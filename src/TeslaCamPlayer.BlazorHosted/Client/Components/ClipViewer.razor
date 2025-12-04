@@ -1,14 +1,35 @@
-﻿@using TeslaCamPlayer.BlazorHosted.Shared.Models
+@using TeslaCamPlayer.BlazorHosted.Shared.Models
 
 <div class="viewer">
-	<div class="top-row">
-		<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" VideoEnded="VideoEnded" TimeUpdate="FrontVideoTimeUpdate" />
+	<div class="viewer-grid">
+		<div class="main-view">
+			<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" VideoEnded="VideoEnded" TimeUpdate="FrontVideoTimeUpdate" />
+		</div>
+		<div class="side-view">
+			<div style="@(_currentSegment?.CameraLeftBPillar == null ? "display:none" : "")" class="video-wrapper">
+				<VideoPlayer @key="@("LEFTPIL")" @ref="_videoPlayerLeftBPillar" Class="video video--left-pillar" VideoEnded="VideoEnded" />
+			</div>
+			<div style="@(_currentSegment?.CameraRightBPillar == null ? "display:none" : "")" class="video-wrapper">
+				<VideoPlayer @key="@("RIGHTPIL")" @ref="_videoPlayerRightBPillar" Class="video video--right-pillar" VideoEnded="VideoEnded" />
+			</div>
+			<div style="@(_currentSegment?.CameraLeftRepeater == null ? "display:none" : "")" class="video-wrapper">
+				<VideoPlayer @key="@("D1916B24")" @ref="_videoPlayerLeftRepeater" Class="video video--left-repeater" VideoEnded="VideoEnded" />
+			</div>
+			<div style="@(_currentSegment?.CameraRightRepeater == null ? "display:none" : "")" class="video-wrapper">
+				<VideoPlayer @key="@("87B15DCA")" @ref="_videoPlayerRightRepeater" Class="video video--right-repeater" VideoEnded="VideoEnded" />
+			</div>
+			<div style="@(_currentSegment?.CameraBack == null ? "display:none" : "")" class="video-wrapper">
+				<VideoPlayer @key="@("66EC38D4")" @ref="_videoPlayerBack" Class="video video--back" VideoEnded="VideoEnded" />
+			</div>
+			<div style="@(_currentSegment?.CameraFisheye == null ? "display:none" : "")" class="video-wrapper">
+				<VideoPlayer @key="@("FISH")" @ref="_videoPlayerFisheye" Class="video video--fisheye" VideoEnded="VideoEnded" />
+			</div>
+			<div style="@(_currentSegment?.CameraNarrow == null ? "display:none" : "")" class="video-wrapper">
+				<VideoPlayer @key="@("NARROW")" @ref="_videoPlayerNarrow" Class="video video--narrow" VideoEnded="VideoEnded" />
+			</div>
+		</div>
 	</div>
-	<div class="bottom-row">
-		<VideoPlayer @key="@("D1916B24")" @ref="_videoPlayerLeftRepeater" Class="video video--left-repeater" VideoEnded="VideoEnded" />
-		<VideoPlayer @key="@("66EC38D4")" @ref="_videoPlayerBack" Class="video video--back" VideoEnded="VideoEnded" />
-		<VideoPlayer @key="@("87B15DCA")" @ref="_videoPlayerRightRepeater" Class="video video--right-repeater" VideoEnded="VideoEnded" />
-	</div>
+
 	<div class="controls">
 		<div class="play-pause">
 			<MudIconButton Icon="@Icons.Material.Filled.SkipPrevious" Size="Size.Medium" OnClick="@PreviousButtonClicked" />

@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>TeslaCamPlayer</Name>
+  <Repository>ghcr.io/yourusername/teslacamplayer</Repository>
+  <Registry>https://ghcr.io/yourusername/teslacamplayer</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/yourusername/teslacamplayer/issues</Support>
+  <Project>https://github.com/yourusername/teslacamplayer</Project>
+  <Overview>
+    TeslaCam Player is a self-hosted web viewer for your Tesla Sentry and Dashcam clips.
+    It supports multi-camera playback (Front, Back, Repeaters, Pillars), timestamp syncing, and event marking.
+  </Overview>
+  <Category>Tools:Utilities MediaApp:Video</Category>
+  <WebUI>http://[IP]:[PORT:8080]/</WebUI>
+  <TemplateURL/>
+  <Icon>https://raw.githubusercontent.com/yourusername/teslacamplayer/master/src/TeslaCamPlayer.BlazorHosted/Client/wwwroot/icon-192.png</Icon>
+  <ExtraParams/>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Description>
+    TeslaCam Player allows you to browse and play video clips saved by your Tesla vehicle.
+    Mount your TeslaCam folder to /TeslaCam inside the container.
+  </Description>
+  <Networking>
+    <Mode>bridge</Mode>
+    <Publish>
+      <Port>
+        <HostPort>8080</HostPort>
+        <ContainerPort>80</ContainerPort>
+        <Protocol>tcp</Protocol>
+      </Port>
+    </Publish>
+  </Networking>
+  <Data>
+    <Volume>
+      <HostDir>/mnt/user/appdata/teslacam/clips</HostDir>
+      <ContainerDir>/TeslaCam</ContainerDir>
+      <Mode>rw</Mode>
+    </Volume>
+  </Data>
+  <Environment>
+    <!-- Add any environment variables here if needed -->
+  </Environment>
+  <Config Name="Clips Directory" Target="/TeslaCam" Default="/mnt/user/appdata/teslacam/clips" Mode="rw" Description="Path to your TeslaCam clips folder (containing RecentClips, SavedClips, SentryClips)" Type="Path" Display="always" Required="true" Mask="false"/>
+  <Config Name="Web Port" Target="80" Default="8080" Mode="tcp" Description="The port to access the web interface" Type="Port" Display="always" Required="true" Mask="false"/>
+</Container>

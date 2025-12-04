@@ -93,7 +93,11 @@ public partial class ClipsService : IClipsService
 				CameraFront = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Front),
 				CameraLeftRepeater = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.LeftRepeater),
 				CameraRightRepeater = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.RightRepeater),
-				CameraBack = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Back)
+				CameraBack = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Back),
+				CameraLeftBPillar = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.LeftBPillar),
+				CameraRightBPillar = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.RightBPillar),
+				CameraFisheye = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Fisheye),
+				CameraNarrow = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Narrow)
 			};
 			
 			currentClipSegments.Add(segment);
@@ -156,6 +160,10 @@ public partial class ClipsService : IClipsService
 			"front" => Cameras.Front,
 			"left_repeater" => Cameras.LeftRepeater,
 			"right_repeater" => Cameras.RightRepeater,
+			"left_pillar" => Cameras.LeftBPillar,
+			"right_pillar" => Cameras.RightBPillar,
+			"fisheye" => Cameras.Fisheye,
+			"narrow" => Cameras.Narrow,
 			_ => Cameras.Unknown
 		};
 
@@ -207,7 +215,11 @@ public partial class ClipsService : IClipsService
 				CameraFront = g.FirstOrDefault(v => v.Camera == Cameras.Front),
 				CameraLeftRepeater = g.FirstOrDefault(v => v.Camera == Cameras.LeftRepeater),
 				CameraRightRepeater = g.FirstOrDefault(v => v.Camera == Cameras.RightRepeater),
-				CameraBack = g.FirstOrDefault(v => v.Camera == Cameras.Back)
+				CameraBack = g.FirstOrDefault(v => v.Camera == Cameras.Back),
+				CameraLeftBPillar = g.FirstOrDefault(v => v.Camera == Cameras.LeftBPillar),
+				CameraRightBPillar = g.FirstOrDefault(v => v.Camera == Cameras.RightBPillar),
+				CameraFisheye = g.FirstOrDefault(v => v.Camera == Cameras.Fisheye),
+				CameraNarrow = g.FirstOrDefault(v => v.Camera == Cameras.Narrow)
 			})
 			.ToArray();
 
@@ -260,6 +272,6 @@ public partial class ClipsService : IClipsService
 	 * vsecond = 49
 	 * camera = front
 	 */
-	[GeneratedRegex(@"(?:[\\/]|^)(?<type>(?:Recent|Saved|Sentry)Clips)(?:[\\/](?<event>(?<year>20\d{2})\-(?<month>[0-1][0-9])\-(?<day>[0-3][0-9])_(?<hour>[0-2][0-9])\-(?<minute>[0-5][0-9])\-(?<second>[0-5][0-9])))?[\\/](?<vyear>20\d{2})\-(?<vmonth>[0-1][0-9])\-(?<vday>[0-3][0-9])_(?<vhour>[0-2][0-9])\-(?<vminute>[0-5][0-9])\-(?<vsecond>[0-5][0-9])\-(?<camera>back|front|left_repeater|right_repeater)\.mp4")]
+	[GeneratedRegex(@"(?:[\\/]|^)(?<type>(?:Recent|Saved|Sentry)Clips)(?:[\\/](?<event>(?<year>20\d{2})\-(?<month>[0-1][0-9])\-(?<day>[0-3][0-9])_(?<hour>[0-2][0-9])\-(?<minute>[0-5][0-9])\-(?<second>[0-5][0-9])))?[\\/](?<vyear>20\d{2})\-(?<vmonth>[0-1][0-9])\-(?<vday>[0-3][0-9])_(?<vhour>[0-2][0-9])\-(?<vminute>[0-5][0-9])\-(?<vsecond>[0-5][0-9])\-(?<camera>back|front|left_repeater|right_repeater|left_pillar|right_pillar|fisheye|narrow)\.mp4")]
 	private static partial Regex FileNameRegexGenerated();
 }
