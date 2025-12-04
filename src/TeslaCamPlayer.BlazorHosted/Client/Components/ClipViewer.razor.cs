@@ -39,6 +39,10 @@ public partial class ClipViewer : ComponentBase
 	private VideoPlayer _videoPlayerLeftRepeater;
 	private VideoPlayer _videoPlayerRightRepeater;
 	private VideoPlayer _videoPlayerBack;
+	private VideoPlayer _videoPlayerLeftBPillar;
+	private VideoPlayer _videoPlayerRightBPillar;
+	private VideoPlayer _videoPlayerFisheye;
+	private VideoPlayer _videoPlayerNarrow;
 	private int _videoLoadedEventCount = 0;
 	private bool _isPlaying;
 	private ClipVideoSegment _currentSegment;
@@ -82,6 +86,26 @@ public partial class ClipViewer : ComponentBase
 			Console.WriteLine("Loaded: Back");
 			_videoLoadedEventCount++;
 		};
+		_videoPlayerLeftBPillar.Loaded += () =>
+		{
+			Console.WriteLine("Loaded: LeftBPillar");
+			_videoLoadedEventCount++;
+		};
+		_videoPlayerRightBPillar.Loaded += () =>
+		{
+			Console.WriteLine("Loaded: RightBPillar");
+			_videoLoadedEventCount++;
+		};
+		_videoPlayerFisheye.Loaded += () =>
+		{
+			Console.WriteLine("Loaded: Fisheye");
+			_videoLoadedEventCount++;
+		};
+		_videoPlayerNarrow.Loaded += () =>
+		{
+			Console.WriteLine("Loaded: Narrow");
+			_videoLoadedEventCount++;
+		};
 	}
 
 	private static Task AwaitUiUpdate()
@@ -116,6 +140,10 @@ public partial class ClipViewer : ComponentBase
 		_videoPlayerLeftRepeater.Src = _currentSegment.CameraLeftRepeater?.Url;
 		_videoPlayerRightRepeater.Src = _currentSegment.CameraRightRepeater?.Url;
 		_videoPlayerBack.Src = _currentSegment.CameraBack?.Url;
+		_videoPlayerLeftBPillar.Src = _currentSegment.CameraLeftBPillar?.Url;
+		_videoPlayerRightBPillar.Src = _currentSegment.CameraRightBPillar?.Url;
+		_videoPlayerFisheye.Src = _currentSegment.CameraFisheye?.Url;
+		_videoPlayerNarrow.Src = _currentSegment.CameraNarrow?.Url;
 
 		if (_loadSegmentCts.IsCancellationRequested)
 			return false;
@@ -151,6 +179,10 @@ public partial class ClipViewer : ComponentBase
 			await action(_videoPlayerLeftRepeater);
 			await action(_videoPlayerRightRepeater);
 			await action(_videoPlayerBack);
+			await action(_videoPlayerLeftBPillar);
+			await action(_videoPlayerRightBPillar);
+			await action(_videoPlayerFisheye);
+			await action(_videoPlayerNarrow);
 		}
 		catch
 		{
