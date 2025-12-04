@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Serilog;
@@ -19,6 +20,7 @@ public partial class ClipsService : IClipsService
 	private static readonly string CacheFilePath = Path.Combine(AppContext.BaseDirectory, "clips.json");
 	private static readonly Regex FileNameRegex = FileNameRegexGenerated();
 	private static Clip[] _cache;
+	private static readonly SemaphoreSlim FfProbeSemaphore = new(10);
 	
 	private readonly ISettingsProvider _settingsProvider;
 	private readonly IFfProbeService _ffProbeService;
@@ -54,7 +56,21 @@ public partial class ClipsService : IClipsService
 			.Select(path => new { Path = path, RegexMatch = FileNameRegex.Match(path) })
 			.Where(f => f.RegexMatch.Success)
 			.ToList()
-			.Select(async f => knownVideoFiles.TryGetValue(f.Path, out var knownVideo) ? knownVideo : await TryParseVideoFileAsync(f.Path, f.RegexMatch))))
+			.Select(async f =>
+			{
+				if (knownVideoFiles.TryGetValue(f.Path, out var knownVideo))
+					return knownVideo;
+
+				await FfProbeSemaphore.WaitAsync();
+				try
+				{
+					return await TryParseVideoFileAsync(f.Path, f.RegexMatch);
+				}
+				finally
+				{
+					FfProbeSemaphore.Release();
+				}
+			})))
 			.AsParallel()
 			.Where(vfi => vfi != null)
 			.ToList();
