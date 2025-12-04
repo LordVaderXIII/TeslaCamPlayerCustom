@@ -1,105 +1,85 @@
-# TeslaCamPlayer
+# TeslaCam Player
 
-[![Release](https://github.com/Rene-Sackers/TeslaCamPlayer/actions/workflows/release.yml/badge.svg)](https://github.com/Rene-Sackers/TeslaCamPlayer/actions/workflows/release.yml)
-
-GitHub: https://github.com/Rene-Sackers/TeslaCamPlayer
-
-A Blazor WASM application for easily viewing locally stored Tesla sentry & dashcam videos.
-
-Works great in combination with [TeslaUSB](https://github.com/marcone/teslausb).
-
-First release, still needs some work, but functional and might be just what you needed :)
-
-![Screenshot](readme/screenshot.png)
+A self-hosted web player for viewing Tesla Sentry and Dashcam clips.
 
 ## Features
 
-### Implemented
+- **Multi-Camera Support:** View up to 8 camera angles simultaneously, including:
+  - Front, Back, Left/Right Repeaters
+  - Left/Right Pillars (New!)
+  - Fisheye & Narrow (Legacy/Debug)
+- **Synchronized Playback:** All video feeds are synced by timestamp.
+- **Event Markers:** Visualize the exact moment of a Sentry event on the timeline.
+- **Responsive Layout:** Large main view (Front) with a grid of side cameras.
+- **Dockerized:** Easy deployment on any Docker host (Unraid, Synology, Linux, etc.).
 
-- Infinite scrolling list of events (virtualized)
-- Icons to easily identify events (sentry/dashcam/honk/movement detected/manual save)
-- Calendar to easily go to a certain date
-- Auto scaling viewer
-- Supports MCU-1 (3 camera, missing back cam) and/or missing/corrupt angles
-- Event time marker on timeline
-- Filtering events
-- RecentClips viewing
+## Prerequisites
 
-### TODO/missing
+- **Docker:** You need a machine running Docker.
+- **TeslaCam Clips:** Access to your TeslaCam folder (USB drive or network copy). The folder structure should look like `TeslaCam/{RecentClips,SavedClips,SentryClips}`.
 
-- Mobile viewport support
-- Progress bar for loading. Initial load checks the length of each video file, this may take a moment.
-- Map for event location
-- Exporting clips
-- General small issues
+## Installation
 
-## Windows
+### Unraid
 
-The Windows build is a self-contained .exe, you do not need to install .NET, as it's compiled into the executable.
+1.  **Community Applications:** (If available) Search for "TeslaCamPlayer".
+2.  **Manual Install (Docker Template):**
+    - Go to the **Docker** tab.
+    - Click **Add Container**.
+    - Switch to **Advanced View** (optional, but helps).
+    - **Name:** TeslaCamPlayer
+    - **Repository:** `ghcr.io/yourusername/teslacamplayer:latest` (Replace with actual image if hosted, or build locally)
+    - **Network Type:** Bridge
+    - **Web Port:**
+        - Container Port: `80`
+        - Host Port: `8080` (or any free port)
+    - **Clips Volume:**
+        - Container Path: `/TeslaCam`
+        - Host Path: `/mnt/user/appdata/teslacam/clips` (Path to your clips)
+    - Click **Apply**.
 
-Download the latest version from [releases](https://github.com/Rene-Sackers/TeslaCamPlayer/releases/tag/v2023.7.23.1431) (teslacamplayer-win-x64-\*.zip) and extract the zip.
+### Docker Run
 
-Modify `appsettings.json`, change the value for `ClipsRootPath`, set it to the path that contains your TeslaCam videos, and escape the \\ directory character with another \\ For example:
-
-```json
-{
-	...
-	"AllowedHosts": "*",
-	"ClipsRootPath": "D:\\Some\\Folder\\TeslaCam"
-}
-
+```bash
+docker run -d \
+  --name teslacam-player \
+  -p 8080:80 \
+  -v /path/to/your/TeslaCam:/TeslaCam \
+  --restart unless-stopped \
+  ghcr.io/yourusername/teslacamplayer:latest
 ```
 
-Run `TeslaCamPlayer.BlazorHosted.Server.exe` and navigate to `http://localhost:5000` in your browser.
+### Docker Compose
 
-## Docker
-
+```yaml
+version: '3'
+services:
+  teslacam:
+    image: ghcr.io/yourusername/teslacamplayer:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - /path/to/your/TeslaCam:/TeslaCam
+    restart: unless-stopped
 ```
-docker run \
-	-e ClipsRootPath=/TeslaCam \
-	-v D:\\TeslaCam\\:/TeslaCam \
-	-p 80:80 \
-	teslacam
-```
 
-### Environment variables
+## Usage
 
-| Variable      | Example   | Description                                                                                                                                          |
-| ------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ClipsRootPath | /TeslaCam | The path to the root of the clips mount in the container. This is set by default, you do not need to change it if you mount the volume to this path. |
+1.  Open your browser and navigate to `http://<your-server-ip>:8080`.
+2.  The player will scan the `/TeslaCam` directory for clips. *Note: Initial scan might take a moment if you have thousands of files.*
+3.  Select an event from the list.
+4.  Use the timeline to scrub through the video. The event trigger is marked with a red dot.
 
-### Volumes
+## Troubleshooting
 
-| Volume    | Description                                                                                                                                          |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| /TeslaCam | Should contain the event folders with the camera files (eg. RecentClips, SavedClips, SentryClips) Mounts to the `ClipsRootPath` environment variable |
+-   **No Clips Found:** Ensure the volume mount `/TeslaCam` inside the container points to the directory *containing* `SentryClips`, `SavedClips`, etc. If you mount `SentryClips` directly to `/TeslaCam`, it won't work.
+-   **Missing Cameras:** Not all Tesla models record all cameras. The player will only show cameras present in the folder.
+-   **Playback Issues:** This app relies on the browser's native MP4 playback. Ensure your browser supports H.264/H.265.
 
-### Ports
+## Development
 
-| Port | Description                 |
-| ---- | --------------------------- |
-| 80   | The HTTP web interface port |
+See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for instructions on how to build and test locally.
 
-# Legal
+## License
 
-pls no sue kthx
-
-## Tesla
-
-This software is in no way, shape or form affiliated with Tesla, Inc. (https://www.tesla.com/), or its products.
-This software is not:
-
-- An official Tesla product
-- Licensed by Tesla
-- Built by or in conjunction with Tesla
-- Commisioned by Tesla
-
-It does not directly impact Tesla products. It is an aftermarket piece of software that processes data produced by Tesla vehicles.
-
-## FFmpeg
-
-This software uses libraries from the FFmpeg project under the LGPLv2.1  
-The Windows build of this software includes a copy of ffprobe.exe, compiled by: https://github.com/BtbN/FFmpeg-Builds/releases  
-More info and sources for FFmpeg can be found on: https://ffmpeg.org/
-
-[def]: releases
+MIT
