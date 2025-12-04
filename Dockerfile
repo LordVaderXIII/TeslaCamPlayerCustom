@@ -6,7 +6,7 @@ RUN dotnet publish *.csproj -c Release -o /app/publish /p:DefineConstants=DOCKER
 # Remove ffprobe.exe from docker builds. It relies on an apt package instead.
 RUN rm -r /app/publish/lib/
 
-FROM node:17 AS gulp
+FROM node:20-alpine AS gulp
 WORKDIR /src
 COPY src/TeslaCamPlayer.BlazorHosted/Client/package.json .
 COPY src/TeslaCamPlayer.BlazorHosted/Client/gulpfile.js .
@@ -15,8 +15,8 @@ RUN npm install
 RUN npm install -g gulp
 RUN gulp default
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
-RUN apt-get update && apt-get install -y ffmpeg --no-install-recommends
+FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine AS final
+RUN apk add --no-cache ffmpeg
 WORKDIR /app
 ENV ClipsRootPath=/TeslaCam
 ENV ASPNETCORE_HTTP_PORTS=80
