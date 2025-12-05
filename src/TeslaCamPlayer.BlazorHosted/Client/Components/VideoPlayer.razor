@@ -7,6 +7,8 @@
 	@onended="@VideoEndedHandler"
 	@ontimeupdate="@TimeUpdateHandler"
 	@oncanplaythrough="@OnLoadedData"
+	@onclick="@OnClickHandler"
+	style="@(Clickable ? "cursor: pointer" : null)"
 	disableremoteplayback></video>
 
 @code {
@@ -18,6 +20,12 @@
 	
 	[Parameter]
 	public string Class { get; set; }
+
+	[Parameter]
+	public bool Clickable { get; set; }
+
+	[Parameter]
+	public EventCallback OnClick { get; set; }
 	
 	[Parameter]
 	public EventCallback VideoEnded { get; set; }
@@ -48,6 +56,9 @@
 
 	private Task TimeUpdateHandler()
 		=> TimeUpdate.InvokeAsync();
+
+	private Task OnClickHandler()
+		=> Clickable ? OnClick.InvokeAsync() : Task.CompletedTask;
 
 	private void OnLoadedData()
 		=> Loaded?.Invoke();
