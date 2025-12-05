@@ -54,6 +54,7 @@ public partial class ClipViewer : ComponentBase
 	private double _timelineValue;
 	private System.Timers.Timer _setVideoTimeDebounceTimer;
 	private CancellationTokenSource _loadSegmentCts = new();
+	private Cameras _mainCamera = Cameras.Front;
 
 	protected override void OnInitialized()
 	{
@@ -136,15 +137,6 @@ public partial class ClipViewer : ComponentBase
 		if (wasPlaying)
 			await TogglePlayingAsync(false);
 		
-		_videoPlayerFront.Src = _currentSegment.CameraFront?.Url;
-		_videoPlayerLeftRepeater.Src = _currentSegment.CameraLeftRepeater?.Url;
-		_videoPlayerRightRepeater.Src = _currentSegment.CameraRightRepeater?.Url;
-		_videoPlayerBack.Src = _currentSegment.CameraBack?.Url;
-		_videoPlayerLeftBPillar.Src = _currentSegment.CameraLeftBPillar?.Url;
-		_videoPlayerRightBPillar.Src = _currentSegment.CameraRightBPillar?.Url;
-		_videoPlayerFisheye.Src = _currentSegment.CameraFisheye?.Url;
-		_videoPlayerNarrow.Src = _currentSegment.CameraNarrow?.Url;
-
 		if (_loadSegmentCts.IsCancellationRequested)
 			return false;
 		
@@ -296,6 +288,35 @@ public partial class ClipViewer : ComponentBase
 		{
 			// ignore, happens sometimes
 		}
+	}
+
+	private async Task SwapCamera(Cameras camera)
+	{
+		if (_mainCamera == camera)
+			return;
+
+		var wasPlaying = _isPlaying;
+		if (wasPlaying)
+			await TogglePlayingAsync(false);
+
+		_mainCamera = camera;
+		await InvokeAsync(StateHasChanged);
+
+		// After DOM update (and player recreation/move), we need to restore time.
+		if (_currentSegment != null)
+		{
+			// We can use the current TimelineValue to restore the position
+			var scrubToDate = _clip.StartDate.AddSeconds(TimelineValue);
+			var secondsIntoSegment = (scrubToDate - _currentSegment.StartDate).TotalSeconds;
+
+			// We need to wait a bit for the new player to be ready?
+			// Or just set the time. Since src is the same, maybe it loads fast.
+			// But we should try to set the time on all players.
+			await ExecuteOnPlayers(async p => await p.SetTimeAsync(secondsIntoSegment));
+		}
+
+		if (wasPlaying)
+			await TogglePlayingAsync(true);
 	}
 
 	private double DateTimeToTimelinePercentage(DateTime dateTime)

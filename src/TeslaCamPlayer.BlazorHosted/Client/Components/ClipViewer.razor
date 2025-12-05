@@ -3,30 +3,88 @@
 <div class="viewer">
 	<div class="viewer-grid">
 		<div class="main-view">
-			<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" VideoEnded="VideoEnded" TimeUpdate="FrontVideoTimeUpdate" />
+			@if (_mainCamera == Cameras.Front)
+			{
+				<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" Src="@(_currentSegment?.CameraFront?.Url)" VideoEnded="VideoEnded" TimeUpdate="FrontVideoTimeUpdate" />
+			}
+			@if (_mainCamera == Cameras.LeftBPillar)
+			{
+				<VideoPlayer @key="@("LEFTPIL")" @ref="_videoPlayerLeftBPillar" Class="video video--left-pillar" Src="@(_currentSegment?.CameraLeftBPillar?.Url)" VideoEnded="VideoEnded" />
+			}
+			@if (_mainCamera == Cameras.RightBPillar)
+			{
+				<VideoPlayer @key="@("RIGHTPIL")" @ref="_videoPlayerRightBPillar" Class="video video--right-pillar" Src="@(_currentSegment?.CameraRightBPillar?.Url)" VideoEnded="VideoEnded" />
+			}
+			@if (_mainCamera == Cameras.LeftRepeater)
+			{
+				<VideoPlayer @key="@("D1916B24")" @ref="_videoPlayerLeftRepeater" Class="video video--left-repeater" Src="@(_currentSegment?.CameraLeftRepeater?.Url)" VideoEnded="VideoEnded" />
+			}
+			@if (_mainCamera == Cameras.RightRepeater)
+			{
+				<VideoPlayer @key="@("87B15DCA")" @ref="_videoPlayerRightRepeater" Class="video video--right-repeater" Src="@(_currentSegment?.CameraRightRepeater?.Url)" VideoEnded="VideoEnded" />
+			}
+			@if (_mainCamera == Cameras.Back)
+			{
+				<VideoPlayer @key="@("66EC38D4")" @ref="_videoPlayerBack" Class="video video--back" Src="@(_currentSegment?.CameraBack?.Url)" VideoEnded="VideoEnded" />
+			}
+			@if (_mainCamera == Cameras.Fisheye)
+			{
+				<VideoPlayer @key="@("FISH")" @ref="_videoPlayerFisheye" Class="video video--fisheye" Src="@(_currentSegment?.CameraFisheye?.Url)" VideoEnded="VideoEnded" />
+			}
+			@if (_mainCamera == Cameras.Narrow)
+			{
+				<VideoPlayer @key="@("NARROW")" @ref="_videoPlayerNarrow" Class="video video--narrow" Src="@(_currentSegment?.CameraNarrow?.Url)" VideoEnded="VideoEnded" />
+			}
 		</div>
 		<div class="side-view">
-			<div style="@(_currentSegment?.CameraLeftBPillar == null ? "display:none" : "")" class="video-wrapper">
-				<VideoPlayer @key="@("LEFTPIL")" @ref="_videoPlayerLeftBPillar" Class="video video--left-pillar" VideoEnded="VideoEnded" />
-			</div>
-			<div style="@(_currentSegment?.CameraRightBPillar == null ? "display:none" : "")" class="video-wrapper">
-				<VideoPlayer @key="@("RIGHTPIL")" @ref="_videoPlayerRightBPillar" Class="video video--right-pillar" VideoEnded="VideoEnded" />
-			</div>
-			<div style="@(_currentSegment?.CameraLeftRepeater == null ? "display:none" : "")" class="video-wrapper">
-				<VideoPlayer @key="@("D1916B24")" @ref="_videoPlayerLeftRepeater" Class="video video--left-repeater" VideoEnded="VideoEnded" />
-			</div>
-			<div style="@(_currentSegment?.CameraRightRepeater == null ? "display:none" : "")" class="video-wrapper">
-				<VideoPlayer @key="@("87B15DCA")" @ref="_videoPlayerRightRepeater" Class="video video--right-repeater" VideoEnded="VideoEnded" />
-			</div>
-			<div style="@(_currentSegment?.CameraBack == null ? "display:none" : "")" class="video-wrapper">
-				<VideoPlayer @key="@("66EC38D4")" @ref="_videoPlayerBack" Class="video video--back" VideoEnded="VideoEnded" />
-			</div>
-			<div style="@(_currentSegment?.CameraFisheye == null ? "display:none" : "")" class="video-wrapper">
-				<VideoPlayer @key="@("FISH")" @ref="_videoPlayerFisheye" Class="video video--fisheye" VideoEnded="VideoEnded" />
-			</div>
-			<div style="@(_currentSegment?.CameraNarrow == null ? "display:none" : "")" class="video-wrapper">
-				<VideoPlayer @key="@("NARROW")" @ref="_videoPlayerNarrow" Class="video video--narrow" VideoEnded="VideoEnded" />
-			</div>
+			@if (_mainCamera != Cameras.Front)
+			{
+				<div style="@(_currentSegment?.CameraFront == null ? "display:none" : "")" class="video-wrapper">
+					<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" Src="@(_currentSegment?.CameraFront?.Url)" VideoEnded="VideoEnded" TimeUpdate="FrontVideoTimeUpdate" Clickable="true" OnClick="@(() => SwapCamera(Cameras.Front))" />
+				</div>
+			}
+			@if (_mainCamera != Cameras.LeftBPillar)
+			{
+				<div style="@(_currentSegment?.CameraLeftBPillar == null ? "display:none" : "")" class="video-wrapper">
+					<VideoPlayer @key="@("LEFTPIL")" @ref="_videoPlayerLeftBPillar" Class="video video--left-pillar" Src="@(_currentSegment?.CameraLeftBPillar?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.LeftBPillar))" />
+				</div>
+			}
+			@if (_mainCamera != Cameras.RightBPillar)
+			{
+				<div style="@(_currentSegment?.CameraRightBPillar == null ? "display:none" : "")" class="video-wrapper">
+					<VideoPlayer @key="@("RIGHTPIL")" @ref="_videoPlayerRightBPillar" Class="video video--right-pillar" Src="@(_currentSegment?.CameraRightBPillar?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.RightBPillar))" />
+				</div>
+			}
+			@if (_mainCamera != Cameras.LeftRepeater)
+			{
+				<div style="@(_currentSegment?.CameraLeftRepeater == null ? "display:none" : "")" class="video-wrapper">
+					<VideoPlayer @key="@("D1916B24")" @ref="_videoPlayerLeftRepeater" Class="video video--left-repeater" Src="@(_currentSegment?.CameraLeftRepeater?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.LeftRepeater))" />
+				</div>
+			}
+			@if (_mainCamera != Cameras.RightRepeater)
+			{
+				<div style="@(_currentSegment?.CameraRightRepeater == null ? "display:none" : "")" class="video-wrapper">
+					<VideoPlayer @key="@("87B15DCA")" @ref="_videoPlayerRightRepeater" Class="video video--right-repeater" Src="@(_currentSegment?.CameraRightRepeater?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.RightRepeater))" />
+				</div>
+			}
+			@if (_mainCamera != Cameras.Back)
+			{
+				<div style="@(_currentSegment?.CameraBack == null ? "display:none" : "")" class="video-wrapper">
+					<VideoPlayer @key="@("66EC38D4")" @ref="_videoPlayerBack" Class="video video--back" Src="@(_currentSegment?.CameraBack?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.Back))" />
+				</div>
+			}
+			@if (_mainCamera != Cameras.Fisheye)
+			{
+				<div style="@(_currentSegment?.CameraFisheye == null ? "display:none" : "")" class="video-wrapper">
+					<VideoPlayer @key="@("FISH")" @ref="_videoPlayerFisheye" Class="video video--fisheye" Src="@(_currentSegment?.CameraFisheye?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.Fisheye))" />
+				</div>
+			}
+			@if (_mainCamera != Cameras.Narrow)
+			{
+				<div style="@(_currentSegment?.CameraNarrow == null ? "display:none" : "")" class="video-wrapper">
+					<VideoPlayer @key="@("NARROW")" @ref="_videoPlayerNarrow" Class="video video--narrow" Src="@(_currentSegment?.CameraNarrow?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.Narrow))" />
+				</div>
+			}
 		</div>
 	</div>
 

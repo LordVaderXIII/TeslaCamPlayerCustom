@@ -61,7 +61,7 @@ public partial class Index : ComponentBase
 		await InvokeAsync(StateHasChanged);
 
 		_setDatePickerInitialDate = false;
-		_clips = await HttpClient.GetFromNewtonsoftJsonAsync<Clip[]>("Api/GetClips?refreshCache=" + refreshCache);
+		_clips = await HttpClient.GetFromNewtonsoftJsonAsync<Clip[]>($"Api/GetClips?refreshCache={refreshCache}&_={DateTime.Now.Ticks}");
 
 		FilterClips();
 	}
