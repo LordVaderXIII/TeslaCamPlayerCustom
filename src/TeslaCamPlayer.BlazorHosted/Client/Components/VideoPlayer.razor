@@ -9,7 +9,8 @@
 		@onended="@VideoEndedHandler"
 		@ontimeupdate="@TimeUpdateHandler"
 		@oncanplaythrough="@OnLoadedData"
-		disableremoteplayback></video>
+		disableremoteplayback
+		playsinline></video>
 	@if (!string.IsNullOrEmpty(Label))
 	{
 		<div class="video-label">@Label</div>
