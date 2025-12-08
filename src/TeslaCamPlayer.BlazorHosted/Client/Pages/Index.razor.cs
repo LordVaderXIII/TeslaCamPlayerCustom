@@ -319,4 +319,10 @@ public partial class Index : ComponentBase
     {
         _isBrowserVisible = !_isBrowserVisible;
     }
+
+	private void ShowChangelog()
+	{
+		var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+		DialogService.Show<ChangelogDialog>("Version History", options);
+	}
 }

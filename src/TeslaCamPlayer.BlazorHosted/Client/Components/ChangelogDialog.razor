@@ -1,0 +1,43 @@
+@using TeslaCamPlayer.BlazorHosted.Client.Models
+@inherits MudComponentBase
+
+<MudDialog>
+    <DialogContent>
+        <MudTimeline>
+            @foreach (var release in VersionInfo.Releases)
+            {
+                <MudTimelineItem>
+                    <ItemContent>
+                        <MudCard Elevation="25" Class="mt-n5">
+                            <MudCardHeader>
+                                <CardHeaderContent>
+                                    <MudText Typo="Typo.h6">v@(release.Version)</MudText>
+                                    <MudText Typo="Typo.caption">@release.Date</MudText>
+                                </CardHeaderContent>
+                            </MudCardHeader>
+                            <MudCardContent>
+                                <MudList Dense="true">
+                                    @foreach (var change in release.Changes)
+                                    {
+                                        <MudListItem Icon="@Icons.Material.Filled.Check" IconSize="Size.Small">
+                                            @change
+                                        </MudListItem>
+                                    }
+                                </MudList>
+                            </MudCardContent>
+                        </MudCard>
+                    </ItemContent>
+                </MudTimelineItem>
+            }
+        </MudTimeline>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    void Cancel() => MudDialog.Cancel();
+}

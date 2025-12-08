@@ -1,4 +1,6 @@
 @page "/"
+@using TeslaCamPlayer.BlazorHosted.Client.Components
+@using TeslaCamPlayer.BlazorHosted.Client.Models
 @using TeslaCamPlayer.BlazorHosted.Shared.Models
 
 @if (_filteredclips == null)
@@ -16,6 +18,11 @@ else
                        Color="Color.Primary"
                        OnClick="@ToggleBrowser" />
     </div>
+
+	<!-- Version Display -->
+	<div class="version-display" @onclick="ShowChangelog">
+		<MudText Typo="Typo.caption">v@(VersionInfo.CurrentVersion)</MudText>
+	</div>
 
 	<div class="main-content">
 		<div class="viewer-container">
