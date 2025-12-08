@@ -10,6 +10,7 @@ A self-hosted web player for viewing Tesla Sentry and Dashcam clips.
   - Fisheye & Narrow (Legacy/Debug)
 - **Synchronized Playback:** All video feeds are synced by timestamp.
 - **Event Markers:** Visualize the exact moment of a Sentry event on the timeline.
+- **Clip Export:** Export custom clips with multiple camera angles merged into a single video file.
 - **Responsive Layout:** Large main view (Front) with a grid of side cameras.
 - **Dockerized:** Easy deployment on any Docker host (Unraid, Synology, Linux, etc.).
 
@@ -73,6 +74,12 @@ services:
     -   *Scan history is saved in a `teslacam.db` file located in your mapped clips folder.*
 4.  Select an event from the list.
 5.  Use the timeline to scrub through the video. The event trigger is marked with a red dot.
+6.  **Exporting Clips:**
+    - Click the **Export Clip** (movie creation icon) button in the toolbar.
+    - Drag the green (start) and red (end) brackets on the timeline to select the export range.
+    - Use the checkboxes on each camera view to include or exclude specific cameras.
+    - Click **Export** to start the job.
+    - Click the **Downloads** icon to view export status and download completed clips.
 
 ## Troubleshooting
 

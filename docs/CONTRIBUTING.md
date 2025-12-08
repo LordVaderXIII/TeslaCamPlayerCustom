@@ -2,14 +2,14 @@
 
 ## Project Structure
 
-- **Backend:** ASP.NET Core (.NET 7/8). Handles file scanning, metadata parsing (ffmpeg), and serving video files.
+- **Backend:** ASP.NET Core (.NET 7/8). Handles file scanning, metadata parsing (ffmpeg), and serving video files. Also handles clip export jobs using ffmpeg.
 - **Frontend:** Blazor WebAssembly. Handles the UI, video synchronization, and user interaction.
 
 ## Prerequisites
 
 - .NET 8 SDK
 - Node.js (for building frontend styles via Gulp)
-- FFmpeg (required for runtime duration analysis)
+- FFmpeg (required for runtime duration analysis and clip exporting)
 
 ## Local Setup
 

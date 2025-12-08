@@ -14,6 +14,12 @@
 	{
 		<div class="video-label">@Label</div>
 	}
+	@if (Selectable)
+	{
+		<div class="video-overlay-checkbox" @onclick:stopPropagation="true">
+			<MudCheckBox T="bool" Value="@IsSelected" ValueChanged="@IsSelectedChanged" Color="Color.Primary" />
+		</div>
+	}
 </div>
 
 @code {
@@ -40,6 +46,15 @@
 	
 	[Parameter]
 	public EventCallback TimeUpdate { get; set; }
+
+	[Parameter]
+	public bool Selectable { get; set; }
+
+	[Parameter]
+	public bool IsSelected { get; set; }
+
+	[Parameter]
+	public EventCallback<bool> IsSelectedChanged { get; set; }
 
 	public delegate void LoadedHandler();
 

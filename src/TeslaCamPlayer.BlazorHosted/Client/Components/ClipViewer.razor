@@ -5,94 +5,94 @@
 		<div class="main-view">
 			@if (_mainCamera == Cameras.Front)
 			{
-				<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" Src="@(_currentSegment?.CameraFront?.Url)" VideoEnded="VideoEnded" TimeUpdate="FrontVideoTimeUpdate" Label="Front" />
+				<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" Src="@(_currentSegment?.CameraFront?.Url)" VideoEnded="VideoEnded" TimeUpdate="FrontVideoTimeUpdate" Label="Front" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Front).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.LeftBPillar)
 			{
-				<VideoPlayer @key="@("LEFTPIL")" @ref="_videoPlayerLeftBPillar" Class="video video--left-pillar" Src="@(_currentSegment?.CameraLeftBPillar?.Url)" VideoEnded="VideoEnded" Label="Left Pillar" />
+				<VideoPlayer @key="@("LEFTPIL")" @ref="_videoPlayerLeftBPillar" Class="video video--left-pillar" Src="@(_currentSegment?.CameraLeftBPillar?.Url)" VideoEnded="VideoEnded" Label="Left Pillar" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.LeftBPillar).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.RightBPillar)
 			{
-				<VideoPlayer @key="@("RIGHTPIL")" @ref="_videoPlayerRightBPillar" Class="video video--right-pillar" Src="@(_currentSegment?.CameraRightBPillar?.Url)" VideoEnded="VideoEnded" Label="Right Pillar" />
+				<VideoPlayer @key="@("RIGHTPIL")" @ref="_videoPlayerRightBPillar" Class="video video--right-pillar" Src="@(_currentSegment?.CameraRightBPillar?.Url)" VideoEnded="VideoEnded" Label="Right Pillar" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.RightBPillar).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.LeftRepeater)
 			{
-				<VideoPlayer @key="@("D1916B24")" @ref="_videoPlayerLeftRepeater" Class="video video--left-repeater" Src="@(_currentSegment?.CameraLeftRepeater?.Url)" VideoEnded="VideoEnded" Label="Left Repeater" />
+				<VideoPlayer @key="@("D1916B24")" @ref="_videoPlayerLeftRepeater" Class="video video--left-repeater" Src="@(_currentSegment?.CameraLeftRepeater?.Url)" VideoEnded="VideoEnded" Label="Left Repeater" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.LeftRepeater).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.RightRepeater)
 			{
-				<VideoPlayer @key="@("87B15DCA")" @ref="_videoPlayerRightRepeater" Class="video video--right-repeater" Src="@(_currentSegment?.CameraRightRepeater?.Url)" VideoEnded="VideoEnded" Label="Right Repeater" />
+				<VideoPlayer @key="@("87B15DCA")" @ref="_videoPlayerRightRepeater" Class="video video--right-repeater" Src="@(_currentSegment?.CameraRightRepeater?.Url)" VideoEnded="VideoEnded" Label="Right Repeater" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.RightRepeater).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.Back)
 			{
-				<VideoPlayer @key="@("66EC38D4")" @ref="_videoPlayerBack" Class="video video--back" Src="@(_currentSegment?.CameraBack?.Url)" VideoEnded="VideoEnded" Label="Back" />
+				<VideoPlayer @key="@("66EC38D4")" @ref="_videoPlayerBack" Class="video video--back" Src="@(_currentSegment?.CameraBack?.Url)" VideoEnded="VideoEnded" Label="Back" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Back).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.Fisheye)
 			{
-				<VideoPlayer @key="@("FISH")" @ref="_videoPlayerFisheye" Class="video video--fisheye" Src="@(_currentSegment?.CameraFisheye?.Url)" VideoEnded="VideoEnded" Label="Fisheye" />
+				<VideoPlayer @key="@("FISH")" @ref="_videoPlayerFisheye" Class="video video--fisheye" Src="@(_currentSegment?.CameraFisheye?.Url)" VideoEnded="VideoEnded" Label="Fisheye" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Fisheye).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.Narrow)
 			{
-				<VideoPlayer @key="@("NARROW")" @ref="_videoPlayerNarrow" Class="video video--narrow" Src="@(_currentSegment?.CameraNarrow?.Url)" VideoEnded="VideoEnded" Label="Narrow" />
+				<VideoPlayer @key="@("NARROW")" @ref="_videoPlayerNarrow" Class="video video--narrow" Src="@(_currentSegment?.CameraNarrow?.Url)" VideoEnded="VideoEnded" Label="Narrow" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Narrow).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.Cabin)
 			{
-				<VideoPlayer @key="@("CABIN")" @ref="_videoPlayerCabin" Class="video video--cabin" Src="@(_currentSegment?.CameraCabin?.Url)" VideoEnded="VideoEnded" Label="Cabin" />
+				<VideoPlayer @key="@("CABIN")" @ref="_videoPlayerCabin" Class="video video--cabin" Src="@(_currentSegment?.CameraCabin?.Url)" VideoEnded="VideoEnded" Label="Cabin" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Cabin).IsSelected" />
 			}
 		</div>
 		<div class="side-view">
 			@if (_mainCamera != Cameras.Front)
 			{
 				<div style="@(_currentSegment?.CameraFront == null ? "display:none" : "")" class="video-wrapper">
-					<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" Src="@(_currentSegment?.CameraFront?.Url)" VideoEnded="VideoEnded" TimeUpdate="FrontVideoTimeUpdate" Clickable="true" OnClick="@(() => SwapCamera(Cameras.Front))" Label="Front" />
+					<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" Src="@(_currentSegment?.CameraFront?.Url)" VideoEnded="VideoEnded" TimeUpdate="FrontVideoTimeUpdate" Clickable="@(!IsExportMode)" OnClick="@(() => SwapCamera(Cameras.Front))" Label="Front" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Front).IsSelected" />
 				</div>
 			}
 			@if (_mainCamera != Cameras.LeftBPillar)
 			{
 				<div style="@(_currentSegment?.CameraLeftBPillar == null ? "display:none" : "")" class="video-wrapper">
-					<VideoPlayer @key="@("LEFTPIL")" @ref="_videoPlayerLeftBPillar" Class="video video--left-pillar" Src="@(_currentSegment?.CameraLeftBPillar?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.LeftBPillar))" Label="Left Pillar" />
+					<VideoPlayer @key="@("LEFTPIL")" @ref="_videoPlayerLeftBPillar" Class="video video--left-pillar" Src="@(_currentSegment?.CameraLeftBPillar?.Url)" VideoEnded="VideoEnded" Clickable="@(!IsExportMode)" OnClick="@(() => SwapCamera(Cameras.LeftBPillar))" Label="Left Pillar" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.LeftBPillar).IsSelected" />
 				</div>
 			}
 			@if (_mainCamera != Cameras.RightBPillar)
 			{
 				<div style="@(_currentSegment?.CameraRightBPillar == null ? "display:none" : "")" class="video-wrapper">
-					<VideoPlayer @key="@("RIGHTPIL")" @ref="_videoPlayerRightBPillar" Class="video video--right-pillar" Src="@(_currentSegment?.CameraRightBPillar?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.RightBPillar))" Label="Right Pillar" />
+					<VideoPlayer @key="@("RIGHTPIL")" @ref="_videoPlayerRightBPillar" Class="video video--right-pillar" Src="@(_currentSegment?.CameraRightBPillar?.Url)" VideoEnded="VideoEnded" Clickable="@(!IsExportMode)" OnClick="@(() => SwapCamera(Cameras.RightBPillar))" Label="Right Pillar" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.RightBPillar).IsSelected" />
 				</div>
 			}
 			@if (_mainCamera != Cameras.LeftRepeater)
 			{
 				<div style="@(_currentSegment?.CameraLeftRepeater == null ? "display:none" : "")" class="video-wrapper">
-					<VideoPlayer @key="@("D1916B24")" @ref="_videoPlayerLeftRepeater" Class="video video--left-repeater" Src="@(_currentSegment?.CameraLeftRepeater?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.LeftRepeater))" Label="Left Repeater" />
+					<VideoPlayer @key="@("D1916B24")" @ref="_videoPlayerLeftRepeater" Class="video video--left-repeater" Src="@(_currentSegment?.CameraLeftRepeater?.Url)" VideoEnded="VideoEnded" Clickable="@(!IsExportMode)" OnClick="@(() => SwapCamera(Cameras.LeftRepeater))" Label="Left Repeater" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.LeftRepeater).IsSelected" />
 				</div>
 			}
 			@if (_mainCamera != Cameras.RightRepeater)
 			{
 				<div style="@(_currentSegment?.CameraRightRepeater == null ? "display:none" : "")" class="video-wrapper">
-					<VideoPlayer @key="@("87B15DCA")" @ref="_videoPlayerRightRepeater" Class="video video--right-repeater" Src="@(_currentSegment?.CameraRightRepeater?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.RightRepeater))" Label="Right Repeater" />
+					<VideoPlayer @key="@("87B15DCA")" @ref="_videoPlayerRightRepeater" Class="video video--right-repeater" Src="@(_currentSegment?.CameraRightRepeater?.Url)" VideoEnded="VideoEnded" Clickable="@(!IsExportMode)" OnClick="@(() => SwapCamera(Cameras.RightRepeater))" Label="Right Repeater" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.RightRepeater).IsSelected" />
 				</div>
 			}
 			@if (_mainCamera != Cameras.Back)
 			{
 				<div style="@(_currentSegment?.CameraBack == null ? "display:none" : "")" class="video-wrapper">
-					<VideoPlayer @key="@("66EC38D4")" @ref="_videoPlayerBack" Class="video video--back" Src="@(_currentSegment?.CameraBack?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.Back))" Label="Back" />
+					<VideoPlayer @key="@("66EC38D4")" @ref="_videoPlayerBack" Class="video video--back" Src="@(_currentSegment?.CameraBack?.Url)" VideoEnded="VideoEnded" Clickable="@(!IsExportMode)" OnClick="@(() => SwapCamera(Cameras.Back))" Label="Back" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Back).IsSelected" />
 				</div>
 			}
 			@if (_mainCamera != Cameras.Fisheye)
 			{
 				<div style="@(_currentSegment?.CameraFisheye == null ? "display:none" : "")" class="video-wrapper">
-					<VideoPlayer @key="@("FISH")" @ref="_videoPlayerFisheye" Class="video video--fisheye" Src="@(_currentSegment?.CameraFisheye?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.Fisheye))" Label="Fisheye" />
+					<VideoPlayer @key="@("FISH")" @ref="_videoPlayerFisheye" Class="video video--fisheye" Src="@(_currentSegment?.CameraFisheye?.Url)" VideoEnded="VideoEnded" Clickable="@(!IsExportMode)" OnClick="@(() => SwapCamera(Cameras.Fisheye))" Label="Fisheye" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Fisheye).IsSelected" />
 				</div>
 			}
 			@if (_mainCamera != Cameras.Narrow)
 			{
 				<div style="@(_currentSegment?.CameraNarrow == null ? "display:none" : "")" class="video-wrapper">
-					<VideoPlayer @key="@("NARROW")" @ref="_videoPlayerNarrow" Class="video video--narrow" Src="@(_currentSegment?.CameraNarrow?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.Narrow))" Label="Narrow" />
+					<VideoPlayer @key="@("NARROW")" @ref="_videoPlayerNarrow" Class="video video--narrow" Src="@(_currentSegment?.CameraNarrow?.Url)" VideoEnded="VideoEnded" Clickable="@(!IsExportMode)" OnClick="@(() => SwapCamera(Cameras.Narrow))" Label="Narrow" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Narrow).IsSelected" />
 				</div>
 			}
 			@if (_mainCamera != Cameras.Cabin)
 			{
 				<div style="@(_currentSegment?.CameraCabin == null ? "display:none" : "")" class="video-wrapper">
-					<VideoPlayer @key="@("CABIN")" @ref="_videoPlayerCabin" Class="video video--cabin" Src="@(_currentSegment?.CameraCabin?.Url)" VideoEnded="VideoEnded" Clickable="true" OnClick="@(() => SwapCamera(Cameras.Cabin))" Label="Cabin" />
+					<VideoPlayer @key="@("CABIN")" @ref="_videoPlayerCabin" Class="video video--cabin" Src="@(_currentSegment?.CameraCabin?.Url)" VideoEnded="VideoEnded" Clickable="@(!IsExportMode)" OnClick="@(() => SwapCamera(Cameras.Cabin))" Label="Cabin" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Cabin).IsSelected" />
 				</div>
 			}
 		</div>
@@ -106,7 +106,7 @@
 		</div>
 		<div class="seeker-slider-container">
 			<div class="time-container">@_clip?.StartDate.ToString("hh:mm:ss tt")</div>
-			<div class="slider-container">
+			<div class="slider-container" @ref="_timelineSliderElement" @onpointermove="OnTimelinePointerMove">
 				<MudSlider
 					T="double"
 					@ref="_timelineSlider"
@@ -120,6 +120,20 @@
 				@foreach (var segment in _clip?.Segments ?? Array.Empty<ClipVideoSegment>())
 				{
 					<div class="segment-marker" style="@SegmentStartMargerStyle(segment)"></div>
+				}
+				@if (IsExportMode)
+				{
+					<div class="export-markers-container" @onmousedown:stopPropagation="true">
+						<div class="export-range-highlight" style="@ExportHighlightStyle()"></div>
+						<div class="export-handle start" style="@ExportHandleStyle(true)"
+						     @onpointerdown="@((e) => StartDrag(e, true))"
+						     @onpointerup="EndDrag"
+						     @onpointerdown:stopPropagation="true"></div>
+						<div class="export-handle end" style="@ExportHandleStyle(false)"
+						     @onpointerdown="@((e) => StartDrag(e, false))"
+						     @onpointerup="EndDrag"
+						     @onpointerdown:stopPropagation="true"></div>
+					</div>
 				}
 			</div>
 			<div class="time-container">@_clip?.EndDate.ToString("hh:mm:ss tt")</div>
