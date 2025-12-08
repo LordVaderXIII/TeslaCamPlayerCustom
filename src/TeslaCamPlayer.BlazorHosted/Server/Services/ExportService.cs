@@ -121,13 +121,11 @@ public class ExportService : IExportService
             // Let's try the "concat demuxer" approach.
             // We create a text file for each camera angle listing the files.
 
-            var tempFiles = new List<string>();
             var activeCameras = request.SelectedCameras.Where(c => c != Cameras.Unknown).ToList();
             if (!activeCameras.Contains(request.MainCamera) && request.MainCamera != Cameras.Unknown) activeCameras.Add(request.MainCamera); // Ensure main is there
 
-            var filterComplex = new StringBuilder();
-
-            // Determine input indexes
+            var tempFiles = new List<string>();
+            var validCameras = new List<Cameras>();
             var cameraInputMap = new Dictionary<Cameras, int>();
             int inputIndex = 0;
 
@@ -156,20 +154,30 @@ public class ExportService : IExportService
                     {
                          sb.AppendLine($"file '{videoFile.FilePath}'");
                     }
-                    else
-                    {
-                         // If a segment is missing this camera, we might need a dummy black video or just skip (but skipping breaks sync).
-                         // Generating a black video of duration is hard without knowing exact duration.
-                         // For now, assume consistent files, or if missing, we might have desync issues.
-                         // A more robust way is generating black frames.
-                         // Let's skip for MVP and hope segments are consistent.
-                    }
                 }
-                await File.WriteAllTextAsync(concatListPath, sb.ToString());
-                tempFiles.Add(concatListPath);
 
-                cameraInputMap[cam] = inputIndex++;
+                if (sb.Length > 0)
+                {
+                    await File.WriteAllTextAsync(concatListPath, sb.ToString());
+                    tempFiles.Add(concatListPath);
+                    cameraInputMap[cam] = inputIndex++;
+                    validCameras.Add(cam);
+                }
             }
+
+            if (!validCameras.Any())
+            {
+                throw new Exception("No video files found for the selected cameras in this time range.");
+            }
+
+            if (!validCameras.Contains(request.MainCamera))
+            {
+                request.MainCamera = validCameras.First();
+            }
+
+            activeCameras = validCameras;
+
+            var filterComplex = new StringBuilder();
 
             // Calculate trim times
             // First segment start: segments.First().StartDate
@@ -429,13 +437,13 @@ public class ExportService : IExportService
             {
                  var concatPath = tempFiles[cameraInputMap[cam]];
                  // We apply the same seek to all inputs to keep sync
-                 inputArgs.Append($"-ss {startOffset} -f concat -safe 0 -i \"{concatPath}\" ");
+                 inputArgs.Append($"-f concat -safe 0 -i \"{concatPath}\" ");
             }
 
             var outputFilePath = GetExportFilePath(job.FileName);
 
             // Command
-            var ffmpegArgs = $"{inputArgs} -filter_complex \"{filterComplex}\" -map \"[outv]\" -t {duration} -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p \"{outputFilePath}\"";
+            var ffmpegArgs = $"{inputArgs} -filter_complex \"{filterComplex}\" -map \"[outv]\" -ss {startOffset} -t {duration} -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p \"{outputFilePath}\"";
 
             // Run FFmpeg
             Log.Information("Starting FFmpeg with args: {Args}", ffmpegArgs);
