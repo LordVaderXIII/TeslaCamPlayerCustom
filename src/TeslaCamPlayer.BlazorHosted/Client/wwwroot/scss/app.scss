@@ -124,3 +124,20 @@ $event-item-inner-height: $event-item-height - $event-item-padding * 2;
         z-index: 1500;
     }
 }
+
+.version-display {
+	position: absolute;
+	top: 0;
+	right: 0;
+	padding: 4px 8px;
+	z-index: 1000;
+	background-color: rgba(0, 0, 0, 0.5);
+	color: white;
+	cursor: pointer;
+	border-bottom-left-radius: 4px;
+	transition: background-color 0.2s ease;
+
+	&:hover {
+		background-color: rgba(0, 0, 0, 0.8);
+	}
+}
