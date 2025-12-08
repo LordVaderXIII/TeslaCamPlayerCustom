@@ -1,15 +1,20 @@
-﻿<video
-	@key="@Src"
-	@ref="_player"
-	src="@Src"
-	class="@Class
-	@(string.IsNullOrWhiteSpace(Src) ? "d-none" : null)"
-	@onended="@VideoEndedHandler"
-	@ontimeupdate="@TimeUpdateHandler"
-	@oncanplaythrough="@OnLoadedData"
-	@onclick="@OnClickHandler"
-	style="@(Clickable ? "cursor: pointer" : null)"
-	disableremoteplayback></video>
+<div class="@Class @(string.IsNullOrWhiteSpace(Src) ? "d-none" : null) video-player-container"
+	 style="@(Clickable ? "cursor: pointer" : null)"
+	 @onclick="@OnClickHandler">
+	<video
+		@key="@Src"
+		@ref="_player"
+		src="@Src"
+		style="width: 100%; height: 100%; display: block;"
+		@onended="@VideoEndedHandler"
+		@ontimeupdate="@TimeUpdateHandler"
+		@oncanplaythrough="@OnLoadedData"
+		disableremoteplayback></video>
+	@if (!string.IsNullOrEmpty(Label))
+	{
+		<div class="video-label">@Label</div>
+	}
+</div>
 
 @code {
 	[Inject]
@@ -20,6 +25,9 @@
 	
 	[Parameter]
 	public string Class { get; set; }
+
+	[Parameter]
+	public string Label { get; set; }
 
 	[Parameter]
 	public bool Clickable { get; set; }
