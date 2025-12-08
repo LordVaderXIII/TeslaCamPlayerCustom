@@ -7,6 +7,7 @@ using TeslaCamPlayer.BlazorHosted.Client.Components;
 using TeslaCamPlayer.BlazorHosted.Client.Helpers;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
 using TeslaCamPlayer.BlazorHosted.Client.Models;
+using TeslaCamPlayer.BlazorHosted.Client.Services.Interfaces;
 
 namespace TeslaCamPlayer.BlazorHosted.Client.Pages;
 
@@ -16,6 +17,15 @@ public partial class Index : ComponentBase
 
 	[Inject]
 	private HttpClient HttpClient { get; set; }
+
+	[Inject]
+	private IExportClientService ExportClientService { get; set; }
+
+	[Inject]
+	private IDialogService DialogService { get; set; }
+
+	[Inject]
+	private ISnackbar Snackbar { get; set; }
 
 	[Inject]
 	private IJSRuntime JsRuntime { get; set; }
@@ -33,13 +43,39 @@ public partial class Index : ComponentBase
 	private bool _showFilter;
 	private bool _filterChanged;
 	private EventFilterValues _eventFilter = new();
+	private bool _isExportMode;
+	private bool _hasProcessingJobs;
+	private System.Timers.Timer _jobsCheckTimer;
 
 	protected override async Task OnInitializedAsync()
 	{
 		_scrollDebounceTimer = new(100);
 		_scrollDebounceTimer.Elapsed += ScrollDebounceTimerTick;
 
+		_jobsCheckTimer = new(5000);
+		_jobsCheckTimer.Elapsed += async (_, __) => await CheckProcessingJobs();
+		_jobsCheckTimer.Enabled = true;
+
 		await RefreshEventsAsync(SyncMode.None);
+		await CheckProcessingJobs();
+	}
+
+	private async Task CheckProcessingJobs()
+	{
+		try
+		{
+			var jobs = await ExportClientService.GetJobsAsync();
+			var processing = jobs.Any(j => j.Status == ExportStatus.Processing || j.Status == ExportStatus.Queued);
+			if (processing != _hasProcessingJobs)
+			{
+				_hasProcessingJobs = processing;
+				await InvokeAsync(StateHasChanged);
+			}
+		}
+		catch
+		{
+			// Ignore errors during background check
+		}
 	}
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -243,5 +279,30 @@ public partial class Index : ComponentBase
 		
 		_ignoreDatePicked = targetDate;
 		await _datePicker.GoToDate(targetDate);
+	}
+
+	private void ToggleExportMode()
+	{
+		_isExportMode = !_isExportMode;
+	}
+
+	private async Task ShowDownloads()
+	{
+		var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
+		DialogService.Show<DownloadsDialog>("Export Jobs", options);
+	}
+
+	private async Task OnExportRequested(ExportRequest request)
+	{
+		try
+		{
+			Snackbar.Add("Export started", Severity.Info);
+			await ExportClientService.StartExportAsync(request);
+			_isExportMode = false;
+		}
+		catch (Exception ex)
+		{
+			Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
+		}
 	}
 }

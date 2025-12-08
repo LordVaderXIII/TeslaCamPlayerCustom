@@ -1,0 +1,87 @@
+@using TeslaCamPlayer.BlazorHosted.Client.Services.Interfaces
+@using TeslaCamPlayer.BlazorHosted.Shared.Models
+@inject IExportClientService ExportClientService
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <DialogContent>
+        <MudTable Items="@_jobs" Hover="true" Breakpoint="Breakpoint.Sm" Loading="@_loading" LoadingProgressColor="Color.Info">
+            <HeaderContent>
+                <MudTh>Job ID</MudTh>
+                <MudTh>Created At</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Job ID">@context.Id.ToString().Substring(0, 8)</MudTd>
+                <MudTd DataLabel="Created At">@context.CreatedAt.ToString("g")</MudTd>
+                <MudTd DataLabel="Status">
+                    @context.Status
+                    @if (context.Status == ExportStatus.Processing)
+                    {
+                        <MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" Class="ml-2"/>
+                    }
+                    else if (context.Status == ExportStatus.Failed)
+                    {
+                        <MudTooltip Text="@context.ErrorMessage">
+                            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" Class="ml-2"/>
+                        </MudTooltip>
+                    }
+                </MudTd>
+                <MudTd DataLabel="Actions">
+                    @if (context.Status == ExportStatus.Completed)
+                    {
+                        <MudButton Href="@($"/Api/Export/Download/{context.FileName}")"
+                                   Target="_blank"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Success"
+                                   Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Download">
+                            Download
+                        </MudButton>
+                    }
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Refresh" Variant="Variant.Text">Refresh</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private List<ExportJob> _jobs = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadJobs();
+    }
+
+    private async Task LoadJobs()
+    {
+        _loading = true;
+        try
+        {
+            _jobs = (await ExportClientService.GetJobsAsync()).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load jobs: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task Refresh()
+    {
+        await LoadJobs();
+    }
+
+    private void Close() => MudDialog.Close(DialogResult.Ok(true));
+}

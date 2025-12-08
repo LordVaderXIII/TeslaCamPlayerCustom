@@ -18,6 +18,7 @@ builder.Services.AddControllersWithViews().AddNewtonsoftJson();
 builder.Services.AddRazorPages();
 builder.Services.AddSingleton<ISettingsProvider, SettingsProvider>();
 builder.Services.AddTransient<IClipsService, ClipsService>();
+builder.Services.AddSingleton<IExportService, ExportService>();
 #if WINDOWS
 builder.Services.AddTransient<IFfProbeService, FfProbeServiceWindows>();
 #elif DOCKER

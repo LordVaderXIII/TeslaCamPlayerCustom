@@ -11,7 +11,11 @@ else
 {
 	<div class="main-content">
 		<div class="viewer-container">
-			<ClipViewer @ref="_clipViewer" PreviousButtonClicked="PreviousButtonClicked" NextButtonClicked="NextButtonClicked" />
+			<ClipViewer @ref="_clipViewer"
+			            PreviousButtonClicked="PreviousButtonClicked"
+			            NextButtonClicked="NextButtonClicked"
+			            IsExportMode="_isExportMode"
+			            OnExportRequested="OnExportRequested" />
 		</div>
 		<div class="browser">
 			<MudDatePicker
@@ -29,6 +33,27 @@ else
 				</MudTooltip>
 				<MudTooltip Text="Rescan all files and rebuild database">
 					<MudIconButton Icon="@Icons.Material.Filled.Autorenew" Size="Size.Small" OnClick="@(() => RefreshEventsAsync(SyncMode.Full))"/>
+				</MudTooltip>
+				<MudDivider Vertical="true" FlexItem="true" Class="mx-2" />
+				<MudTooltip Text="@(_isExportMode ? "Cancel Export" : "Export Clip")">
+					<MudIconButton Icon="@(_isExportMode ? Icons.Material.Filled.Close : Icons.Material.Filled.MovieCreation)"
+					               Color="@(_isExportMode ? Color.Error : Color.Default)"
+					               Size="Size.Small"
+					               OnClick="@ToggleExportMode"/>
+				</MudTooltip>
+				@if (_isExportMode)
+				{
+					<MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" OnClick="@(() => _clipViewer.TriggerExportAsync())" Class="ml-2">Export</MudButton>
+				}
+				<MudTooltip Text="Downloads">
+					@if (_hasProcessingJobs)
+					{
+						<MudProgressCircular Color="Color.Primary" Size="Size.Small" Indeterminate="true" Class="mx-2" @onclick="@ShowDownloads" Style="cursor: pointer"/>
+					}
+					else
+					{
+						<MudIconButton Icon="@Icons.Material.Filled.Download" Size="Size.Small" OnClick="@ShowDownloads" />
+					}
 				</MudTooltip>
 				<MudSpacer/>
 				<div>
