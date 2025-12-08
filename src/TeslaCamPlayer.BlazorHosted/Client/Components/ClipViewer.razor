@@ -113,7 +113,9 @@
 	<div class="controls">
 		<div class="play-pause">
 			<MudIconButton Icon="@Icons.Material.Filled.SkipPrevious" Size="Size.Medium" OnClick="@PreviousButtonClicked" />
+			<MudIconButton Icon="@Icons.Material.Filled.Replay5" Size="Size.Medium" OnClick="@SkipBackwardClicked" />
 			<MudIconButton Icon="@(_isPlaying ? Icons.Material.Filled.PauseCircleOutline : Icons.Material.Filled.PlayCircleOutline)" Size="Size.Large" OnClick="@PlayPauseClicked" />
+			<MudIconButton Icon="@Icons.Material.Filled.Forward5" Size="Size.Medium" OnClick="@SkipForwardClicked" />
 			<MudIconButton Icon="@Icons.Material.Filled.SkipNext" Size="Size.Medium" OnClick="@NextButtonClicked" />
 		</div>
 		<div class="seeker-slider-container">

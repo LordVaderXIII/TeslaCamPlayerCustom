@@ -297,15 +297,20 @@ public partial class ClipViewer : ComponentBase
 	private async Task ScrubToSliderTime()
 	{
 		_setVideoTimeDebounceTimer.Enabled = false;
-		
+
 		if (!_isScrubbing)
 			return;
 
+		await SeekToTimestampAsync();
+	}
+
+	private async Task SeekToTimestampAsync()
+	{
 		try
 		{
 			var scrubToDate = _clip.StartDate.AddSeconds(TimelineValue);
 			var segment = _clip.SegmentAtDate(scrubToDate)
-				?? _clip.Segments.Where(s => s.StartDate > scrubToDate).MinBy(s => s.StartDate);
+			              ?? _clip.Segments.Where(s => s.StartDate > scrubToDate).MinBy(s => s.StartDate);
 
 			if (segment == null)
 				return;
@@ -324,6 +329,18 @@ public partial class ClipViewer : ComponentBase
 		{
 			// ignore
 		}
+	}
+
+	private async Task SkipBackwardClicked()
+	{
+		TimelineValue = Math.Max(0, TimelineValue - 5);
+		await SeekToTimestampAsync();
+	}
+
+	private async Task SkipForwardClicked()
+	{
+		TimelineValue = Math.Min(_timelineMaxSeconds, TimelineValue + 5);
+		await SeekToTimestampAsync();
 	}
 
 	private async Task SwapCamera(Cameras camera)
