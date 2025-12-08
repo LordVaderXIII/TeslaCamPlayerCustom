@@ -38,20 +38,30 @@ public partial class ClipsService : IClipsService
 	{
 		using var scope = _scopeFactory.CreateScope();
 		var dbContext = scope.ServiceProvider.GetRequiredService<TeslaCamDbContext>();
-		
-		if (syncMode == SyncMode.Full)
-		{
-			// Clear all video files from DB
-			await dbContext.VideoFiles.ExecuteDeleteAsync();
-		}
+        var julesService = scope.ServiceProvider.GetRequiredService<IJulesApiService>();
 
-		if (syncMode == SyncMode.Incremental || syncMode == SyncMode.Full || !dbContext.VideoFiles.Any())
-		{
-			await SyncClipsAsync(dbContext);
-		}
+        try
+        {
+            if (syncMode == SyncMode.Full)
+            {
+                // Clear all video files from DB
+                await dbContext.VideoFiles.ExecuteDeleteAsync();
+            }
 
-		var videoFiles = await dbContext.VideoFiles.ToListAsync();
-		return BuildClips(videoFiles);
+            if (syncMode == SyncMode.Incremental || syncMode == SyncMode.Full || !dbContext.VideoFiles.Any())
+            {
+                await SyncClipsAsync(dbContext);
+            }
+
+            var videoFiles = await dbContext.VideoFiles.ToListAsync();
+            return BuildClips(videoFiles);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error getting clips.");
+            await julesService.ReportErrorAsync(ex, $"Error getting clips with SyncMode {syncMode}");
+            throw;
+        }
 	}
 
 	private async Task SyncClipsAsync(TeslaCamDbContext dbContext)
@@ -188,6 +198,9 @@ public partial class ClipsService : IClipsService
 		catch (Exception e)
 		{
 			Log.Error(e, "Failed to parse info for video file from path: {Path}", path);
+            using var scope = _scopeFactory.CreateScope();
+            var julesService = scope.ServiceProvider.GetRequiredService<IJulesApiService>();
+            await julesService.ReportErrorAsync(e, $"Failed to parse video file: {path}");
 			return null;
 		}
 	}

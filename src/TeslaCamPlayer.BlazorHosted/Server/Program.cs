@@ -2,6 +2,7 @@ using Serilog;
 using Microsoft.EntityFrameworkCore;
 using Serilog.Events;
 using TeslaCamPlayer.BlazorHosted.Server.Data;
+using TeslaCamPlayer.BlazorHosted.Server.Middleware;
 using TeslaCamPlayer.BlazorHosted.Server.Providers;
 using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Services;
@@ -10,15 +11,18 @@ using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Is(LogEventLevel.Verbose)
 	.WriteTo.Console()
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
 	.CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 
 builder.Services.AddControllersWithViews().AddNewtonsoftJson();
 builder.Services.AddRazorPages();
 builder.Services.AddSingleton<ISettingsProvider, SettingsProvider>();
 builder.Services.AddTransient<IClipsService, ClipsService>();
 builder.Services.AddSingleton<IExportService, ExportService>();
+builder.Services.AddTransient<IJulesApiService, JulesApiService>();
 #if WINDOWS
 builder.Services.AddTransient<IFfProbeService, FfProbeServiceWindows>();
 #elif DOCKER
@@ -83,6 +87,8 @@ else
 }
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<JulesErrorReportingMiddleware>();
 
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
