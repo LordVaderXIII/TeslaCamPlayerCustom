@@ -85,6 +85,7 @@ public class ExportService : IExportService
     {
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<TeslaCamDbContext>();
+        var julesService = scope.ServiceProvider.GetRequiredService<IJulesApiService>();
         var job = await dbContext.ExportJobs.FindAsync(jobId);
 
         if (job == null)
@@ -286,6 +287,7 @@ public class ExportService : IExportService
             job.Status = ExportStatus.Failed;
             job.ErrorMessage = ex.Message;
             await dbContext.SaveChangesAsync();
+            await julesService.ReportErrorAsync(ex, $"Export Job {jobId} Failed");
         }
     }
 }

@@ -61,8 +61,22 @@ services:
       - "8080:80"
     volumes:
       - /path/to/your/TeslaCam:/TeslaCam
+    environment:
+      - JULES_API_KEY=your_jules_api_key_here
+      - JULES_SOURCE=sources/github/your_github_username/your_repo_name
     restart: unless-stopped
 ```
+
+## Error Reporting and Auto-Fixes
+
+This application integrates with the **Jules API** to automatically report backend errors and request bug fixes via GitHub Pull Requests.
+
+To enable this feature, you must configure the following environment variables in your Docker container:
+
+- `JULES_API_KEY`: Your Jules API Key. (See [Jules Docs](https://jules.google/docs/api/reference/authentication) to generate one).
+- `JULES_SOURCE`: The Jules Source identifier for your repository, in the format `sources/github/OWNER/REPO`.
+
+**Privacy Note:** Error reports include the error message, stack trace, application version, and environment type. Code snippets from the stack trace may be included if available.
 
 ## Usage
 
