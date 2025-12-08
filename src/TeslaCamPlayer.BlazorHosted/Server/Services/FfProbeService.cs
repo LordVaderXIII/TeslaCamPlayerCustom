@@ -28,8 +28,19 @@ public abstract class FfProbeService : IFfProbeService
 			};
 
 			process.Start();
+
+			// To avoid deadlocks, always read the output stream first.
+			var outputTask = process.StandardError.ReadToEndAsync();
+
+			// We also need to consume StandardOutput to prevent deadlock if the buffer fills up,
+			// even though we don't use it.
+			var stdOutTask = process.StandardOutput.ReadToEndAsync();
+
 			await process.WaitForExitAsync();
-			var output = await process.StandardError.ReadToEndAsync();
+
+			var output = await outputTask;
+			await stdOutTask;
+
 			return Helpers.ParseFfProbeOutputHelper.GetDuration(output);
 		}
 		catch (Exception e)

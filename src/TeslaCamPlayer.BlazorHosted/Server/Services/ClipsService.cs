@@ -119,7 +119,7 @@ public partial class ClipsService : IClipsService
 			currentClipSegments.Add(segment);
 
 			// Set i to the video after the last video in this clip segment, ie: the first video of the next segment.
-			i = i + segmentVideos.Count + 1;
+			i += segmentVideos.Count;
 			
 			// No more recent video files
 			if (i >= recentVideoFiles.Count)
