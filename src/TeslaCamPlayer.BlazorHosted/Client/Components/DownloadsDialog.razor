@@ -31,7 +31,7 @@
                 <MudTd DataLabel="Actions">
                     @if (context.Status == ExportStatus.Completed)
                     {
-                        <MudButton Href="@($"/Api/Export/Download/{context.FileName}")"
+                        <MudButton Href="@($"/Api/Download/{context.FileName}")"
                                    Target="_blank"
                                    Variant="Variant.Filled"
                                    Color="Color.Success"
