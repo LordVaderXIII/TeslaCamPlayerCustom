@@ -189,84 +189,46 @@ public class ExportService : IExportService
 
             var otherCameras = activeCameras.Where(c => c != request.MainCamera).ToList();
             var mainCamIndex = cameraInputMap[request.MainCamera];
-            var otherCamIndices = otherCameras.Select(c => cameraInputMap[c]).ToList();
 
-            string mainLabel = $"[{mainCamIndex}:v]";
-            string mainScaled = $"[main_s]";
+            // Base canvas - Black background to avoid green bars
+            filterComplex.Append($"color=s=1920x1080:c=black[base];");
 
-            if (activeCameras.Count <= 4)
+            // Main Camera processing (Top Center)
+            string mainCamName = System.Text.RegularExpressions.Regex.Replace(request.MainCamera.ToString(), "([a-z])([A-Z])", "$1 $2");
+            filterComplex.Append($"[{mainCamIndex}:v]scale=960:720:force_original_aspect_ratio=decrease,pad=960:720:(ow-iw)/2:(oh-ih)/2:color=black,");
+            filterComplex.Append($"drawtext=text='{mainCamName}':fontcolor=white:fontsize=24:x=10:y=h-th-10:box=1:boxcolor=black@0.5:fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'[main_s];");
+
+            // Overlay Main on Base
+            filterComplex.Append($"[base][main_s]overlay=480:0"); // (1920-960)/2 = 480
+
+            if (otherCameras.Count == 0)
             {
-                // Layout A: Main Left (1440x1080), Column Right.
-                filterComplex.Append($"{mainLabel}scale=1440:1080:force_original_aspect_ratio=decrease,pad=1440:1080:(ow-iw)/2:(oh-ih)/2[main_s];");
-
-                int yPos = 0;
-                for (int i = 0; i < otherCamIndices.Count; i++)
-                {
-                    filterComplex.Append($"[{otherCamIndices[i]}:v]scale=480:360:force_original_aspect_ratio=decrease,pad=480:360:(ow-iw)/2:(oh-ih)/2[s{i}];");
-                }
-
-                // Base canvas
-                filterComplex.Append($"nullsrc=size=1920x1080[base];");
-                filterComplex.Append($"[base][main_s]overlay=0:0[tmp1];");
-
-                string lastTmp = "tmp1";
-                for (int i = 0; i < otherCamIndices.Count; i++)
-                {
-                    string nextTmp = $"tmp{i + 2}";
-                    if (i == otherCamIndices.Count - 1) nextTmp = "outv";
-
-                    filterComplex.Append($"[{lastTmp}][s{i}]overlay=1440:{yPos}[{nextTmp}]"); // No semicolon here
-                    if (i < otherCamIndices.Count - 1)
-                    {
-                        filterComplex.Append(";");
-                    }
-                    yPos += 360;
-                    lastTmp = nextTmp;
-                }
-
-                if (otherCamIndices.Count == 0)
-                {
-                    // Just main
-                     filterComplex.Replace("[tmp1]", "[outv]");
-                     // Remove the trailing semicolon from replacement if any?
-                     // Wait, if 0 other cams, we appended "[base][main_s]overlay=0:0[tmp1];"
-                     // Replacing [tmp1] with [outv] leaves the semicolon.
-                     // And it's the last command.
-                     // So we need to remove the last semicolon.
-                     if (filterComplex[filterComplex.Length - 1] == ';')
-                     {
-                         filterComplex.Length--;
-                     }
-                }
+                filterComplex.Append($"[outv]");
             }
             else
             {
-                // Layout B: Main (960x720) Top-Left. Flow others.
-                filterComplex.Append($"{mainLabel}scale=960:720:force_original_aspect_ratio=decrease,pad=960:720:(ow-iw)/2:(oh-ih)/2[main_s];");
+                filterComplex.Append($"[tmp_main];");
 
-                filterComplex.Append($"nullsrc=size=1920x1080[base];");
-                filterComplex.Append($"[base][main_s]overlay=0:0[tmp1];");
-
-                var slots = new[]
+                string lastTmp = "tmp_main";
+                for (int i = 0; i < otherCameras.Count; i++)
                 {
-                    (960, 0), (1440, 0),
-                    (960, 360), (1440, 360),
-                    (0, 720), (480, 720), (960, 720), (1440, 720)
-                };
+                    var cam = otherCameras[i];
+                    var camIndex = cameraInputMap[cam];
+                    string camName = System.Text.RegularExpressions.Regex.Replace(cam.ToString(), "([a-z])([A-Z])", "$1 $2");
 
-                string lastTmp = "tmp1";
-                var limit = Math.Min(otherCamIndices.Count, slots.Length);
-                for (int i = 0; i < limit; i++)
-                {
-                    filterComplex.Append($"[{otherCamIndices[i]}:v]scale=480:360:force_original_aspect_ratio=decrease,pad=480:360:(ow-iw)/2:(oh-ih)/2[s{i}];");
+                    int xPos = i * 480;
+                    int yPos = 720;
 
-                    string nextTmp = $"tmp{i + 2}";
-                    if (i == limit - 1) nextTmp = "outv";
+                    // Side Camera processing (Bottom Row)
+                    filterComplex.Append($"[{camIndex}:v]scale=480:360:force_original_aspect_ratio=decrease,pad=480:360:(ow-iw)/2:(oh-ih)/2:color=black,");
+                    filterComplex.Append($"drawtext=text='{camName}':fontcolor=white:fontsize=24:x=10:y=h-th-10:box=1:boxcolor=black@0.5:fontfile='/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'[s{i}];");
 
-                    filterComplex.Append($"[{lastTmp}][s{i}]overlay={slots[i].Item1}:{slots[i].Item2}[{nextTmp}]");
-                     if (i < limit - 1)
+                    string nextTmp = (i == otherCameras.Count - 1) ? "outv" : $"tmp_{i}";
+                    filterComplex.Append($"[{lastTmp}][s{i}]overlay={xPos}:{yPos}[{nextTmp}]");
+
+                    if (i < otherCameras.Count - 1)
                     {
-                        filterComplex.Append(";");
+                         filterComplex.Append(";");
                     }
                     lastTmp = nextTmp;
                 }

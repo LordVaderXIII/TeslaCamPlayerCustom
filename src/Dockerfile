@@ -16,7 +16,7 @@ RUN npm install -g gulp
 RUN gulp default
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
-RUN apt-get update && apt-get install -y ffmpeg --no-install-recommends
+RUN apt-get update && apt-get install -y ffmpeg fonts-dejavu --no-install-recommends
 WORKDIR /app
 ENV ClipsRootPath=/TeslaCam
 ENV ASPNETCORE_HTTP_PORTS=80
