@@ -24,8 +24,11 @@ else
 				@onmousewheel="@DatePickerOnMouseWheel"/>
 
 			<MudToolBar Class="py-2">
-				<MudTooltip Text="Refresh videos/events">
-					<MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" OnClick="@(() => RefreshEventsAsync(true))"/>
+				<MudTooltip Text="Scan for new files only">
+					<MudIconButton Icon="@Icons.Material.Filled.Refresh" Size="Size.Small" OnClick="@(() => RefreshEventsAsync(SyncMode.Incremental))"/>
+				</MudTooltip>
+				<MudTooltip Text="Rescan all files and rebuild database">
+					<MudIconButton Icon="@Icons.Material.Filled.Autorenew" Size="Size.Small" OnClick="@(() => RefreshEventsAsync(SyncMode.Full))"/>
 				</MudTooltip>
 				<MudSpacer/>
 				<div>

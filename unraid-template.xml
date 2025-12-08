@@ -26,6 +26,7 @@
   <Description>
     TeslaCam Player allows you to browse and play video clips saved by your Tesla vehicle.
     Mount your TeslaCam folder to /TeslaCam inside the container.
+    The database file (teslacam.db) will be stored in the root of the /TeslaCam directory to persist scan history.
   </Description>
   <Networking>
     <Mode>bridge</Mode>

@@ -1,6 +1,7 @@
 using System.Web;
 using Microsoft.AspNetCore.Mvc;
 using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
+using TeslaCamPlayer.BlazorHosted.Server.Services;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
 
@@ -20,8 +21,8 @@ public class ApiController : ControllerBase
 	}
 
 	[HttpGet]
-	public async Task<Clip[]> GetClips(bool refreshCache = false)
-		=> await _clipsService.GetClipsAsync(refreshCache);
+	public async Task<Clip[]> GetClips(SyncMode syncMode = SyncMode.None)
+		=> await _clipsService.GetClipsAsync(syncMode);
 
 	private bool IsUnderRootPath(string path)
 		=> path.StartsWith(_rootFullPath);

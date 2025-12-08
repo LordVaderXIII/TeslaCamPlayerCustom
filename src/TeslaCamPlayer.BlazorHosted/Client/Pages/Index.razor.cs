@@ -39,7 +39,7 @@ public partial class Index : ComponentBase
 		_scrollDebounceTimer = new(100);
 		_scrollDebounceTimer.Elapsed += ScrollDebounceTimerTick;
 
-		await RefreshEventsAsync(false);
+		await RefreshEventsAsync(SyncMode.None);
 	}
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -53,7 +53,7 @@ public partial class Index : ComponentBase
 		}
 	}
 
-	private async Task RefreshEventsAsync(bool refreshCache)
+	private async Task RefreshEventsAsync(SyncMode syncMode)
 	{
 		_filteredclips = null;
 		_clips = null;
@@ -61,7 +61,7 @@ public partial class Index : ComponentBase
 		await InvokeAsync(StateHasChanged);
 
 		_setDatePickerInitialDate = false;
-		_clips = await HttpClient.GetFromNewtonsoftJsonAsync<Clip[]>($"Api/GetClips?refreshCache={refreshCache}&_={DateTime.Now.Ticks}");
+		_clips = await HttpClient.GetFromNewtonsoftJsonAsync<Clip[]>($"Api/GetClips?syncMode={syncMode}&_={DateTime.Now.Ticks}");
 
 		FilterClips();
 	}
