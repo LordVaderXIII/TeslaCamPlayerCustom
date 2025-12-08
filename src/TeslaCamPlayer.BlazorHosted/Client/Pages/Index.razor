@@ -1,4 +1,4 @@
-﻿@page "/"
+@page "/"
 @using TeslaCamPlayer.BlazorHosted.Shared.Models
 
 @if (_filteredclips == null)
@@ -9,6 +9,14 @@
 }
 else
 {
+    <!-- Mobile Toggle Button -->
+    <div class="mobile-browser-toggle d-md-none">
+        <MudIconButton Icon="@(_isBrowserVisible ? Icons.Material.Filled.Close : Icons.Material.Filled.Menu)"
+                       Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="@ToggleBrowser" />
+    </div>
+
 	<div class="main-content">
 		<div class="viewer-container">
 			<ClipViewer @ref="_clipViewer"
@@ -17,7 +25,7 @@ else
 			            IsExportMode="_isExportMode"
 			            OnExportRequested="OnExportRequested" />
 		</div>
-		<div class="browser">
+		<div class="browser @(_isBrowserVisible ? "visible" : "")">
 			<MudDatePicker
 				@ref="_datePicker"
 				PickerVariant="PickerVariant.Static"
@@ -69,7 +77,7 @@ else
 			<div @ref="_eventsList" class="events-list" @onscroll="EventListScrolled">
 				<Virtualize TItem="Clip" ItemSize="@EventItemHeight" Items="@_filteredclips" OverscanCount="10">
 					<ItemContent>
-						<div class="event @(_activeClip == context ? "event--active" : null)" @key="@context.EndDate" @onclick="@(() => SetActiveClip(context))">
+						<div class="event @(_activeClip == context ? "event--active" : null)" @key="@context.EndDate" @onclick="@(() => SetActiveClipMobile(context))">
 							@if (!string.IsNullOrWhiteSpace(context.ThumbnailUrl))
 							{
 								<img class="thumbnail" src="@context.ThumbnailUrl" loading="lazy"/>

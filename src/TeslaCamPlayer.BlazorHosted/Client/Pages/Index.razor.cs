@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
 using System.Timers;
@@ -46,6 +46,7 @@ public partial class Index : ComponentBase
 	private bool _isExportMode;
 	private bool _hasProcessingJobs;
 	private System.Timers.Timer _jobsCheckTimer;
+    private bool _isBrowserVisible;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -211,6 +212,14 @@ public partial class Index : ComponentBase
 		_datePicker.Date = clip.StartDate.Date;
 	}
 
+    // New method for mobile interaction
+    private async Task SetActiveClipMobile(Clip clip)
+    {
+        await SetActiveClip(clip);
+        // On mobile, hide the browser after selection
+        _isBrowserVisible = false;
+    }
+
 	private void EventListScrolled()
 	{
 		if (!_scrollDebounceTimer.Enabled)
@@ -305,4 +314,9 @@ public partial class Index : ComponentBase
 			Snackbar.Add($"Export failed: {ex.Message}", Severity.Error);
 		}
 	}
+
+    private void ToggleBrowser()
+    {
+        _isBrowserVisible = !_isBrowserVisible;
+    }
 }
