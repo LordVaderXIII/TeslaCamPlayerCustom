@@ -37,6 +37,25 @@ using (var scope = app.Services.CreateScope())
 {
 	var dbContext = scope.ServiceProvider.GetRequiredService<TeslaCamDbContext>();
 	dbContext.Database.EnsureCreated();
+    // Ensure ExportJobs table exists if EnsureCreated didn't create it (because DB existed)
+    try
+    {
+        dbContext.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS ""ExportJobs"" (
+                ""Id"" TEXT NOT NULL CONSTRAINT ""PK_ExportJobs"" PRIMARY KEY,
+                ""Name"" TEXT NULL,
+                ""Status"" INTEGER NOT NULL,
+                ""CreatedAt"" TEXT NOT NULL,
+                ""FileName"" TEXT NULL,
+                ""ErrorMessage"" TEXT NULL,
+                ""Progress"" REAL NOT NULL
+            );
+        ");
+    }
+    catch (Exception ex)
+    {
+        Log.Error(ex, "Failed to ensure ExportJobs table exists.");
+    }
 }
 
 try
