@@ -1,5 +1,7 @@
 using Serilog;
+using Microsoft.EntityFrameworkCore;
 using Serilog.Events;
+using TeslaCamPlayer.BlazorHosted.Server.Data;
 using TeslaCamPlayer.BlazorHosted.Server.Providers;
 using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Services;
@@ -22,11 +24,23 @@ builder.Services.AddTransient<IFfProbeService, FfProbeServiceWindows>();
 builder.Services.AddTransient<IFfProbeService, FfProbeServiceDocker>();
 #endif
 
+builder.Services.AddDbContext<TeslaCamDbContext>((sp, options) =>
+{
+	var clipsRootPath = sp.GetService<ISettingsProvider>()!.Settings.ClipsRootPath;
+	options.UseSqlite($"Data Source={Path.Combine(clipsRootPath, "teslacam.db")}");
+});
+
 var app = builder.Build();
 
-var clipsRootPath = app.Services.GetService<ISettingsProvider>()!.Settings.ClipsRootPath;
+using (var scope = app.Services.CreateScope())
+{
+	var dbContext = scope.ServiceProvider.GetRequiredService<TeslaCamDbContext>();
+	dbContext.Database.EnsureCreated();
+}
+
 try
 {
+	var clipsRootPath = app.Services.GetService<ISettingsProvider>()!.Settings.ClipsRootPath;
 	if (!Directory.Exists(clipsRootPath))
 		throw new Exception("Configured clips root path doesn't exist, or no permission to access: " + clipsRootPath);
 }

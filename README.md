@@ -67,8 +67,12 @@ services:
 
 1.  Open your browser and navigate to `http://<your-server-ip>:8080`.
 2.  The player will scan the `/TeslaCam` directory for clips. *Note: Initial scan might take a moment if you have thousands of files.*
-3.  Select an event from the list.
-4.  Use the timeline to scrub through the video. The event trigger is marked with a red dot.
+3.  **Syncing:**
+    -   **Sync New:** Scans for new files only.
+    -   **Full Resync:** Clears the database and rescans everything.
+    -   *Scan history is saved in a `teslacam.db` file located in your mapped clips folder.*
+4.  Select an event from the list.
+5.  Use the timeline to scrub through the video. The event trigger is marked with a red dot.
 
 ## Troubleshooting
 

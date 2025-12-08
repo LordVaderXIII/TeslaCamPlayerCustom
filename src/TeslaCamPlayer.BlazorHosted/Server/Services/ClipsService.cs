@@ -1,12 +1,15 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Serilog;
+using TeslaCamPlayer.BlazorHosted.Server.Data;
 using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
@@ -17,64 +20,95 @@ public partial class ClipsService : IClipsService
 {
 	private const string NoThumbnailImageUrl = "/img/no-thumbnail.png";
 	
-	private static readonly string CacheFilePath = Path.Combine(AppContext.BaseDirectory, "clips.json");
 	private static readonly Regex FileNameRegex = FileNameRegexGenerated();
-	private static Clip[] _cache;
 	private static readonly SemaphoreSlim FfProbeSemaphore = new(10);
 	
 	private readonly ISettingsProvider _settingsProvider;
 	private readonly IFfProbeService _ffProbeService;
+	private readonly IServiceScopeFactory _scopeFactory;
 
-	public ClipsService(ISettingsProvider settingsProvider, IFfProbeService ffProbeService)
+	public ClipsService(ISettingsProvider settingsProvider, IFfProbeService ffProbeService, IServiceScopeFactory scopeFactory)
 	{
 		_settingsProvider = settingsProvider;
 		_ffProbeService = ffProbeService;
+		_scopeFactory = scopeFactory;
 	}
 
-	private async Task<Clip[]> GetCachedAsync()
-		=> File.Exists(CacheFilePath)
-			? JsonConvert.DeserializeObject<Clip[]>(await File.ReadAllTextAsync(CacheFilePath))
-			: null;
-
-	public async Task<Clip[]> GetClipsAsync(bool refreshCache = false)
+	public async Task<Clip[]> GetClipsAsync(SyncMode syncMode = SyncMode.None)
 	{
-		_cache ??= await GetCachedAsync();
+		using var scope = _scopeFactory.CreateScope();
+		var dbContext = scope.ServiceProvider.GetRequiredService<TeslaCamDbContext>();
 		
-		if (!refreshCache && _cache != null)
-			return _cache;
+		if (syncMode == SyncMode.Full)
+		{
+			// Clear all video files from DB
+			await dbContext.VideoFiles.ExecuteDeleteAsync();
+		}
 
-		_cache ??= [];
-		
-		var knownVideoFiles = _cache
-			.SelectMany(c => c.Segments.SelectMany(s => s.VideoFiles))
-			.Where(f => f != null)
-			.ToDictionary(v => v.FilePath, v => v);
+		if (syncMode == SyncMode.Incremental || syncMode == SyncMode.Full || !dbContext.VideoFiles.Any())
+		{
+			await SyncClipsAsync(dbContext);
+		}
 
-		var videoFiles = (await Task.WhenAll(Directory
+		var videoFiles = await dbContext.VideoFiles.ToListAsync();
+		return BuildClips(videoFiles);
+	}
+
+	private async Task SyncClipsAsync(TeslaCamDbContext dbContext)
+	{
+		var knownVideoFiles = await dbContext.VideoFiles
+			.ToDictionaryAsync(v => v.FilePath, v => v);
+
+		var filePaths = Directory
 			.GetFiles(_settingsProvider.Settings.ClipsRootPath, "*.mp4", SearchOption.AllDirectories)
-			.AsParallel()
+			.ToHashSet();
+
+		// Remove files that no longer exist
+		var filesToRemove = knownVideoFiles.Keys.Where(k => !filePaths.Contains(k)).ToList();
+		if (filesToRemove.Any())
+		{
+			foreach (var fileToRemove in filesToRemove)
+			{
+				var entity = knownVideoFiles[fileToRemove];
+				dbContext.VideoFiles.Remove(entity);
+				knownVideoFiles.Remove(fileToRemove);
+			}
+		}
+
+		// Find new files
+		var newFiles = filePaths
+			.Where(path => !knownVideoFiles.ContainsKey(path))
 			.Select(path => new { Path = path, RegexMatch = FileNameRegex.Match(path) })
 			.Where(f => f.RegexMatch.Success)
-			.ToList()
-			.Select(async f =>
-			{
-				if (knownVideoFiles.TryGetValue(f.Path, out var knownVideo))
-					return knownVideo;
-
-				await FfProbeSemaphore.WaitAsync();
-				try
-				{
-					return await TryParseVideoFileAsync(f.Path, f.RegexMatch);
-				}
-				finally
-				{
-					FfProbeSemaphore.Release();
-				}
-			})))
-			.AsParallel()
-			.Where(vfi => vfi != null)
 			.ToList();
 
+		if (newFiles.Any())
+		{
+			var newVideoFiles = (await Task.WhenAll(newFiles
+				.AsParallel()
+				.Select(async f =>
+				{
+					await FfProbeSemaphore.WaitAsync();
+					try
+					{
+						return await TryParseVideoFileAsync(f.Path, f.RegexMatch);
+					}
+					finally
+					{
+						FfProbeSemaphore.Release();
+					}
+				})))
+				.Where(v => v != null)
+				.ToList();
+
+			await dbContext.VideoFiles.AddRangeAsync(newVideoFiles);
+		}
+
+		await dbContext.SaveChangesAsync();
+	}
+
+	private Clip[] BuildClips(List<VideoFile> videoFiles)
+	{
 		var recentClips = GetRecentClips(videoFiles
 			.Where(vfi => vfi.ClipType == ClipType.Recent).ToList());
 		
@@ -88,9 +122,7 @@ public partial class ClipsService : IClipsService
 			.OrderByDescending(c => c.StartDate)
 			.ToArray();
 
-		_cache = clips;
-		await File.WriteAllTextAsync(CacheFilePath, JsonConvert.SerializeObject(clips));
-		return _cache;
+		return clips;
 	}
 
 	private static IEnumerable<Clip> GetRecentClips(List<VideoFile> recentVideoFiles)
