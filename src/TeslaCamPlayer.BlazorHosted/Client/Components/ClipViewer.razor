@@ -1,6 +1,11 @@
 @using TeslaCamPlayer.BlazorHosted.Shared.Models
 
 <div class="viewer">
+    <!-- Camera Switch Button (Mobile Only) -->
+    <div class="camera-switch-btn d-md-none">
+        <MudIconButton Icon="@Icons.Material.Filled.Cameraswitch" Variant="Variant.Filled" Color="Color.Secondary" OnClick="@ToggleCameraOverlay" />
+    </div>
+
 	<div class="viewer-grid">
 		<div class="main-view">
 			@if (_mainCamera == Cameras.Front)
@@ -40,7 +45,7 @@
 				<VideoPlayer @key="@("CABIN")" @ref="_videoPlayerCabin" Class="video video--cabin" Src="@(_currentSegment?.CameraCabin?.Url)" VideoEnded="VideoEnded" Label="Cabin" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Cabin).IsSelected" />
 			}
 		</div>
-		<div class="side-view">
+		<div class="side-view @(_showCameraOverlay ? "mobile-cameras-overlay" : "")">
 			@if (_mainCamera != Cameras.Front)
 			{
 				<div style="@(_currentSegment?.CameraFront == null ? "display:none" : "")" class="video-wrapper">
@@ -95,6 +100,13 @@
 					<VideoPlayer @key="@("CABIN")" @ref="_videoPlayerCabin" Class="video video--cabin" Src="@(_currentSegment?.CameraCabin?.Url)" VideoEnded="VideoEnded" Clickable="@(!IsExportMode)" OnClick="@(() => SwapCamera(Cameras.Cabin))" Label="Cabin" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Cabin).IsSelected" />
 				</div>
 			}
+            <!-- Add a close button for the overlay mode -->
+            @if (_showCameraOverlay)
+            {
+                <div style="position: sticky; bottom: 0; left: 0; right: 0; text-align: center; padding: 10px; z-index: 1000;">
+                     <MudIconButton Icon="@Icons.Material.Filled.Close" Variant="Variant.Filled" Color="Color.Error" OnClick="@ToggleCameraOverlay" />
+                </div>
+            }
 		</div>
 	</div>
 

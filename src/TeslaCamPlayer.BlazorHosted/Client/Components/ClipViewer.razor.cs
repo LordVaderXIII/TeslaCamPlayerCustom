@@ -64,6 +64,7 @@ public partial class ClipViewer : ComponentBase
 	private System.Timers.Timer _setVideoTimeDebounceTimer;
 	private CancellationTokenSource _loadSegmentCts = new();
 	private Cameras _mainCamera = Cameras.Front;
+    private bool _showCameraOverlay; // Mobile camera switch overlay
 
 	// Export logic
 	private double _exportStart;
@@ -102,51 +103,38 @@ public partial class ClipViewer : ComponentBase
 		if (!firstRender)
 			return;
 
-		_videoPlayerFront.Loaded += () =>
-		{
-			Console.WriteLine("Loaded: Front");
-			_videoLoadedEventCount++;
-		};
-		_videoPlayerLeftRepeater.Loaded += () =>
-		{
-			Console.WriteLine("Loaded: Left");
-			_videoLoadedEventCount++;
-		};
-		_videoPlayerRightRepeater.Loaded += () =>
-		{
-			Console.WriteLine("Loaded: Right");
-			_videoLoadedEventCount++;
-		};
-		_videoPlayerBack.Loaded += () =>
-		{
-			Console.WriteLine("Loaded: Back");
-			_videoLoadedEventCount++;
-		};
-		_videoPlayerLeftBPillar.Loaded += () =>
-		{
-			Console.WriteLine("Loaded: LeftBPillar");
-			_videoLoadedEventCount++;
-		};
-		_videoPlayerRightBPillar.Loaded += () =>
-		{
-			Console.WriteLine("Loaded: RightBPillar");
-			_videoLoadedEventCount++;
-		};
-		_videoPlayerFisheye.Loaded += () =>
-		{
-			Console.WriteLine("Loaded: Fisheye");
-			_videoLoadedEventCount++;
-		};
-		_videoPlayerNarrow.Loaded += () =>
-		{
-			Console.WriteLine("Loaded: Narrow");
-			_videoLoadedEventCount++;
-		};
-		_videoPlayerCabin.Loaded += () =>
-		{
-			Console.WriteLine("Loaded: Cabin");
-			_videoLoadedEventCount++;
-		};
+		// Attach listeners only if components exist (they might be conditionally rendered)
+		// But in ClipViewer they are always rendered if segment exists.
+        // Actually, in the Razor file, video players are inside if blocks based on _mainCamera.
+        // So we might get null refs if we try to attach events to players that are not rendered?
+        // Wait, the Razor file uses if blocks to render ONE main player, and then other blocks to render SIDE players.
+        // But the @ref works if the component is rendered.
+        // If a component is NOT rendered, the ref will be null.
+        // The original code was attaching events unconditionally in OnAfterRender?
+        // Let's check the original OnAfterRender.
+        // It attached to all of them. This implies they were all rendered.
+        // In the Razor file:
+        // Main View: 9 IF blocks. Only 1 is true. So 1 main player is rendered.
+        // Side View: 9 IF blocks. 8 are true (!= main). So 8 side players are rendered.
+        // So all 9 players should be rendered in total (1 main + 8 side).
+        // Wait, the `VideoPlayer` component uses `@key`.
+        // The refs `_videoPlayerFront` etc. are used in BOTH main view and side view blocks?
+        // No, you can't reuse a ref for different component instances.
+        // In the Razor file:
+        // <VideoPlayer @ref="_videoPlayerFront" ... in Main View if Front is Main
+        // <VideoPlayer @ref="_videoPlayerFront" ... in Side View if Front is NOT Main
+        // Since only one of these conditions is true at a time, `_videoPlayerFront` will always point to the single instance of the Front player (either in main or side).
+        // So it's safe.
+
+		if (_videoPlayerFront != null) _videoPlayerFront.Loaded += () => { Console.WriteLine("Loaded: Front"); _videoLoadedEventCount++; };
+		if (_videoPlayerLeftRepeater != null) _videoPlayerLeftRepeater.Loaded += () => { Console.WriteLine("Loaded: Left"); _videoLoadedEventCount++; };
+		if (_videoPlayerRightRepeater != null) _videoPlayerRightRepeater.Loaded += () => { Console.WriteLine("Loaded: Right"); _videoLoadedEventCount++; };
+		if (_videoPlayerBack != null) _videoPlayerBack.Loaded += () => { Console.WriteLine("Loaded: Back"); _videoLoadedEventCount++; };
+		if (_videoPlayerLeftBPillar != null) _videoPlayerLeftBPillar.Loaded += () => { Console.WriteLine("Loaded: LeftBPillar"); _videoLoadedEventCount++; };
+		if (_videoPlayerRightBPillar != null) _videoPlayerRightBPillar.Loaded += () => { Console.WriteLine("Loaded: RightBPillar"); _videoLoadedEventCount++; };
+		if (_videoPlayerFisheye != null) _videoPlayerFisheye.Loaded += () => { Console.WriteLine("Loaded: Fisheye"); _videoLoadedEventCount++; };
+		if (_videoPlayerNarrow != null) _videoPlayerNarrow.Loaded += () => { Console.WriteLine("Loaded: Narrow"); _videoLoadedEventCount++; };
+		if (_videoPlayerCabin != null) _videoPlayerCabin.Loaded += () => { Console.WriteLine("Loaded: Cabin"); _videoLoadedEventCount++; };
 	}
 
 	private static Task AwaitUiUpdate()
@@ -210,15 +198,15 @@ public partial class ClipViewer : ComponentBase
 	{
 		try
 		{
-			await action(_videoPlayerFront);
-			await action(_videoPlayerLeftRepeater);
-			await action(_videoPlayerRightRepeater);
-			await action(_videoPlayerBack);
-			await action(_videoPlayerLeftBPillar);
-			await action(_videoPlayerRightBPillar);
-			await action(_videoPlayerFisheye);
-			await action(_videoPlayerNarrow);
-			await action(_videoPlayerCabin);
+            if (_videoPlayerFront != null) await action(_videoPlayerFront);
+			if (_videoPlayerLeftRepeater != null) await action(_videoPlayerLeftRepeater);
+			if (_videoPlayerRightRepeater != null) await action(_videoPlayerRightRepeater);
+			if (_videoPlayerBack != null) await action(_videoPlayerBack);
+			if (_videoPlayerLeftBPillar != null) await action(_videoPlayerLeftBPillar);
+			if (_videoPlayerRightBPillar != null) await action(_videoPlayerRightBPillar);
+			if (_videoPlayerFisheye != null) await action(_videoPlayerFisheye);
+			if (_videoPlayerNarrow != null) await action(_videoPlayerNarrow);
+			if (_videoPlayerCabin != null) await action(_videoPlayerCabin);
 		}
 		catch
 		{
@@ -270,6 +258,9 @@ public partial class ClipViewer : ComponentBase
 		if (_isScrubbing || _isDraggingExportHandle)
 			return;
 		
+        // Ensure player is valid
+        if (_videoPlayerFront == null) return;
+
 		var seconds = await _videoPlayerFront.GetTimeAsync();
 		var currentTime = _currentSegment.StartDate.AddSeconds(seconds);
 		var secondsSinceClipStart = (currentTime - _clip.StartDate).TotalSeconds;
@@ -280,13 +271,12 @@ public partial class ClipViewer : ComponentBase
 
 	private async Task TimelineSliderPointerDown()
 	{
-		if (IsExportMode) return; // Disable regular scrubbing in export mode? Or allow it? User said "Existing timeline slider only when export is clicked... drag brackets". Regular scrubbing is useful to verify brackets. Let's keep it.
+		if (IsExportMode) return;
 
 		_isScrubbing = true;
 		_wasPlayingBeforeScrub = _isPlaying;
 		await TogglePlayingAsync(false);
 		
-		// Allow value change event to trigger, then scrub before user releases mouse click
 		await AwaitUiUpdate();
 		await ScrubToSliderTime();
 	}
@@ -332,38 +322,43 @@ public partial class ClipViewer : ComponentBase
 		}
 		catch
 		{
-			// ignore, happens sometimes
+			// ignore
 		}
 	}
 
 	private async Task SwapCamera(Cameras camera)
 	{
-		if (_mainCamera == camera)
-			return;
+        if (_mainCamera == camera)
+        {
+            // If already selected, maybe just close overlay?
+            _showCameraOverlay = false;
+            return;
+        }
 
 		var wasPlaying = _isPlaying;
 		if (wasPlaying)
 			await TogglePlayingAsync(false);
 
 		_mainCamera = camera;
+        _showCameraOverlay = false; // Close overlay on swap
 		await InvokeAsync(StateHasChanged);
 
-		// After DOM update (and player recreation/move), we need to restore time.
 		if (_currentSegment != null)
 		{
-			// We can use the current TimelineValue to restore the position
 			var scrubToDate = _clip.StartDate.AddSeconds(TimelineValue);
 			var secondsIntoSegment = (scrubToDate - _currentSegment.StartDate).TotalSeconds;
 
-			// We need to wait a bit for the new player to be ready?
-			// Or just set the time. Since src is the same, maybe it loads fast.
-			// But we should try to set the time on all players.
 			await ExecuteOnPlayers(async p => await p.SetTimeAsync(secondsIntoSegment));
 		}
 
 		if (wasPlaying)
 			await TogglePlayingAsync(true);
 	}
+
+    private void ToggleCameraOverlay()
+    {
+        _showCameraOverlay = !_showCameraOverlay;
+    }
 
 	private double DateTimeToTimelinePercentage(DateTime dateTime)
 	{
@@ -424,47 +419,18 @@ public partial class ClipViewer : ComponentBase
 		_isDraggingExportHandle = false;
 	}
 
-	// We need to track mouse movement on the slider container to update drag handle
-	// But the event is on the handle itself which moves.
-	// Actually better to have onmousemove on the slider container.
-	// But `MudSlider` consumes events?
-	// The container `.seeker-slider-container` or `.slider-container` should handle it.
-	// But we can't easily modify the razor structure around MudSlider to add MouseMove without replacing it or wrapping it.
-	// ClipViewer.razor has `.slider-container`. We can add @onpointermove there.
-
-	// In `ClipViewer.razor` I added handlers for handles, but movement needs to be tracked on container.
-	// I'll update `ClipViewer.razor` to add `onpointermove` to `slider-container`.
-
 	private void OnTimelinePointerMove(PointerEventArgs e)
 	{
 		if (_isDraggingExportHandle)
 		{
-			// We need to calculate position relative to the container width.
-			// This requires JS interop to get bounding rect of the container.
-			// For now, let's assume we can use e.OffsetX if it's relative to target.
-			// But target might be the slider or handle.
-			// A reliable way requires JS.
-
-			// Let's defer to a JS function to get percentage.
-			// Or simpler: Use `TimelineValue` as a proxy if we were dragging the slider, but we are dragging handles.
-
-			// Let's implement a simple JS helper to get relative click position.
 			_ = UpdateHandlePosition(e);
 		}
 	}
 
 	private async Task UpdateHandlePosition(PointerEventArgs e)
 	{
-		// We need to know the width of the slider container and the click position relative to it.
-		// Since we can't easily get that from Blazor event args without knowing the element reference bounding box...
-		// Let's use JS.
-
-		// For now, I'll rely on the user dragging the handle, which might be tricky without full mouse capture.
-		// Let's update `ClipViewer.razor` to include `onpointermove` on the `slider-container`.
-
 		var result = await JsRuntime.InvokeAsync<double>("getSliderPercentage", e.ClientX, _timelineSliderElement);
 
-		// result is 0..1
 		var seconds = result * _timelineMaxSeconds;
 		seconds = Math.Max(0, Math.Min(_timelineMaxSeconds, seconds));
 
@@ -480,7 +446,7 @@ public partial class ClipViewer : ComponentBase
 		StateHasChanged();
 	}
 
-	private ElementReference _timelineSliderElement; // Ref to slider-container
+	private ElementReference _timelineSliderElement;
 
 	public async Task TriggerExportAsync()
 	{
@@ -489,7 +455,6 @@ public partial class ClipViewer : ComponentBase
 		{
 			ClipStartDate = _clip.StartDate,
 			EventFolderName = _clip.Event?.Timestamp != null ?
-				// Need to find event folder name. The current segment front camera has it.
 				_currentSegment?.CameraFront?.EventFolderName
 				: null,
 			StartTime = _clip.StartDate.AddSeconds(_exportStart),
