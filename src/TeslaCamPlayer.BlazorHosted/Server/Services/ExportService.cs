@@ -122,8 +122,8 @@ public class ExportService : IExportService
             // We create a text file for each camera angle listing the files.
 
             var tempFiles = new List<string>();
-            var activeCameras = request.SelectedCameras;
-            if (!activeCameras.Contains(request.MainCamera)) activeCameras.Add(request.MainCamera); // Ensure main is there
+            var activeCameras = request.SelectedCameras.Where(c => c != Cameras.Unknown).ToList();
+            if (!activeCameras.Contains(request.MainCamera) && request.MainCamera != Cameras.Unknown) activeCameras.Add(request.MainCamera); // Ensure main is there
 
             var filterComplex = new StringBuilder();
 
@@ -402,14 +402,13 @@ public class ExportService : IExportService
                 };
 
                 string lastTmp = "tmp1";
-                for (int i = 0; i < otherCamIndices.Count; i++)
+                var limit = Math.Min(otherCamIndices.Count, slots.Length);
+                for (int i = 0; i < limit; i++)
                 {
-                    if (i >= slots.Length) break; // limit
-
                     filterComplex.Append($"[v{otherCamIndices[i]}]scale=480:360:force_original_aspect_ratio=decrease,pad=480:360:(ow-iw)/2:(oh-ih)/2[s{i}];");
 
                     string nextTmp = $"tmp{i + 2}";
-                    if (i == otherCamIndices.Count - 1) nextTmp = "outv";
+                    if (i == limit - 1) nextTmp = "outv";
 
                     filterComplex.Append($"[{lastTmp}][s{i}]overlay={slots[i].Item1}:{slots[i].Item2}[{nextTmp}];");
                     lastTmp = nextTmp;
