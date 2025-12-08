@@ -43,6 +43,7 @@ public partial class ClipViewer : ComponentBase
 	private VideoPlayer _videoPlayerRightBPillar;
 	private VideoPlayer _videoPlayerFisheye;
 	private VideoPlayer _videoPlayerNarrow;
+	private VideoPlayer _videoPlayerCabin;
 	private int _videoLoadedEventCount = 0;
 	private bool _isPlaying;
 	private ClipVideoSegment _currentSegment;
@@ -105,6 +106,11 @@ public partial class ClipViewer : ComponentBase
 		_videoPlayerNarrow.Loaded += () =>
 		{
 			Console.WriteLine("Loaded: Narrow");
+			_videoLoadedEventCount++;
+		};
+		_videoPlayerCabin.Loaded += () =>
+		{
+			Console.WriteLine("Loaded: Cabin");
 			_videoLoadedEventCount++;
 		};
 	}
@@ -175,6 +181,7 @@ public partial class ClipViewer : ComponentBase
 			await action(_videoPlayerRightBPillar);
 			await action(_videoPlayerFisheye);
 			await action(_videoPlayerNarrow);
+			await action(_videoPlayerCabin);
 		}
 		catch
 		{

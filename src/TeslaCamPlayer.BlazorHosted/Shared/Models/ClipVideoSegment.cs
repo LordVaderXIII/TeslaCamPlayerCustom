@@ -12,6 +12,7 @@ public class ClipVideoSegment
 	public VideoFile CameraRightBPillar { get; init; }
 	public VideoFile CameraFisheye { get; init; }
 	public VideoFile CameraNarrow { get; init; }
+	public VideoFile CameraCabin { get; init; }
 
 	public VideoFile[] VideoFiles => [
 		CameraFront,
@@ -21,7 +22,8 @@ public class ClipVideoSegment
 		CameraLeftBPillar,
 		CameraRightBPillar,
 		CameraFisheye,
-		CameraNarrow
+		CameraNarrow,
+		CameraCabin
 	];
 
 	public int CameraAnglesCount() => VideoFiles.Count(f => f != null);
