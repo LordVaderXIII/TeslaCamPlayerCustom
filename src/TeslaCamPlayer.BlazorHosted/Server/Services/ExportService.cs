@@ -191,7 +191,7 @@ public class ExportService : IExportService
             var mainCamIndex = cameraInputMap[request.MainCamera];
             var otherCamIndices = otherCameras.Select(c => cameraInputMap[c]).ToList();
 
-            string mainLabel = $"[v{mainCamIndex}]";
+            string mainLabel = $"[{mainCamIndex}:v]";
             string mainScaled = $"[main_s]";
 
             if (activeCameras.Count <= 4)
@@ -202,7 +202,7 @@ public class ExportService : IExportService
                 int yPos = 0;
                 for (int i = 0; i < otherCamIndices.Count; i++)
                 {
-                    filterComplex.Append($"[v{otherCamIndices[i]}]scale=480:360:force_original_aspect_ratio=decrease,pad=480:360:(ow-iw)/2:(oh-ih)/2[s{i}];");
+                    filterComplex.Append($"[{otherCamIndices[i]}:v]scale=480:360:force_original_aspect_ratio=decrease,pad=480:360:(ow-iw)/2:(oh-ih)/2[s{i}];");
                 }
 
                 // Base canvas
@@ -258,7 +258,7 @@ public class ExportService : IExportService
                 var limit = Math.Min(otherCamIndices.Count, slots.Length);
                 for (int i = 0; i < limit; i++)
                 {
-                    filterComplex.Append($"[v{otherCamIndices[i]}]scale=480:360:force_original_aspect_ratio=decrease,pad=480:360:(ow-iw)/2:(oh-ih)/2[s{i}];");
+                    filterComplex.Append($"[{otherCamIndices[i]}:v]scale=480:360:force_original_aspect_ratio=decrease,pad=480:360:(ow-iw)/2:(oh-ih)/2[s{i}];");
 
                     string nextTmp = $"tmp{i + 2}";
                     if (i == limit - 1) nextTmp = "outv";
