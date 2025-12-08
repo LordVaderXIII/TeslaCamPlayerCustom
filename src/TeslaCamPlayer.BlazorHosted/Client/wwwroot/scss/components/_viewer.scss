@@ -194,10 +194,11 @@
 @media (max-width: 960px) {
     .viewer {
         .viewer-grid {
-            flex-grow: 0; // Don't force it to take full height on mobile
+            flex: none !important; // Don't force it to take full height on mobile
+            height: auto !important;
 
             .main-view {
-                flex: none; // Disable flex sizing
+                flex: none !important; // Disable flex sizing
                 width: 100%;
                 aspect-ratio: 16/9; // Force 16:9 aspect ratio
             }
