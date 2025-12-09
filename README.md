@@ -13,6 +13,7 @@ A self-hosted web player for viewing Tesla Sentry and Dashcam clips.
 - **Clip Export:** Export custom clips with multiple camera angles merged into a single video file.
 - **Responsive Layout:** Large main view (Front) with a grid of side cameras.
 - **Dockerized:** Easy deployment on any Docker host (Unraid, Synology, Linux, etc.).
+- **Jules Integration:** View logs and manually report errors to Jules for automated resolution directly from the UI.
 
 ## Prerequisites
 
@@ -85,6 +86,16 @@ To enable this feature, you must configure the following environment variables i
 - `JULES_SOURCE`: The Jules Source identifier for your repository, in the format `sources/github/OWNER/REPO`.
 
 **Privacy Note:** Error reports include the error message, stack trace, application version, and environment type. Code snippets from the stack trace may be included if available.
+
+### Manual Error Reporting
+
+You can also view application logs and manually report specific errors to Jules:
+
+1.  Click the **User Profile** icon.
+2.  Click **Settings**.
+3.  Click the **Logs** button.
+4.  Review the list of "Resolvable Errors".
+5.  Click **Send to Jules** on any error to initiate an automated fix session.
 
 ## Usage
 
