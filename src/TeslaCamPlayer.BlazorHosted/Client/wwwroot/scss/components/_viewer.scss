@@ -193,9 +193,14 @@
 // Mobile Layout
 @media (max-width: 960px) {
     .viewer {
+        height: auto !important;
+        flex-grow: 0 !important;
+        justify-content: flex-start !important;
+
         .viewer-grid {
             flex: none !important; // Don't force it to take full height on mobile
             height: auto !important;
+            padding-bottom: 0 !important;
 
             .main-view {
                 flex: none !important; // Disable flex sizing
