@@ -75,6 +75,9 @@
 	public ValueTask SetTimeAsync(double time)
 		=> JsRuntime.InvokeVoidAsync("setProperty", _player, "currentTime", time);
 
+	public ValueTask SetPlaybackRateAsync(double rate)
+		=> JsRuntime.InvokeVoidAsync("setProperty", _player, "playbackRate", rate);
+
 	private Task VideoEndedHandler()
 		=> VideoEnded.InvokeAsync();
 

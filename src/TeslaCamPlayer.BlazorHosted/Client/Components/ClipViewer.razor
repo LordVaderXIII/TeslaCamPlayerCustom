@@ -117,6 +117,12 @@
 			<MudIconButton Icon="@(_isPlaying ? Icons.Material.Filled.PauseCircleOutline : Icons.Material.Filled.PlayCircleOutline)" Size="Size.Large" OnClick="@PlayPauseClicked" />
 			<MudIconButton Icon="@Icons.Material.Filled.Forward5" Size="Size.Medium" OnClick="@SkipForwardClicked" />
 			<MudIconButton Icon="@Icons.Material.Filled.SkipNext" Size="Size.Medium" OnClick="@NextButtonClicked" />
+			<MudMenu Label="@($"x{PlaybackRate}")" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" EndIcon="@Icons.Material.Filled.KeyboardArrowDown">
+				<MudMenuItem OnClick="@(() => SetPlaybackRateAsync(0.5))">x0.5</MudMenuItem>
+				<MudMenuItem OnClick="@(() => SetPlaybackRateAsync(1.0))">x1.0</MudMenuItem>
+				<MudMenuItem OnClick="@(() => SetPlaybackRateAsync(1.5))">x1.5</MudMenuItem>
+				<MudMenuItem OnClick="@(() => SetPlaybackRateAsync(2.0))">x2.0</MudMenuItem>
+			</MudMenu>
 		</div>
 		<div class="seeker-slider-container">
 			<div class="time-container">@_clip?.StartDate.ToString("hh:mm:ss tt")</div>
