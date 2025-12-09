@@ -51,9 +51,14 @@ public partial class Index : ComponentBase
 	private bool _hasProcessingJobs;
 	private System.Timers.Timer _jobsCheckTimer;
     private bool _isBrowserVisible;
+	private string _userInitials = "AD";
 
 	protected override async Task OnInitializedAsync()
 	{
+		var state = await AuthStateProvider.GetAuthenticationStateAsync();
+		var firstName = state.User.FindFirst("FirstName")?.Value ?? "Admin";
+		_userInitials = firstName.Substring(0, Math.Min(2, firstName.Length)).ToUpper();
+
 		_scrollDebounceTimer = new(100);
 		_scrollDebounceTimer.Elapsed += ScrollDebounceTimerTick;
 
@@ -332,9 +337,7 @@ public partial class Index : ComponentBase
 
     private string GetInitials()
     {
-        var state = ((Providers.CustomAuthenticationStateProvider)AuthStateProvider).GetAuthenticationStateAsync().Result;
-        var firstName = state.User.FindFirst("FirstName")?.Value ?? "Admin";
-        return firstName.Substring(0, Math.Min(2, firstName.Length)).ToUpper();
+        return _userInitials;
     }
 
     private void ShowSettings()
