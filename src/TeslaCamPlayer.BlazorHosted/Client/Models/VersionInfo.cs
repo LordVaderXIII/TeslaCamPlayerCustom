@@ -11,13 +11,13 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
 
     public static class VersionInfo
     {
-        public const string CurrentVersion = "0.1.79";
+        public const string CurrentVersion = "2025-12-0.9.3";
 
         public static readonly List<VersionRelease> Releases = new List<VersionRelease>
         {
             new VersionRelease
             {
-                Version = "0.1.79",
+                Version = "2025-12-0.9.3",
                 Date = "2025-12-09",
                 Changes = new List<string>
                 {
@@ -26,7 +26,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.78",
+                Version = "2025-12-0.9.2",
                 Date = "2025-12-09",
                 Changes = new List<string>
                 {
@@ -35,7 +35,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.77",
+                Version = "2025-12-0.9.1",
                 Date = "2025-12-09",
                 Changes = new List<string>
                 {
@@ -44,7 +44,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.76",
+                Version = "2025-12-0.9",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -53,7 +53,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.75",
+                Version = "2025-12-0.8.5",
                 Date = "2025-12-09",
                 Changes = new List<string>
                 {
@@ -62,7 +62,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.74",
+                Version = "2025-12-0.8.4",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -71,7 +71,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.73",
+                Version = "2025-12-0.8.3",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -80,7 +80,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.72",
+                Version = "2025-12-0.8.2",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -89,7 +89,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.71",
+                Version = "2025-12-0.8.1",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -98,7 +98,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.70",
+                Version = "2025-12-0.8",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -107,7 +107,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.69",
+                Version = "2025-12-0.7.2",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -116,7 +116,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.68",
+                Version = "2025-12-0.7.1",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -125,7 +125,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.67",
+                Version = "2025-12-0.7",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -134,7 +134,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.66",
+                Version = "2025-12-0.6.13",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -143,7 +143,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.65",
+                Version = "2025-12-0.6.12",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -152,7 +152,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.64",
+                Version = "2025-12-0.6.11",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -161,7 +161,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.63",
+                Version = "2025-12-0.6.10",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -170,7 +170,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.62",
+                Version = "2025-12-0.6.9",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -179,7 +179,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.61",
+                Version = "2025-12-0.6.8",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -188,7 +188,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.60",
+                Version = "2025-12-0.6.7",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -197,7 +197,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.59",
+                Version = "2025-12-0.6.6",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -206,7 +206,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.58",
+                Version = "2025-12-0.6.5",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -215,7 +215,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.57",
+                Version = "2025-12-0.6.4",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -224,7 +224,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.56",
+                Version = "2025-12-0.6.3",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -233,7 +233,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.55",
+                Version = "2025-12-0.6.2",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -242,7 +242,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.54",
+                Version = "2025-12-0.6.1",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -251,7 +251,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.53",
+                Version = "2025-12-0.6",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -260,7 +260,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.52",
+                Version = "2025-12-0.5",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -269,7 +269,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.51",
+                Version = "2025-12-0.4.3",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -278,7 +278,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.50",
+                Version = "2025-12-0.4.2",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -287,7 +287,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.49",
+                Version = "2025-12-0.4.1",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -296,7 +296,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.48",
+                Version = "2025-12-0.4",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -305,7 +305,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.47",
+                Version = "2025-12-0.3",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -314,7 +314,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.46",
+                Version = "2025-12-0.2.7",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -323,7 +323,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.45",
+                Version = "2025-12-0.2.6",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -332,7 +332,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.44",
+                Version = "2025-12-0.2.5",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
@@ -341,7 +341,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.43",
+                Version = "2025-12-0.2.4",
                 Date = "2025-12-05",
                 Changes = new List<string>
                 {
@@ -350,7 +350,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.42",
+                Version = "2025-12-0.2.3",
                 Date = "2025-12-05",
                 Changes = new List<string>
                 {
@@ -359,7 +359,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.41",
+                Version = "2025-12-0.2.2",
                 Date = "2025-12-04",
                 Changes = new List<string>
                 {
@@ -368,7 +368,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.40",
+                Version = "2025-12-0.2.1",
                 Date = "2025-12-04",
                 Changes = new List<string>
                 {
@@ -377,7 +377,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.39",
+                Version = "2025-12-0.2",
                 Date = "2025-12-04",
                 Changes = new List<string>
                 {
@@ -386,7 +386,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.38",
+                Version = "2025-12-0.1",
                 Date = "2025-12-04",
                 Changes = new List<string>
                 {
@@ -395,7 +395,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.37",
+                Version = "2023-12-0.1.2",
                 Date = "2023-12-14",
                 Changes = new List<string>
                 {
@@ -404,7 +404,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.36",
+                Version = "2023-12-0.1.1",
                 Date = "2023-12-14",
                 Changes = new List<string>
                 {
@@ -413,7 +413,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.35",
+                Version = "2023-12-0.1",
                 Date = "2023-12-14",
                 Changes = new List<string>
                 {
@@ -422,7 +422,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.34",
+                Version = "2023-07-0.1.34",
                 Date = "2023-07-28",
                 Changes = new List<string>
                 {
@@ -431,7 +431,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.33",
+                Version = "2023-07-0.1.33",
                 Date = "2023-07-28",
                 Changes = new List<string>
                 {
@@ -440,7 +440,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.32",
+                Version = "2023-07-0.1.32",
                 Date = "2023-07-28",
                 Changes = new List<string>
                 {
@@ -449,7 +449,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.31",
+                Version = "2023-07-0.1.31",
                 Date = "2023-07-28",
                 Changes = new List<string>
                 {
@@ -458,7 +458,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.30",
+                Version = "2023-07-0.1.30",
                 Date = "2023-07-28",
                 Changes = new List<string>
                 {
@@ -467,7 +467,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.29",
+                Version = "2023-07-0.1.29",
                 Date = "2023-07-28",
                 Changes = new List<string>
                 {
@@ -476,7 +476,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.28",
+                Version = "2023-07-0.1.28",
                 Date = "2023-07-23",
                 Changes = new List<string>
                 {
@@ -485,7 +485,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.27",
+                Version = "2023-07-0.1.27",
                 Date = "2023-07-23",
                 Changes = new List<string>
                 {
@@ -494,7 +494,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.26",
+                Version = "2023-07-0.1.26",
                 Date = "2023-07-23",
                 Changes = new List<string>
                 {
@@ -503,7 +503,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.25",
+                Version = "2023-07-0.1.25",
                 Date = "2023-07-23",
                 Changes = new List<string>
                 {
@@ -512,7 +512,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.24",
+                Version = "2023-07-0.1.24",
                 Date = "2023-07-23",
                 Changes = new List<string>
                 {
@@ -521,7 +521,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.23",
+                Version = "2023-07-0.1.23",
                 Date = "2023-07-23",
                 Changes = new List<string>
                 {
@@ -530,7 +530,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.22",
+                Version = "2023-07-0.1.22",
                 Date = "2023-07-23",
                 Changes = new List<string>
                 {
@@ -539,7 +539,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.21",
+                Version = "2023-07-0.1.21",
                 Date = "2023-07-23",
                 Changes = new List<string>
                 {
@@ -548,7 +548,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.20",
+                Version = "2023-07-0.1.20",
                 Date = "2023-07-23",
                 Changes = new List<string>
                 {
@@ -557,7 +557,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.19",
+                Version = "2023-07-0.1.19",
                 Date = "2023-07-23",
                 Changes = new List<string>
                 {
@@ -566,7 +566,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.18",
+                Version = "2023-07-0.1.18",
                 Date = "2023-07-23",
                 Changes = new List<string>
                 {
@@ -575,7 +575,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.17",
+                Version = "2023-07-0.1.17",
                 Date = "2023-07-23",
                 Changes = new List<string>
                 {
@@ -584,7 +584,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.16",
+                Version = "2023-07-0.1.16",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -593,7 +593,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.15",
+                Version = "2023-07-0.1.15",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -602,7 +602,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.14",
+                Version = "2023-07-0.1.14",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -611,7 +611,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.13",
+                Version = "2023-07-0.1.13",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -620,7 +620,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.12",
+                Version = "2023-07-0.1.12",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -629,7 +629,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.11",
+                Version = "2023-07-0.1.11",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -638,7 +638,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.10",
+                Version = "2023-07-0.1.10",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -647,7 +647,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.9",
+                Version = "2023-07-0.1.9",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -656,7 +656,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.8",
+                Version = "2023-07-0.1.8",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -665,7 +665,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.7",
+                Version = "2023-07-0.1.7",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -674,7 +674,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.6",
+                Version = "2023-07-0.1.6",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -683,7 +683,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.5",
+                Version = "2023-07-0.1.5",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -692,7 +692,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.4",
+                Version = "2023-07-0.1.4",
                 Date = "2023-07-20",
                 Changes = new List<string>
                 {
@@ -701,7 +701,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.3",
+                Version = "2023-07-0.1.3",
                 Date = "2023-07-18",
                 Changes = new List<string>
                 {
@@ -710,7 +710,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.2",
+                Version = "2023-07-0.1.2",
                 Date = "2023-07-18",
                 Changes = new List<string>
                 {
@@ -719,7 +719,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.1",
+                Version = "2023-07-0.1.1",
                 Date = "2023-07-17",
                 Changes = new List<string>
                 {
@@ -728,7 +728,7 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "0.1.0",
+                Version = "2023-07-0.1",
                 Date = "2023-07-17",
                 Changes = new List<string>
                 {
