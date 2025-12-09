@@ -1,12 +1,34 @@
 @using TeslaCamPlayer.BlazorHosted.Shared.Models
+@inject IJSRuntime JSRuntime
 
 <div class="viewer">
     <!-- Camera Switch Button (Mobile Only) -->
-    <div class="camera-switch-btn d-md-none">
+    <div class="camera-switch-btn d-md-none" style="@(_is360Mode ? "display:none" : "")">
         <MudIconButton Icon="@Icons.Material.Filled.Cameraswitch" Variant="Variant.Filled" Color="Color.Secondary" OnClick="@ToggleCameraOverlay" />
     </div>
 
-	<div class="viewer-grid">
+    <!-- 3D Toggle Button -->
+    <div class="mode-switch-btn">
+         <MudTooltip Text="@(_is360Mode ? "Exit 3D View" : "Enter 3D View")">
+             <MudIconButton Icon="@(_is360Mode ? Icons.Material.Filled.ViewModule : Icons.Material.Filled.ThreeDRotation)"
+                            Variant="Variant.Filled"
+                            Color="Color.Primary"
+                            OnClick="@Toggle360Mode"
+                            Class="mode-toggle-icon"/>
+         </MudTooltip>
+    </div>
+
+    <div id="pano-container" style="@(_is360Mode ? "display:block;" : "display:none;")">
+        <!-- Three.js Canvas will be injected here -->
+         @if (_is360Mode)
+         {
+             <div class="exit-3d-mobile d-md-none">
+                  <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Close" OnClick="@Toggle360Mode">Exit 3D</MudButton>
+             </div>
+         }
+    </div>
+
+	<div class="viewer-grid" style="@(_is360Mode ? "visibility:hidden; position: absolute; z-index: -1; width: 100%; height: 100%; top:0; left:0;" : "")">
 		<div class="main-view">
 			@if (_mainCamera == Cameras.Front)
 			{
@@ -110,7 +132,7 @@
 		</div>
 	</div>
 
-	<div class="controls">
+	<div class="controls" style="@(_is360Mode ? "z-index: 10001; position: relative;" : "")">
 		<div class="play-pause">
 			<MudIconButton Icon="@Icons.Material.Filled.SkipPrevious" Size="Size.Medium" OnClick="@PreviousButtonClicked" />
 			<MudIconButton Icon="@Icons.Material.Filled.Replay5" Size="Size.Medium" OnClick="@SkipBackwardClicked" />
