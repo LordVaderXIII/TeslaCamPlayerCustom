@@ -65,6 +65,16 @@ public partial class ClipViewer : ComponentBase
 	private CancellationTokenSource _loadSegmentCts = new();
 	private Cameras _mainCamera = Cameras.Front;
     private bool _showCameraOverlay; // Mobile camera switch overlay
+	private double _playbackRate = 1.0;
+	private double PlaybackRate
+	{
+		get => _playbackRate;
+		set
+		{
+			_playbackRate = value;
+			InvokeAsync(StateHasChanged);
+		}
+	}
 
 	// Export logic
 	private double _exportStart;
@@ -191,7 +201,15 @@ public partial class ClipViewer : ComponentBase
 		if (wasPlaying)
 			await TogglePlayingAsync(true);
 
+		await ExecuteOnPlayers(async p => await p.SetPlaybackRateAsync(PlaybackRate));
+
 		return !_loadSegmentCts.IsCancellationRequested;
+	}
+
+	private async Task SetPlaybackRateAsync(double rate)
+	{
+		PlaybackRate = rate;
+		await ExecuteOnPlayers(async p => await p.SetPlaybackRateAsync(rate));
 	}
 
 	private async Task ExecuteOnPlayers(Func<VideoPlayer, Task> action)
@@ -365,7 +383,11 @@ public partial class ClipViewer : ComponentBase
 			var scrubToDate = _clip.StartDate.AddSeconds(TimelineValue);
 			var secondsIntoSegment = (scrubToDate - _currentSegment.StartDate).TotalSeconds;
 
-			await ExecuteOnPlayers(async p => await p.SetTimeAsync(secondsIntoSegment));
+			await ExecuteOnPlayers(async p =>
+			{
+				await p.SetTimeAsync(secondsIntoSegment);
+				await p.SetPlaybackRateAsync(PlaybackRate);
+			});
 		}
 
 		if (wasPlaying)
