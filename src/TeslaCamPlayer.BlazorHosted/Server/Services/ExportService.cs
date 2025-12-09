@@ -126,6 +126,14 @@ public class ExportService : IExportService
 
             // 3. Build FFmpeg inputs
             var activeCameras = request.SelectedCameras.Where(c => c != Cameras.Unknown).ToList();
+            if (!activeCameras.Any())
+            {
+                activeCameras = Enum.GetValues(typeof(Cameras))
+                    .Cast<Cameras>()
+                    .Where(c => c != Cameras.Unknown)
+                    .ToList();
+            }
+
             if (!activeCameras.Contains(request.MainCamera) && request.MainCamera != Cameras.Unknown) activeCameras.Add(request.MainCamera);
 
             var tempFiles = new List<string>();
@@ -211,13 +219,16 @@ public class ExportService : IExportService
                 filterComplex.Append($"[tmp_main];");
 
                 string lastTmp = "tmp_main";
+                int totalSideWidth = otherCameras.Count * 480;
+                int startX = (1920 - totalSideWidth) / 2;
+
                 for (int i = 0; i < otherCameras.Count; i++)
                 {
                     var cam = otherCameras[i];
                     var camIndex = cameraInputMap[cam];
                     string camName = System.Text.RegularExpressions.Regex.Replace(cam.ToString(), "([a-z])([A-Z])", "$1 $2");
 
-                    int xPos = i * 480;
+                    int xPos = startX + (i * 480);
                     int yPos = 720;
 
                     // Side Camera processing (Bottom Row)
