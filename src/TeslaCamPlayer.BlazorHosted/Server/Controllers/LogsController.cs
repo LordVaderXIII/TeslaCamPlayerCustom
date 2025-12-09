@@ -23,14 +23,14 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<LogEntry>>> GetLogs()
+        public async Task<ActionResult<List<LogEntry>>> GetLogs([FromQuery] int count = 1000)
         {
-            var logs = new List<LogEntry>();
+            var logs = new Queue<LogEntry>();
             var logsDir = Path.Combine(Directory.GetCurrentDirectory(), "Logs");
 
             if (!Directory.Exists(logsDir))
             {
-                return Ok(logs);
+                return Ok(new List<LogEntry>());
             }
 
             // Get today's log file
@@ -61,7 +61,8 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Controllers
                         {
                             if (currentEntry != null)
                             {
-                                logs.Add(currentEntry);
+                                logs.Enqueue(currentEntry);
+                                if (logs.Count > count) logs.Dequeue();
                             }
 
                             currentEntry = new LogEntry
@@ -100,13 +101,16 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Controllers
                             }
                         }
                     }
-                    if (currentEntry != null) logs.Add(currentEntry);
+                    if (currentEntry != null)
+                    {
+                        logs.Enqueue(currentEntry);
+                        if (logs.Count > count) logs.Dequeue();
+                    }
                 }
             }
 
             // Reverse to show newest first
-            logs.Reverse();
-            return Ok(logs);
+            return Ok(logs.Reverse().ToList());
         }
 
         [HttpPost("report")]

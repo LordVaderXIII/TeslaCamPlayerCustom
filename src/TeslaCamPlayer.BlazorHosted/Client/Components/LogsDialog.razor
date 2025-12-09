@@ -39,7 +39,7 @@
 
         <MudDivider Class="my-4" />
 
-        <MudText Typo="Typo.h5" Class="mb-4">Application Logs</MudText>
+        <MudText Typo="Typo.h5" Class="mb-4">Application Logs (Last 1000)</MudText>
         <div style="background-color: #1e1e1e; color: #d4d4d4; padding: 10px; border-radius: 4px; height: 300px; overflow-y: scroll; font-family: monospace;">
             @if (_logs == null)
             {
@@ -107,7 +107,7 @@
     {
         try
         {
-            _logs = await HttpClient.GetFromJsonAsync<List<LogEntry>>("api/logs");
+            _logs = await HttpClient.GetFromJsonAsync<List<LogEntry>>("api/logs?count=1000");
             _candidates = _logs.Where(l => l.IsCandidate).ToList();
         }
         catch (Exception ex)
