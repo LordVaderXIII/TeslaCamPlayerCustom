@@ -11,10 +11,22 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
 
     public static class VersionInfo
     {
-        public const string CurrentVersion = "0.3";
+        public const string CurrentVersion = "0.4";
 
         public static readonly List<VersionRelease> Releases = new List<VersionRelease>
         {
+            new VersionRelease
+            {
+                Version = "0.4",
+                Date = "2025-12-08",
+                Changes = new List<string>
+                {
+                    "Added Jules API integration for automated error reporting and bug fixes.",
+                    "Implemented persistent storage for export jobs using SQLite database.",
+                    "Added ability to swap main and side camera views by clicking on a side view.",
+                    "Added `playsinline` attribute to video player to prevent native player takeover on iOS."
+                }
+            },
             new VersionRelease
             {
                 Version = "0.3",
