@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using TeslaCamPlayer.BlazorHosted.Server.Data;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
 using Microsoft.AspNetCore.Identity;
+using UserModel = TeslaCamPlayer.BlazorHosted.Shared.Models.User;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Controllers;
 
@@ -68,7 +69,7 @@ public class AuthController : ControllerBase
 
         // Simple hash check (should use a better hasher in production, but requirement says "simple" and we just need it "securely stored")
         // Using ASP.NET Identity PasswordHasher for security
-        var hasher = new PasswordHasher<User>();
+        var hasher = new PasswordHasher<UserModel>();
         var result = hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
 
         if (user.Username == request.Username && result == PasswordVerificationResult.Success)
@@ -123,7 +124,7 @@ public class AuthController : ControllerBase
 
         if (!string.IsNullOrEmpty(request.Password))
         {
-             var hasher = new PasswordHasher<User>();
+             var hasher = new PasswordHasher<UserModel>();
              user.PasswordHash = hasher.HashPassword(user, request.Password);
         }
 
