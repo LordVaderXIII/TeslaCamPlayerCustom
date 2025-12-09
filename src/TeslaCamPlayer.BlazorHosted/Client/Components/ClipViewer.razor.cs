@@ -206,6 +206,19 @@ public partial class ClipViewer : ComponentBase
 		return !_loadSegmentCts.IsCancellationRequested;
 	}
 
+	private async Task CyclePlaybackRateAsync()
+	{
+		var newRate = PlaybackRate switch
+		{
+			0.5 => 1.0,
+			1.0 => 1.5,
+			1.5 => 2.0,
+			2.0 => 0.5,
+			_ => 1.0
+		};
+		await SetPlaybackRateAsync(newRate);
+	}
+
 	private async Task SetPlaybackRateAsync(double rate)
 	{
 		PlaybackRate = rate;
