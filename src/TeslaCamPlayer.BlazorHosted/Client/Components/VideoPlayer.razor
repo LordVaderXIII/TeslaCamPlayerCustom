@@ -10,7 +10,8 @@
 		@ontimeupdate="@TimeUpdateHandler"
 		@oncanplaythrough="@OnLoadedData"
 		disableremoteplayback
-		playsinline></video>
+		playsinline
+        crossorigin="anonymous"></video>
 	@if (!string.IsNullOrEmpty(Label))
 	{
 		<div class="video-label">@Label</div>
@@ -62,6 +63,7 @@
 	public event LoadedHandler Loaded;
 
 	private ElementReference _player;
+    public ElementReference VideoElement => _player;
 	
 	public ValueTask PlayAsync()
 		=> JsRuntime.InvokeVoidAsync("HTMLVideoElement.prototype.play.call", _player);
