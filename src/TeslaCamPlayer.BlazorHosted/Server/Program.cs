@@ -1,12 +1,14 @@
 using Serilog;
 using Microsoft.EntityFrameworkCore;
 using Serilog.Events;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using TeslaCamPlayer.BlazorHosted.Server.Data;
 using TeslaCamPlayer.BlazorHosted.Server.Middleware;
 using TeslaCamPlayer.BlazorHosted.Server.Providers;
 using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Services;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
+using TeslaCamPlayer.BlazorHosted.Shared.Models;
 
 Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Is(LogEventLevel.Verbose)
@@ -16,6 +18,17 @@ Log.Logger = new LoggerConfiguration()
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "TeslaCamAuth";
+        options.Events.OnRedirectToLogin = context =>
+        {
+            context.Response.StatusCode = 401;
+            return Task.CompletedTask;
+        };
+    });
 
 builder.Services.AddControllersWithViews().AddNewtonsoftJson();
 builder.Services.AddRazorPages();
@@ -55,10 +68,43 @@ using (var scope = app.Services.CreateScope())
                 ""Progress"" REAL NOT NULL
             );
         ");
+
+        dbContext.Database.ExecuteSqlRaw(@"
+            CREATE TABLE IF NOT EXISTS ""Users"" (
+                ""Id"" TEXT NOT NULL CONSTRAINT ""PK_Users"" PRIMARY KEY,
+                ""Username"" TEXT NULL,
+                ""PasswordHash"" TEXT NULL,
+                ""FirstName"" TEXT NULL,
+                ""IsEnabled"" INTEGER NOT NULL
+            );
+        ");
+
+        var user = dbContext.Users.Find("Admin");
+        if (user == null)
+        {
+            user = new User
+            {
+                Id = "Admin",
+                Username = "Admin",
+                IsEnabled = false, // Default off
+                FirstName = "Admin"
+            };
+            dbContext.Users.Add(user);
+            dbContext.SaveChanges();
+        }
+
+        var resetAuth = Environment.GetEnvironmentVariable("RESET_AUTH");
+        if (!string.IsNullOrEmpty(resetAuth) && bool.TryParse(resetAuth, out var shouldReset) && shouldReset)
+        {
+            user.IsEnabled = false;
+            dbContext.Users.Update(user);
+            dbContext.SaveChanges();
+            Log.Information("Authentication reset to OFF via RESET_AUTH environment variable.");
+        }
     }
     catch (Exception ex)
     {
-        Log.Error(ex, "Failed to ensure ExportJobs table exists.");
+        Log.Error(ex, "Failed to ensure database schema.");
     }
 }
 
@@ -95,6 +141,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapRazorPages();
 app.MapControllers();

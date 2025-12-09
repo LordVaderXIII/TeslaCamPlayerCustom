@@ -1,0 +1,68 @@
+@page "/login"
+@using TeslaCamPlayer.BlazorHosted.Shared.Models
+@using Microsoft.AspNetCore.Components.Authorization
+@using TeslaCamPlayer.BlazorHosted.Client.Providers
+@attribute [AllowAnonymous]
+@inject HttpClient HttpClient
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+
+<div class="d-flex justify-center align-center" style="height: 100vh">
+    <MudCard Class="pa-4" Style="width: 400px">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <MudText Typo="Typo.h5" Align="Align.Center">Login</MudText>
+            </CardHeaderContent>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
+            }
+
+            <MudTextField @bind-Value="_username" Label="Username" Variant="Variant.Outlined" Class="mb-4" />
+            <MudTextField @bind-Value="_password" Label="Password" Variant="Variant.Outlined" InputType="InputType.Password" OnKeyDown="HandleKeyDown" />
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="AttemptLogin">Login</MudButton>
+        </MudCardActions>
+    </MudCard>
+</div>
+
+@code {
+    private string _username;
+    private string _password;
+    private string _errorMessage;
+
+    private async Task AttemptLogin()
+    {
+        _errorMessage = null;
+        try
+        {
+            var request = new LoginRequest { Username = _username, Password = _password };
+            var response = await HttpClient.PostAsJsonAsync("api/auth/login", request);
+
+            if (response.IsSuccessStatusCode)
+            {
+                ((CustomAuthenticationStateProvider)AuthStateProvider).StateChanged();
+                NavigationManager.NavigateTo("/");
+            }
+            else
+            {
+                _errorMessage = "Invalid credentials";
+            }
+        }
+        catch
+        {
+            _errorMessage = "An error occurred during login";
+        }
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await AttemptLogin();
+        }
+    }
+}

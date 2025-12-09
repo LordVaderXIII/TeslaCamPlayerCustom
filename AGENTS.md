@@ -36,3 +36,4 @@ This project is a .NET 8 Blazor Hosted application designed to view and export v
 ## Input/Output
 - **Exports**: Saved to `ExportedClips` in the clips root.
 - **Database**: SQLite `teslacam.db` used for indexing.
+- **Authentication**: Single-user (Admin) authentication system. Default is OFF. Controlled via `Users` table and environment variable `RESET_AUTH=true`.

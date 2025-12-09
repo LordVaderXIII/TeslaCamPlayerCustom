@@ -64,8 +64,16 @@ services:
     environment:
       - JULES_API_KEY=your_jules_api_key_here
       - JULES_SOURCE=sources/github/your_github_username/your_repo_name
+      - RESET_AUTH=false # Set to true to reset authentication to OFF
     restart: unless-stopped
 ```
+
+## Authentication
+
+Version 1.0 introduces a simple authentication system (disabled by default).
+
+- **Enable Auth:** Click the User Profile icon (top right) -> Settings -> Toggle "Enable Authentication".
+- **Reset Auth:** If you get locked out, set the environment variable `RESET_AUTH=true` in your Docker configuration and restart the container. This will disable authentication, allowing you to log in as Admin without a password and reconfigure it.
 
 ## Error Reporting and Auto-Fixes
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using MudBlazor;
 using System.Timers;
+using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using TeslaCamPlayer.BlazorHosted.Client.Components;
 using TeslaCamPlayer.BlazorHosted.Client.Helpers;
@@ -17,6 +18,9 @@ public partial class Index : ComponentBase
 
 	[Inject]
 	private HttpClient HttpClient { get; set; }
+
+    [Inject]
+    private AuthenticationStateProvider AuthStateProvider { get; set; }
 
 	[Inject]
 	private IExportClientService ExportClientService { get; set; }
@@ -325,4 +329,17 @@ public partial class Index : ComponentBase
 		var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
 		DialogService.Show<ChangelogDialog>("Version History", options);
 	}
+
+    private string GetInitials()
+    {
+        var state = ((Providers.CustomAuthenticationStateProvider)AuthStateProvider).GetAuthenticationStateAsync().Result;
+        var firstName = state.User.FindFirst("FirstName")?.Value ?? "Admin";
+        return firstName.Substring(0, Math.Min(2, firstName.Length)).ToUpper();
+    }
+
+    private void ShowSettings()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        DialogService.Show<SettingsDialog>("Settings", options);
+    }
 }
