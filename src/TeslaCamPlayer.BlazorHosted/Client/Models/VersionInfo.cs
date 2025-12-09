@@ -11,37 +11,10 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
 
     public static class VersionInfo
     {
-        public const string CurrentVersion = "2025-12-0.9.3";
+        public const string CurrentVersion = "2025-12-0.9";
 
         public static readonly List<VersionRelease> Releases = new List<VersionRelease>
         {
-            new VersionRelease
-            {
-                Version = "2025-12-0.9.3",
-                Date = "2025-12-09",
-                Changes = new List<string>
-                {
-                    "Merge pull request #22 from LordVaderXIII/jules/update-version-docs-10146979834830408376"
-                }
-            },
-            new VersionRelease
-            {
-                Version = "2025-12-0.9.2",
-                Date = "2025-12-09",
-                Changes = new List<string>
-                {
-                    "Bump version to 0.4 and update changelog"
-                }
-            },
-            new VersionRelease
-            {
-                Version = "2025-12-0.9.1",
-                Date = "2025-12-09",
-                Changes = new List<string>
-                {
-                    "Merge pull request #21 from LordVaderXIII/jules-api-integration"
-                }
-            },
             new VersionRelease
             {
                 Version = "2025-12-0.9",
@@ -49,15 +22,6 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
                 Changes = new List<string>
                 {
                     "feat: Integrate Jules API for automated error reporting and bug fix PRs"
-                }
-            },
-            new VersionRelease
-            {
-                Version = "2025-12-0.8.5",
-                Date = "2025-12-09",
-                Changes = new List<string>
-                {
-                    "Merge pull request #20 from LordVaderXIII/fix/mobile-video-gap"
                 }
             },
             new VersionRelease
@@ -71,29 +35,11 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "2025-12-0.8.3",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #19 from LordVaderXIII/mobile-layout-fix"
-                }
-            },
-            new VersionRelease
-            {
                 Version = "2025-12-0.8.2",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
-                    "Fix mobile video player size and increment version to 0.2"
-                }
-            },
-            new VersionRelease
-            {
-                Version = "2025-12-0.8.1",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #18 from LordVaderXIII/version-control-display"
+                    "Fix mobile video player size"
                 }
             },
             new VersionRelease
@@ -107,29 +53,11 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "2025-12-0.7.2",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #17 from LordVaderXIII/ios-video-fix"
-                }
-            },
-            new VersionRelease
-            {
                 Version = "2025-12-0.7.1",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
                     "fix(frontend): prevent iOS native player takeover"
-                }
-            },
-            new VersionRelease
-            {
-                Version = "2025-12-0.7",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #16 from LordVaderXIII/feature/skip-buttons"
                 }
             },
             new VersionRelease
@@ -143,29 +71,11 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "2025-12-0.6.12",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #15 from LordVaderXIII/mobile-friendly-ui"
-                }
-            },
-            new VersionRelease
-            {
                 Version = "2025-12-0.6.11",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
                     "Update UI to be mobile-friendly for iPhone 16 Pro Max"
-                }
-            },
-            new VersionRelease
-            {
-                Version = "2025-12-0.6.10",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #14 from LordVaderXIII/fix-export-bugs"
                 }
             },
             new VersionRelease
@@ -179,29 +89,11 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "2025-12-0.6.8",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #13 from LordVaderXIII/bugfix/export-ffmpeg-stream-specifier"
-                }
-            },
-            new VersionRelease
-            {
                 Version = "2025-12-0.6.7",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
                     "Fix FFmpeg invalid stream specifier in ExportService"
-                }
-            },
-            new VersionRelease
-            {
-                Version = "2025-12-0.6.6",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #12 from LordVaderXIII/fix-exports-and-persist-jobs"
                 }
             },
             new VersionRelease
@@ -215,29 +107,11 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "2025-12-0.6.4",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #11 from LordVaderXIII/fix-export-ffmpeg-failure"
-                }
-            },
-            new VersionRelease
-            {
                 Version = "2025-12-0.6.3",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
                     "Fix export job failure by handling empty inputs and improving seek strategy"
-                }
-            },
-            new VersionRelease
-            {
-                Version = "2025-12-0.6.2",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #10 from LordVaderXIII/fix-export-bug-unknown-camera"
                 }
             },
             new VersionRelease
@@ -251,29 +125,11 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "2025-12-0.6",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #9 from LordVaderXIII/clip-export-feature"
-                }
-            },
-            new VersionRelease
-            {
                 Version = "2025-12-0.5",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
                     "feat: Add clip export feature with camera selection and timeline trimming"
-                }
-            },
-            new VersionRelease
-            {
-                Version = "2025-12-0.4.3",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #8 from LordVaderXIII/fix-build-cabin-camera"
                 }
             },
             new VersionRelease
@@ -287,29 +143,11 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "2025-12-0.4.1",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #7 from LordVaderXIII/video-player-labels-favicon"
-                }
-            },
-            new VersionRelease
-            {
                 Version = "2025-12-0.4",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
                     "feat: Add camera labels to video player and update favicon"
-                }
-            },
-            new VersionRelease
-            {
-                Version = "2025-12-0.3",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #6 from LordVaderXIII/feature/sqlite-sync"
                 }
             },
             new VersionRelease
@@ -323,29 +161,11 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "2025-12-0.2.6",
-                Date = "2025-12-08",
-                Changes = new List<string>
-                {
-                    "Merge pull request #5 from LordVaderXIII/bugfix/grouping-and-deadlock"
-                }
-            },
-            new VersionRelease
-            {
                 Version = "2025-12-0.2.5",
                 Date = "2025-12-08",
                 Changes = new List<string>
                 {
                     "Fix ClipsService loop logic and FfProbeService deadlock"
-                }
-            },
-            new VersionRelease
-            {
-                Version = "2025-12-0.2.4",
-                Date = "2025-12-05",
-                Changes = new List<string>
-                {
-                    "Merge pull request #4 from LordVaderXIII/bugfix/camera-swap-and-reload"
                 }
             },
             new VersionRelease
@@ -359,15 +179,6 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "2025-12-0.2.2",
-                Date = "2025-12-04",
-                Changes = new List<string>
-                {
-                    "Merge pull request #3 from LordVaderXIII/bugfix/limit-concurrency"
-                }
-            },
-            new VersionRelease
-            {
                 Version = "2025-12-0.2.1",
                 Date = "2025-12-04",
                 Changes = new List<string>
@@ -377,20 +188,20 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
             },
             new VersionRelease
             {
-                Version = "2025-12-0.2",
-                Date = "2025-12-04",
-                Changes = new List<string>
-                {
-                    "Merge pull request #1 from LordVaderXIII/feature/add-pillar-cameras-and-layout"
-                }
-            },
-            new VersionRelease
-            {
                 Version = "2025-12-0.1",
                 Date = "2025-12-04",
                 Changes = new List<string>
                 {
                     "feat: add support for pillar cameras and update viewer layout"
+                }
+            },
+            new VersionRelease
+            {
+                Version = "---",
+                Date = "---",
+                Changes = new List<string>
+                {
+                    "Forked from Rene-Sackers/TeslaCamPlayer:master due to inactivity."
                 }
             },
             new VersionRelease
