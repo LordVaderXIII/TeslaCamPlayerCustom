@@ -24,6 +24,12 @@ else
 		<MudText Typo="Typo.caption">v@(VersionInfo.CurrentVersion)</MudText>
 	</div>
 
+    <div class="user-profile-icon" @onclick="ShowSettings">
+        <MudAvatar Color="Color.Secondary" Size="Size.Medium" Style="cursor: pointer">
+            @GetInitials()
+        </MudAvatar>
+    </div>
+
 	<div class="main-content">
 		<div class="viewer-container">
 			<ClipViewer @ref="_clipViewer"

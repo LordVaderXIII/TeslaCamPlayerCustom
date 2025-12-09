@@ -1,0 +1,101 @@
+@using TeslaCamPlayer.BlazorHosted.Shared.Models
+@using Microsoft.AspNetCore.Components.Authorization
+@using TeslaCamPlayer.BlazorHosted.Client.Providers
+@inject HttpClient HttpClient
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager NavigationManager
+
+<MudDialog>
+    <DialogContent>
+        <MudForm @ref="_form" @bind-IsValid="_isValid">
+            <MudSwitch T="bool" @bind-Checked="_isEnabled" Label="Enable Authentication" Color="Color.Primary" Class="mb-4" />
+
+            @if (_isEnabled)
+            {
+                <MudAlert Severity="Severity.Info" Class="mb-4">
+                    If this is your first time enabling authentication, please set a password below.
+                </MudAlert>
+
+                <MudTextField @bind-Value="_username" Label="Username" Required="true" RequiredError="Username is required!" Variant="Variant.Outlined" Class="mb-4" />
+                <MudTextField @bind-Value="_firstName" Label="First Name" Variant="Variant.Outlined" Class="mb-4" HelperText="Displayed in the top bar" />
+                <MudTextField @bind-Value="_password" Label="Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4"
+                              HelperText="@(_isOriginallyEnabled ? "Leave blank to keep current password" : "Required")"
+                              Required="@(!_isOriginallyEnabled)" RequiredError="Password is required!" />
+            }
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Save" Disabled="@(!_isValid)">Save</MudButton>
+        @if (_isOriginallyEnabled)
+        {
+             <MudButton Color="Color.Error" OnClick="Logout" Class="ml-2">Logout</MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private bool _isEnabled;
+    private bool _isOriginallyEnabled;
+    private string _username;
+    private string _password;
+    private string _firstName;
+    private bool _isValid;
+    private MudForm _form;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var status = await HttpClient.GetFromJsonAsync<AuthStatus>("api/auth/status");
+            if (status != null)
+            {
+                _isEnabled = status.AuthRequired;
+                _isOriginallyEnabled = status.AuthRequired;
+                _username = status.Username;
+                _firstName = status.FirstName;
+            }
+        }
+        catch
+        {
+            // Handle error
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task Save()
+    {
+        await _form.Validate();
+        if (!_form.IsValid) return;
+
+        var request = new UpdateAuthRequest
+        {
+            IsEnabled = _isEnabled,
+            Username = _username,
+            Password = _password,
+            FirstName = _firstName
+        };
+
+        var response = await HttpClient.PostAsJsonAsync("api/auth/update", request);
+        if (response.IsSuccessStatusCode)
+        {
+            // Refresh auth state
+            ((CustomAuthenticationStateProvider)AuthStateProvider).StateChanged();
+            MudDialog.Close(DialogResult.Ok(true));
+        }
+        else
+        {
+            // Show error
+        }
+    }
+
+    private async Task Logout()
+    {
+        await HttpClient.PostAsync("api/auth/logout", null);
+        ((CustomAuthenticationStateProvider)AuthStateProvider).StateChanged();
+        NavigationManager.NavigateTo("/login", true);
+    }
+}
