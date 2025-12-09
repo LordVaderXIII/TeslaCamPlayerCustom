@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
+using TeslaCamPlayer.BlazorHosted.Shared.Models;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Services
 {
@@ -31,38 +32,36 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
             _httpClient = new HttpClient();
         }
 
-        public async Task ReportErrorAsync(Exception ex, string contextInfo, string stackTrace = null)
+        public async Task<JulesSessionResult> ReportErrorAsync(Exception ex, string contextInfo, string stackTrace = null)
         {
-            await ReportErrorInternalAsync(ex.Message, stackTrace ?? ex.StackTrace, contextInfo);
+            return await ReportErrorInternalAsync(ex.Message, stackTrace ?? ex.StackTrace, contextInfo);
         }
 
-        public async Task ReportFrontendErrorAsync(string message, string stackTrace, string contextInfo)
+        public async Task<JulesSessionResult> ReportFrontendErrorAsync(string message, string stackTrace, string contextInfo)
         {
-            await ReportErrorInternalAsync(message, stackTrace, contextInfo);
+            return await ReportErrorInternalAsync(message, stackTrace, contextInfo);
         }
 
-        private async Task ReportErrorInternalAsync(string message, string stackTrace, string contextInfo)
+        private async Task<JulesSessionResult> ReportErrorInternalAsync(string message, string stackTrace, string contextInfo)
         {
             var apiKey = _configuration["JULES_API_KEY"];
             if (string.IsNullOrEmpty(apiKey))
             {
                 _logger.LogWarning("JULES_API_KEY is not set. Skipping error reporting to Jules.");
-                return;
+                return new JulesSessionResult { IsSuccess = false, Message = "JULES_API_KEY is not set." };
             }
 
             var source = _configuration["JULES_SOURCE"];
             if (string.IsNullOrEmpty(source))
             {
-                // Try to find a source if not explicitly set?
-                // For now, log warning. The user needs to configure this.
                  _logger.LogWarning("JULES_SOURCE is not set. Skipping error reporting to Jules. Please set JULES_SOURCE to 'sources/github/OWNER/REPO'.");
-                 return;
+                 return new JulesSessionResult { IsSuccess = false, Message = "JULES_SOURCE is not set." };
             }
 
             if (!await CheckAndIncrementDailyLimitAsync())
             {
                 _logger.LogWarning("Daily limit for Jules sessions reached. Skipping error report.");
-                return;
+                return new JulesSessionResult { IsSuccess = false, Message = "Daily limit for Jules sessions reached." };
             }
 
             try
@@ -95,16 +94,19 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
                 {
                     var responseString = await response.Content.ReadAsStringAsync();
                     _logger.LogInformation($"Successfully created Jules session: {responseString}");
+                    return new JulesSessionResult { IsSuccess = true, SessionResponse = responseString, Message = "Successfully created Jules session." };
                 }
                 else
                 {
                     var error = await response.Content.ReadAsStringAsync();
                     _logger.LogError($"Failed to create Jules session. Status: {response.StatusCode}, Error: {error}");
+                    return new JulesSessionResult { IsSuccess = false, Error = error, Message = $"Failed to create Jules session. Status: {response.StatusCode}" };
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while reporting to Jules API.");
+                return new JulesSessionResult { IsSuccess = false, Message = "Exception while reporting to Jules API.", Error = ex.Message };
             }
         }
 
@@ -117,7 +119,6 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
             sb.AppendLine($"Context: {contextInfo}");
 
             // App Version
-            // Assuming version is 1.0 or read from assembly
             var version = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Version?.ToString() ?? "Unknown";
             sb.AppendLine($"App Version: {version}");
 
@@ -129,7 +130,6 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
             sb.AppendLine("Stack Trace:");
             sb.AppendLine(stackTrace);
 
-            // Attempt to extract snippet
             var snippet = ExtractSnippet(stackTrace);
             if (!string.IsNullOrEmpty(snippet))
             {
@@ -146,9 +146,6 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
             try
             {
                 if (string.IsNullOrEmpty(stackTrace)) return null;
-
-                // Parse stack trace to find file and line number
-                // Example: at Namespace.Class.Method() in /path/to/file.cs:line 42
                 var lines = stackTrace.Split('\n');
                 foreach (var line in lines)
                 {
@@ -192,10 +189,9 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
         {
             try
             {
-                var dataPath = _settingsProvider.Settings.ClipsRootPath; // Use persistent storage
+                var dataPath = _settingsProvider.Settings.ClipsRootPath;
                 if (string.IsNullOrEmpty(dataPath) || !Directory.Exists(dataPath))
                 {
-                     // Fallback to local data dir if clips path not set yet?
                      dataPath = "Data";
                      if (!Directory.Exists(dataPath)) Directory.CreateDirectory(dataPath);
                 }
@@ -228,13 +224,6 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error checking daily limit.");
-                return true; // Fail open or closed? Fail open might spam, fail closed might miss.
-                             // Let's return true so we don't block reporting on FS error, but log it.
-                             // Actually better to fail closed to be safe?
-                             // "If limit reached, just log the error locally without reporting to Jules."
-                             // If we can't read the file, maybe we should assume limit reached to be safe?
-                             // But let's assume if file error, we allow it but maybe limit in memory.
-                             // I'll stick to returning true for now but logging.
                 return true;
             }
         }

@@ -13,6 +13,7 @@ This project is a .NET 8 Blazor Hosted application designed to view and export v
 ## Key Services
 ### Server
 - **`ClipsService`**: Scans the clips directory, parses filenames, and builds the clip database. Handles concurrency with `SemaphoreSlim`.
+- **`JulesApiService`**: Integrates with the Jules AI API to report errors and request automated bug fixes. Limits sessions to 5 per day.
 - **`ExportService`**: Manages video export jobs. Uses `ffmpeg` to composite multiple camera views (Main + Side views) into a single MP4 file.
   - **Layout Logic**:
     - Supports dynamic layouts based on camera count.
@@ -37,3 +38,4 @@ This project is a .NET 8 Blazor Hosted application designed to view and export v
 - **Exports**: Saved to `ExportedClips` in the clips root.
 - **Database**: SQLite `teslacam.db` used for indexing.
 - **Authentication**: Single-user (Admin) authentication system. Default is OFF. Controlled via `Users` table and environment variable `RESET_AUTH=true`.
+- **Logs**: Application logs are stored in `Logs/` and accessible via the User Profile "Logs" section.

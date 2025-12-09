@@ -1,0 +1,150 @@
+@using TeslaCamPlayer.BlazorHosted.Shared.Models
+@inject HttpClient HttpClient
+@inject ISnackbar Snackbar
+
+<MudDialog MaxWidth="MaxWidth.Large" FullWidth="true">
+    <DialogContent>
+        <MudText Typo="Typo.h5" Class="mb-4">Resolvable Errors</MudText>
+        @if (_candidates == null)
+        {
+            <MudProgressCircular Indeterminate="true" />
+        }
+        else if (!_candidates.Any())
+        {
+            <MudAlert Severity="Severity.Success">No resolvable errors found.</MudAlert>
+        }
+        else
+        {
+            <MudTable Items="_candidates" Dense="true" Hover="true" Striped="true" FixedHeader="true" Height="300px">
+                <HeaderContent>
+                    <MudTh>Timestamp</MudTh>
+                    <MudTh>Message</MudTh>
+                    <MudTh>Action</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Timestamp">@context.Timestamp.ToString("HH:mm:ss")</MudTd>
+                    <MudTd DataLabel="Message">
+                        <MudText Typo="Typo.body2" Style="white-space: pre-wrap; max-height: 100px; overflow-y: auto;">
+                            @context.Message.Split('\n').FirstOrDefault()
+                        </MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Action">
+                        <MudButton Variant="Variant.Filled" Color="Color.Secondary" Size="Size.Small" OnClick="@(() => SendToJules(context))">
+                            Send to Jules
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+
+        <MudDivider Class="my-4" />
+
+        <MudText Typo="Typo.h5" Class="mb-4">Application Logs</MudText>
+        <div style="background-color: #1e1e1e; color: #d4d4d4; padding: 10px; border-radius: 4px; height: 300px; overflow-y: scroll; font-family: monospace;">
+            @if (_logs == null)
+            {
+                <MudText>Loading logs...</MudText>
+            }
+            else
+            {
+                @foreach (var log in _logs)
+                {
+                    <div style="white-space: pre-wrap;">@log.RawLine</div>
+                }
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@if (_showProgress)
+{
+    <MudDialog IsVisible="true">
+        <DialogContent>
+             <MudText Typo="Typo.h6">Sending to Jules...</MudText>
+             @if (_sending)
+             {
+                 <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7" />
+             }
+             else
+             {
+                 @if (_lastResult != null && _lastResult.IsSuccess)
+                 {
+                     <MudAlert Severity="Severity.Success">@_lastResult.Message</MudAlert>
+                     <MudText Class="mt-2" Typo="Typo.body2">Response:</MudText>
+                     <div style="background-color: #f5f5f5; padding: 10px; border-radius: 4px; max-height: 200px; overflow-y: auto;">
+                         <pre>@_lastResult.SessionResponse</pre>
+                     </div>
+                 }
+                 else
+                 {
+                     <MudAlert Severity="Severity.Error">@(_lastResult?.Message ?? "Unknown error")</MudAlert>
+                     @if (!string.IsNullOrEmpty(_lastResult?.Error))
+                     {
+                         <pre>@_lastResult.Error</pre>
+                     }
+                 }
+             }
+        </DialogContent>
+        <DialogActions>
+            <MudButton OnClick="@(() => _showProgress = false)" Disabled="_sending">Close</MudButton>
+        </DialogActions>
+    </MudDialog>
+}
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private List<LogEntry> _logs;
+    private List<LogEntry> _candidates;
+    private bool _showProgress;
+    private bool _sending;
+    private JulesSessionResult _lastResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _logs = await HttpClient.GetFromJsonAsync<List<LogEntry>>("api/logs");
+            _candidates = _logs.Where(l => l.IsCandidate).ToList();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Failed to load logs: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task SendToJules(LogEntry entry)
+    {
+        _showProgress = true;
+        _sending = true;
+        _lastResult = null;
+        StateHasChanged();
+
+        try
+        {
+            var response = await HttpClient.PostAsJsonAsync("api/logs/report", entry);
+            if (response.IsSuccessStatusCode)
+            {
+                _lastResult = await response.Content.ReadFromJsonAsync<JulesSessionResult>();
+            }
+            else
+            {
+                _lastResult = new JulesSessionResult { IsSuccess = false, Message = "Failed to communicate with server." };
+            }
+        }
+        catch (Exception ex)
+        {
+             _lastResult = new JulesSessionResult { IsSuccess = false, Message = ex.Message };
+        }
+        finally
+        {
+            _sending = false;
+            StateHasChanged();
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}

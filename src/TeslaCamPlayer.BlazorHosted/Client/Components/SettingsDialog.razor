@@ -4,6 +4,7 @@
 @inject HttpClient HttpClient
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager NavigationManager
+@inject IDialogService DialogService
 
 <MudDialog>
     <DialogContent>
@@ -25,6 +26,7 @@
         </MudForm>
     </DialogContent>
     <DialogActions>
+        <MudButton OnClick="OpenLogs" Variant="Variant.Outlined" Color="Color.Info" Class="mr-auto">Logs</MudButton>
         <MudButton OnClick="Cancel">Cancel</MudButton>
         <MudButton Color="Color.Primary" OnClick="Save" Disabled="@(!_isValid)">Save</MudButton>
         @if (_isOriginallyEnabled)
@@ -97,5 +99,10 @@
         await HttpClient.PostAsync("api/auth/logout", null);
         ((CustomAuthenticationStateProvider)AuthStateProvider).StateChanged();
         NavigationManager.NavigateTo("/login", true);
+    }
+
+    private void OpenLogs()
+    {
+        DialogService.Show<LogsDialog>("Application Logs", new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true });
     }
 }
