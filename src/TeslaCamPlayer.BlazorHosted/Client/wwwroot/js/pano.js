@@ -148,8 +148,6 @@ window.teslaPano = {
             // So if I have 60 deg, u goes from 0 to 1/6. The video will be squished 6x!
             // I need to fix UVs.
 
-            fixCylinderUVs(geometry);
-
             // Flip for inside view
             mesh.scale.x = -1; // Mirror horizontally because we are looking from inside
 
@@ -220,25 +218,3 @@ window.teslaPano = {
     }
 };
 
-function fixCylinderUVs(geometry) {
-    // Geometry has attributes.uv
-    const uvAttribute = geometry.attributes.uv;
-    const count = uvAttribute.count; // vertices
-
-    // We want to map u from 0..1 across the specific thetaLength.
-    // ThreeJS maps u based on angle / 2PI.
-    // Our thetaLength is PI/3.
-    // So current u values range from startU to startU + (1/6).
-    // We want to normalize them to 0..1.
-    // But since each mesh is a separate geometry created with thetaStart=0,
-    // u ranges from 0 to (1/6).
-    // So we just multiply u by 6.
-
-    for (let i = 0; i < count; i++) {
-        let u = uvAttribute.getX(i);
-        // u is between 0 and 1/6 (approx 0.1666)
-        u = u * 6;
-        uvAttribute.setX(i, u);
-    }
-    uvAttribute.needsUpdate = true;
-}
