@@ -12,7 +12,7 @@ using TeslaCamPlayer.BlazorHosted.Shared.Models;
 
 namespace TeslaCamPlayer.BlazorHosted.Client.Components;
 
-public partial class ClipViewer : ComponentBase
+public partial class ClipViewer : ComponentBase, IDisposable
 {
 	private static readonly TimeSpan TimelineScrubTimeout = TimeSpan.FromSeconds(2);
 	
@@ -65,6 +65,7 @@ public partial class ClipViewer : ComponentBase
 	private CancellationTokenSource _loadSegmentCts = new();
 	private Cameras _mainCamera = Cameras.Front;
     private bool _showCameraOverlay; // Mobile camera switch overlay
+    private bool _is360Mode = false;
 	private double _playbackRate = 1.0;
 	private double PlaybackRate
 	{
@@ -112,29 +113,6 @@ public partial class ClipViewer : ComponentBase
 	{
 		if (!firstRender)
 			return;
-
-		// Attach listeners only if components exist (they might be conditionally rendered)
-		// But in ClipViewer they are always rendered if segment exists.
-        // Actually, in the Razor file, video players are inside if blocks based on _mainCamera.
-        // So we might get null refs if we try to attach events to players that are not rendered?
-        // Wait, the Razor file uses if blocks to render ONE main player, and then other blocks to render SIDE players.
-        // But the @ref works if the component is rendered.
-        // If a component is NOT rendered, the ref will be null.
-        // The original code was attaching events unconditionally in OnAfterRender?
-        // Let's check the original OnAfterRender.
-        // It attached to all of them. This implies they were all rendered.
-        // In the Razor file:
-        // Main View: 9 IF blocks. Only 1 is true. So 1 main player is rendered.
-        // Side View: 9 IF blocks. 8 are true (!= main). So 8 side players are rendered.
-        // So all 9 players should be rendered in total (1 main + 8 side).
-        // Wait, the `VideoPlayer` component uses `@key`.
-        // The refs `_videoPlayerFront` etc. are used in BOTH main view and side view blocks?
-        // No, you can't reuse a ref for different component instances.
-        // In the Razor file:
-        // <VideoPlayer @ref="_videoPlayerFront" ... in Main View if Front is Main
-        // <VideoPlayer @ref="_videoPlayerFront" ... in Side View if Front is NOT Main
-        // Since only one of these conditions is true at a time, `_videoPlayerFront` will always point to the single instance of the Front player (either in main or side).
-        // So it's safe.
 
 		if (_videoPlayerFront != null) _videoPlayerFront.Loaded += () => { Console.WriteLine("Loaded: Front"); _videoLoadedEventCount++; };
 		if (_videoPlayerLeftRepeater != null) _videoPlayerLeftRepeater.Loaded += () => { Console.WriteLine("Loaded: Left"); _videoLoadedEventCount++; };
@@ -517,4 +495,40 @@ public partial class ClipViewer : ComponentBase
 
 		await OnExportRequested.InvokeAsync(request);
 	}
+
+    private async Task Toggle360Mode()
+    {
+        _is360Mode = !_is360Mode;
+
+        if (_is360Mode)
+        {
+            // Initialize Three.js Pano
+            // Collect video elements
+            var videoElements = new Dictionary<string, ElementReference>();
+            if (_videoPlayerFront != null) videoElements["Front"] = _videoPlayerFront.VideoElement;
+            if (_videoPlayerLeftBPillar != null) videoElements["LeftBPillar"] = _videoPlayerLeftBPillar.VideoElement;
+            if (_videoPlayerLeftRepeater != null) videoElements["LeftRepeater"] = _videoPlayerLeftRepeater.VideoElement;
+            if (_videoPlayerBack != null) videoElements["Back"] = _videoPlayerBack.VideoElement;
+            if (_videoPlayerRightRepeater != null) videoElements["RightRepeater"] = _videoPlayerRightRepeater.VideoElement;
+            if (_videoPlayerRightBPillar != null) videoElements["RightBPillar"] = _videoPlayerRightBPillar.VideoElement;
+
+            await InvokeAsync(StateHasChanged); // Ensure DOM is updated with IDs/classes
+            await Task.Delay(50); // Small delay to allow DOM render
+
+            await JsRuntime.InvokeVoidAsync("teslaPano.init", "pano-container", videoElements);
+        }
+        else
+        {
+            // Dispose
+            await JsRuntime.InvokeVoidAsync("teslaPano.dispose");
+        }
+    }
+
+    public void Dispose()
+    {
+        // Cleanup if component is destroyed while in 360 mode
+         _ = JsRuntime.InvokeVoidAsync("teslaPano.dispose");
+         _setVideoTimeDebounceTimer?.Dispose();
+         _loadSegmentCts?.Dispose();
+    }
 }
