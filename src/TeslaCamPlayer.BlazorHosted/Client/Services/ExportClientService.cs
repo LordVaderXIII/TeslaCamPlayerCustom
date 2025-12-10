@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -26,7 +27,7 @@ public class ExportClientService : IExportClientService
 
     public async Task<IEnumerable<ExportJob>> GetJobsAsync()
     {
-        return await _httpClient.GetFromJsonAsync<IEnumerable<ExportJob>>("Api/GetJobs");
+        return await _httpClient.GetFromJsonAsync<IEnumerable<ExportJob>>("Api/GetJobs") ?? Enumerable.Empty<ExportJob>();
     }
 
     public async Task<ExportJob> GetJobAsync(Guid id)
