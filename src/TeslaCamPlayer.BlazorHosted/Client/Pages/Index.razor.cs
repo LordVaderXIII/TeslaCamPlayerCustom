@@ -107,7 +107,16 @@ public partial class Index : ComponentBase
 		await InvokeAsync(StateHasChanged);
 
 		_setDatePickerInitialDate = false;
-		_clips = await HttpClient.GetFromNewtonsoftJsonAsync<Clip[]>($"Api/GetClips?syncMode={syncMode}&_={DateTime.Now.Ticks}");
+        try
+        {
+		    _clips = await HttpClient.GetFromNewtonsoftJsonAsync<Clip[]>($"Api/GetClips?syncMode={syncMode}&_={DateTime.Now.Ticks}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching clips: {ex}");
+            Snackbar.Add("Failed to load clips. Please try again.", Severity.Error);
+            _clips = Array.Empty<Clip>();
+        }
 
 		FilterClips();
 	}
