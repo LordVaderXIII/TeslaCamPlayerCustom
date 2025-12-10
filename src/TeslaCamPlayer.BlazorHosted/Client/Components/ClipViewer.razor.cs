@@ -181,6 +181,11 @@ public partial class ClipViewer : ComponentBase, IDisposable
 
 		await ExecuteOnPlayers(async p => await p.SetPlaybackRateAsync(PlaybackRate));
 
+		if (_is360Mode)
+		{
+			await Update360ModeAsync();
+		}
+
 		return !_loadSegmentCts.IsCancellationRequested;
 	}
 
@@ -502,29 +507,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
 
         if (_is360Mode)
         {
-            // Initialize Three.js Pano
-            // Collect video elements
-            var videoElements = new Dictionary<string, ElementReference>();
-            if (_videoPlayerFront != null) videoElements["Front"] = _videoPlayerFront.VideoElement;
-            if (_videoPlayerLeftBPillar != null) videoElements["LeftBPillar"] = _videoPlayerLeftBPillar.VideoElement;
-            if (_videoPlayerLeftRepeater != null) videoElements["LeftRepeater"] = _videoPlayerLeftRepeater.VideoElement;
-            if (_videoPlayerBack != null) videoElements["Back"] = _videoPlayerBack.VideoElement;
-            if (_videoPlayerRightRepeater != null) videoElements["RightRepeater"] = _videoPlayerRightRepeater.VideoElement;
-            if (_videoPlayerRightBPillar != null) videoElements["RightBPillar"] = _videoPlayerRightBPillar.VideoElement;
-
-            await InvokeAsync(StateHasChanged); // Ensure DOM is updated with IDs/classes
-            await Task.Delay(50); // Small delay to allow DOM render
-
-            try
-            {
-                await JsRuntime.InvokeVoidAsync("teslaPano.init", "pano-container", videoElements);
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Failed to init 3D mode: {ex}");
-                _is360Mode = false;
-                await InvokeAsync(StateHasChanged);
-            }
+            await Update360ModeAsync();
         }
         else
         {
@@ -537,6 +520,33 @@ public partial class ClipViewer : ComponentBase, IDisposable
             {
                 Console.Error.WriteLine($"Failed to dispose 3D mode: {ex}");
             }
+        }
+    }
+
+    private async Task Update360ModeAsync()
+    {
+        // Initialize Three.js Pano
+        // Collect video elements
+        var videoElements = new Dictionary<string, ElementReference>();
+        if (_videoPlayerFront != null) videoElements["Front"] = _videoPlayerFront.VideoElement;
+        if (_videoPlayerLeftBPillar != null) videoElements["LeftBPillar"] = _videoPlayerLeftBPillar.VideoElement;
+        if (_videoPlayerLeftRepeater != null) videoElements["LeftRepeater"] = _videoPlayerLeftRepeater.VideoElement;
+        if (_videoPlayerBack != null) videoElements["Back"] = _videoPlayerBack.VideoElement;
+        if (_videoPlayerRightRepeater != null) videoElements["RightRepeater"] = _videoPlayerRightRepeater.VideoElement;
+        if (_videoPlayerRightBPillar != null) videoElements["RightBPillar"] = _videoPlayerRightBPillar.VideoElement;
+
+        await InvokeAsync(StateHasChanged); // Ensure DOM is updated with IDs/classes
+        await Task.Delay(50); // Small delay to allow DOM render
+
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("teslaPano.init", "pano-container", videoElements);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to init 3D mode: {ex}");
+            _is360Mode = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 

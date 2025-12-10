@@ -8,7 +8,7 @@
     </div>
 
     <!-- 3D Toggle Button -->
-    <div class="mode-switch-btn">
+    <div class="mode-switch-btn" style="@(_is360Mode ? "z-index: 10002; position: absolute;" : "")">
          <MudTooltip Text="@(_is360Mode ? "Exit 3D View" : "Enter 3D View")">
              <MudIconButton Icon="@(_is360Mode ? Icons.Material.Filled.ViewModule : Icons.Material.Filled.Panorama)"
                             Variant="Variant.Filled"

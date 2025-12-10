@@ -2,7 +2,7 @@
 @inherits MudComponentBase
 
 <MudDialog>
-    <DialogContent>
+    <DialogContent Style="max-height: 70vh; overflow-y: auto;">
         <MudTimeline>
             @foreach (var release in VersionInfo.Releases)
             {

@@ -20,8 +20,8 @@
                 <MudAlert Severity="Severity.Error" Class="mb-4">@_errorMessage</MudAlert>
             }
 
-            <MudTextField @bind-Value="_username" Label="Username" Variant="Variant.Outlined" Class="mb-4" />
-            <MudTextField @bind-Value="_password" Label="Password" Variant="Variant.Outlined" InputType="InputType.Password" OnKeyDown="HandleKeyDown" />
+            <MudTextField @bind-Value="_username" Label="Username" Variant="Variant.Outlined" Class="mb-4" UserAttributes="@(new Dictionary<string, object> { { "autocomplete", "username" }, { "name", "username" } })" />
+            <MudTextField @bind-Value="_password" Label="Password" Variant="Variant.Outlined" InputType="InputType.Password" OnKeyDown="HandleKeyDown" UserAttributes="@(new Dictionary<string, object> { { "autocomplete", "current-password" }, { "name", "password" } })" />
         </MudCardContent>
         <MudCardActions>
             <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true" OnClick="AttemptLogin">Login</MudButton>
