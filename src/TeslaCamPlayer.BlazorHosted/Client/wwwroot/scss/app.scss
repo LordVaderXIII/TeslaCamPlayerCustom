@@ -118,6 +118,10 @@ $event-item-inner-height: $event-item-height - $event-item-padding * 2;
 			transform: none;
 			display: flex;
 			min-height: 0;
+
+            .browser-date-picker {
+                align-self: center;
+            }
 		}
 	}
 
