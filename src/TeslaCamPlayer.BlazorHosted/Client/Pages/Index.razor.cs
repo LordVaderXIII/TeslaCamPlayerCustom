@@ -133,6 +133,7 @@ public partial class Index : ComponentBase
 
 		FilterClips();
 		await InvokeAsync(StateHasChanged);
+		await Task.CompletedTask;
 	}
 
 	private void EventFilterValuesChanged(EventFilterValues values)
@@ -218,7 +219,7 @@ public partial class Index : ComponentBase
 		_activeClip = clip;
 		await _clipViewer.SetClipAsync(_activeClip);
 		_ignoreDatePicked = clip.StartDate.Date;
-		_datePicker.Date = clip.StartDate.Date;
+		await _datePicker.GoToDate(clip.StartDate.Date);
 	}
 
     // New method for mobile interaction
@@ -304,7 +305,7 @@ public partial class Index : ComponentBase
 		_isExportMode = !_isExportMode;
 	}
 
-	private async Task ShowDownloads()
+	private void ShowDownloads()
 	{
 		var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true };
 		DialogService.Show<DownloadsDialog>("Export Jobs", options);

@@ -107,7 +107,7 @@
     {
         try
         {
-            _logs = await HttpClient.GetFromJsonAsync<List<LogEntry>>("api/logs?count=1000");
+            _logs = await HttpClient.GetFromJsonAsync<List<LogEntry>>("api/logs?count=1000") ?? new List<LogEntry>();
             _candidates = _logs.Where(l => l.IsCandidate).ToList();
         }
         catch (Exception ex)
