@@ -8,6 +8,7 @@ A self-hosted web player for viewing Tesla Sentry and Dashcam clips.
   - Front, Back, Left/Right Repeaters
   - Left/Right Pillars (New!)
   - Fisheye & Narrow (Legacy/Debug)
+- **3D/360° Mode:** Toggle a panoramic 3D view of all cameras stitched together (reconstructs the car's surroundings).
 - **Synchronized Playback:** All video feeds are synced by timestamp.
 - **Event Markers:** Visualize the exact moment of a Sentry event on the timeline.
 - **Clip Export:** Export custom clips with multiple camera angles merged into a single video file.

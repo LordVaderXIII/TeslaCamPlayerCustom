@@ -515,19 +515,35 @@ public partial class ClipViewer : ComponentBase, IDisposable
             await InvokeAsync(StateHasChanged); // Ensure DOM is updated with IDs/classes
             await Task.Delay(50); // Small delay to allow DOM render
 
-            await JsRuntime.InvokeVoidAsync("teslaPano.init", "pano-container", videoElements);
+            try
+            {
+                await JsRuntime.InvokeVoidAsync("teslaPano.init", "pano-container", videoElements);
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to init 3D mode: {ex}");
+                _is360Mode = false;
+                await InvokeAsync(StateHasChanged);
+            }
         }
         else
         {
             // Dispose
-            await JsRuntime.InvokeVoidAsync("teslaPano.dispose");
+            try
+            {
+                await JsRuntime.InvokeVoidAsync("teslaPano.dispose");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Failed to dispose 3D mode: {ex}");
+            }
         }
     }
 
     public void Dispose()
     {
         // Cleanup if component is destroyed while in 360 mode
-         _ = JsRuntime.InvokeVoidAsync("teslaPano.dispose");
+         _ = JsRuntime.InvokeVoidAsync("teslaPano.dispose").AsTask().ContinueWith(t => { /* ignore */ });
          _setVideoTimeDebounceTimer?.Dispose();
          _loadSegmentCts?.Dispose();
     }

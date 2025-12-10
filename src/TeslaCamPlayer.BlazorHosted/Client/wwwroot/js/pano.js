@@ -41,42 +41,31 @@ window.teslaPano = {
         this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.05;
-        this.controls.enableZoom = true;
+        // Disable built-in zoom (dolly) because it moves the camera.
+        // We want FOV zoom for a 360 viewer.
+        this.controls.enableZoom = false;
         this.controls.enablePan = false; // We want rotation, not panning the camera origin
-        this.controls.rotateSpeed = -0.5; // Negative to reverse drag direction for "inside" feel (dragging background)
+        this.controls.rotateSpeed = -0.5; // Negative to reverse drag direction for "inside" feel
 
         // Limit zoom to stay inside
         const radius = 10;
-        this.controls.minDistance = 0.1;
+        this.controls.minDistance = 0;
         this.controls.maxDistance = radius - 2.0;
 
-        // 5. Create Cylinder Segments
-        // Order: Left Repeater -> Left Pillar -> Front -> Right Pillar -> Right Repeater -> Back
-        // We map these to a circle.
-        // Front is Center (0 deg).
-        // Left is +Angle, Right is -Angle (or vice versa depending on system).
-        // Let's assume standard CCW from +X.
-        // But for "Inside" view, let's just place them relative to -Z (Front).
+        // Custom FOV Zoom Handler
+        this.onWheel = (event) => {
+            event.preventDefault();
 
-        // Configuration for segments
-        // We use 6 segments of 60 degrees (PI/3).
-        // Total 360.
-        // Height calculation: Video 4:3.
-        // Arc Length = R * theta = 10 * PI/3 = 10.47
-        // Height = 10.47 * (3/4) = 7.85
+            const zoomSpeed = 0.05;
+            this.camera.fov += event.deltaY * zoomSpeed;
+            this.camera.fov = Math.max(10, Math.min(100, this.camera.fov));
+            this.camera.updateProjectionMatrix();
+        };
+        container.addEventListener('wheel', this.onWheel, { passive: false });
+
+        // 5. Create Cylinder Segments
         const segmentHeight = 7.85;
         const segmentRadius = 10;
-
-        // Map of logical position to Camera Key
-        // Angles are in radians.
-        // 0 is usually +X in ThreeJS Cylinder.
-        // We want Front at -Z. -Z is 90 deg (PI/2) from +X? Or 270?
-        // Let's just create a Group and rotate it later.
-
-        // We will arrange segments linearly in circle:
-        // Segment 1 (Front): Center.
-        // Segment 2 (Left Pillar): Left of Front.
-        // ...
 
         const segments = [
             { key: "Front",         angleOffset: 0 },
@@ -106,47 +95,17 @@ window.teslaPano = {
             texture.format = THREE.RGBFormat;
 
             // Create Segment Geometry
-            // CylinderGeometry(radiusTop, radiusBottom, height, radialSegments, heightSegments, openEnded, thetaStart, thetaLength)
-            // thetaStart: default starts at +X axis (0).
             const geometry = new THREE.CylinderGeometry(
                 segmentRadius, segmentRadius, segmentHeight,
                 32, 1, true,
-                0, segmentAngle // Create a generic 60 deg slice starting at 0
+                0, segmentAngle
             );
-
-            // Correct UVs if needed? Standard Cylinder UVs should map full texture to the thetaLength slice.
-            // Actually, standard cylinder UVs map u=0..1 to theta=0..2PI.
-            // If we use thetaLength < 2PI, UVs usually cover the whole segment?
-            // Wait, CylinderGeometry UV generation:
-            // u = ( currentAngle ) / ( 2 * PI ) usually?
-            // If so, we need to remap UVs to 0..1 for just this slice.
-            // EASIER APPROACH: PlaneGeometry curved or just remap UVs.
-            // Let's check ThreeJS docs or behavior.
-            // Actually, simpler is to use `planeGeometry` and bend it, OR just map UVs manually.
-
-            // Let's try manual UV fix for the slice.
-            // Or use a helper function to create geometry.
-
-            // Alternative: Scale X = -1 for inside view.
 
             const material = new THREE.MeshBasicMaterial({ map: texture, side: THREE.BackSide });
             const mesh = new THREE.Mesh(geometry, material);
 
             // Position and Rotate the slice
-            // The slice is created from 0 to 60 deg.
-            // We want to rotate it to the correct slot.
-            // seg.angleOffset * 60 deg.
             mesh.rotation.y = seg.angleOffset * segmentAngle;
-
-            // Fix UVs:
-            // Access position attribute to calculate UVs?
-            // Actually, let's use a simpler primitive: Plane, positioned and rotated?
-            // No, user wants curved "Sphere/Cylinder".
-            // Let's assume CylinderGeometry allows correct mapping or we accept slight distortion/tiling.
-            // Wait, if I create a cylinder sector, ThreeJS maps 0..1 U to the WHOLE circumference usually?
-            // "The u coordinate is calculated by the angle... u = phi / ( 2 * PI )"
-            // So if I have 60 deg, u goes from 0 to 1/6. The video will be squished 6x!
-            // I need to fix UVs.
 
             // Flip for inside view
             mesh.scale.x = -1; // Mirror horizontally because we are looking from inside
@@ -155,17 +114,6 @@ window.teslaPano = {
         });
 
         // Rotate group so "Front" (offset 0) is at -Z.
-        // Currently Front is 0..60 deg (starting at +X).
-        // Center of Front slice is +30 deg.
-        // We want Center of Front slice to be at -Z (which is +90 deg or 270 deg?).
-        // -Z is 270 deg (3PI/2) in standard math (if X=0).
-        // Let's just rotate the Group until it looks right.
-        // Start with -PI/2 - (segmentAngle/2).
-        // Trial and error or logic:
-        // +X is 0. Front is 0..60. Center 30.
-        // We want Center to be at 90 deg (Left)? No, -90 (Right)?
-        // User looks at -Z.
-        // Let's rotate group by -90 deg - 30 deg = -120 deg.
         group.rotation.y = -Math.PI / 2 - (segmentAngle / 2);
 
         // Handle Resize
@@ -196,12 +144,26 @@ window.teslaPano = {
         if (this.onResize) {
             window.removeEventListener('resize', this.onResize);
         }
+
+        // Remove wheel listener
+        // We need the container element.
+        // Since we don't store it, we can query by ID if we knew it, or just rely on DOM removal clearing listeners (mostly).
+        // But better to remove it if possible.
+        // We didn't store container reference. Let's try to find it again or store it in init.
+        // Actually, if we remove the DOM element (renderer), the listener on 'container' still exists if container persists.
+        // The container is "pano-container" (passed in init).
+        const container = document.getElementById("pano-container");
+        if (container && this.onWheel) {
+            container.removeEventListener('wheel', this.onWheel);
+        }
+
         if (this.renderer) {
-            this.renderer.domElement.remove();
+            if (this.renderer.domElement && this.renderer.domElement.parentNode) {
+                this.renderer.domElement.parentNode.removeChild(this.renderer.domElement);
+            }
             this.renderer.dispose();
         }
-        // Dispose textures/materials?
-        // Ideally yes, traverse scene.
+
         if (this.scene) {
             this.scene.traverse((object) => {
                 if (object.geometry) object.geometry.dispose();
@@ -212,9 +174,13 @@ window.teslaPano = {
             });
             this.scene = null;
         }
-        this.controls = null;
+
+        if (this.controls) {
+             this.controls.dispose();
+             this.controls = null;
+        }
+
         this.camera = null;
         this.renderer = null;
     }
 };
-
