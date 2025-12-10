@@ -2,34 +2,36 @@
 @inherits MudComponentBase
 
 <MudDialog>
-    <DialogContent Style="max-height: 70vh; overflow-y: auto;">
-        <MudTimeline>
-            @foreach (var release in VersionInfo.Releases)
-            {
-                <MudTimelineItem>
-                    <ItemContent>
-                        <MudCard Elevation="25" Class="mt-n5">
-                            <MudCardHeader>
-                                <CardHeaderContent>
-                                    <MudText Typo="Typo.h6">v@(release.Version)</MudText>
-                                    <MudText Typo="Typo.caption">@release.Date</MudText>
-                                </CardHeaderContent>
-                            </MudCardHeader>
-                            <MudCardContent>
-                                <MudList Dense="true">
-                                    @foreach (var change in release.Changes)
-                                    {
-                                        <MudListItem Icon="@Icons.Material.Filled.Check" IconSize="Size.Small">
-                                            @change
-                                        </MudListItem>
-                                    }
-                                </MudList>
-                            </MudCardContent>
-                        </MudCard>
-                    </ItemContent>
-                </MudTimelineItem>
-            }
-        </MudTimeline>
+    <DialogContent>
+        <div style="max-height: 70vh; overflow-y: auto;">
+            <MudTimeline>
+                @foreach (var release in VersionInfo.Releases)
+                {
+                    <MudTimelineItem>
+                        <ItemContent>
+                            <MudCard Elevation="25" Class="mt-n5">
+                                <MudCardHeader>
+                                    <CardHeaderContent>
+                                        <MudText Typo="Typo.h6">v@(release.Version)</MudText>
+                                        <MudText Typo="Typo.caption">@release.Date</MudText>
+                                    </CardHeaderContent>
+                                </MudCardHeader>
+                                <MudCardContent>
+                                    <MudList Dense="true">
+                                        @foreach (var change in release.Changes)
+                                        {
+                                            <MudListItem Icon="@Icons.Material.Filled.Check" IconSize="Size.Small">
+                                                @change
+                                            </MudListItem>
+                                        }
+                                    </MudList>
+                                </MudCardContent>
+                            </MudCard>
+                        </ItemContent>
+                    </MudTimelineItem>
+                }
+            </MudTimeline>
+        </div>
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Close</MudButton>
