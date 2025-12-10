@@ -266,5 +266,25 @@
              top: 10px;
              right: 15px; // Adjust if needed
         }
+
+        &.viewer--360 {
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh !important;
+            z-index: 5000;
+            background: black;
+
+            // Ensure controls stay at bottom
+            .controls {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                background: rgba(0,0,0,0.5);
+                z-index: 10001;
+            }
+        }
     }
 }

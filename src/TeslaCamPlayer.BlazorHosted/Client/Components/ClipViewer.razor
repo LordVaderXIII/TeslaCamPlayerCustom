@@ -1,14 +1,14 @@
 @using TeslaCamPlayer.BlazorHosted.Shared.Models
 @inject IJSRuntime JSRuntime
 
-<div class="viewer">
+<div class="viewer @(_is360Mode ? "viewer--360" : "")">
     <!-- Camera Switch Button (Mobile Only) -->
     <div class="camera-switch-btn d-md-none" style="@(_is360Mode ? "display:none" : "")">
         <MudIconButton Icon="@Icons.Material.Filled.Cameraswitch" Variant="Variant.Filled" Color="Color.Secondary" OnClick="@ToggleCameraOverlay" />
     </div>
 
     <!-- 3D Toggle Button -->
-    <div class="mode-switch-btn" style="@(_is360Mode ? "z-index: 10002; position: absolute;" : "")">
+    <div class="mode-switch-btn @(_is360Mode ? "d-none d-md-block" : "")" style="@(_is360Mode ? "z-index: 10002; position: absolute;" : "")">
          <MudTooltip Text="@(_is360Mode ? "Exit 3D View" : "Enter 3D View")">
              <MudIconButton Icon="@(_is360Mode ? Icons.Material.Filled.ViewModule : Icons.Material.Filled.Panorama)"
                             Variant="Variant.Filled"
