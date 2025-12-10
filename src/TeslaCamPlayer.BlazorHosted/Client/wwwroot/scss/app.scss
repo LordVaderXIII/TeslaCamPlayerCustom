@@ -147,14 +147,6 @@ $event-item-inner-height: $event-item-height - $event-item-padding * 2;
 	&:hover {
 		background-color: rgba(0, 0, 0, 0.8);
 	}
-
-	// Adjust for mobile to avoid overlap with toggle button
-	@media (max-width: 960px) {
-		top: auto;
-		bottom: 0;
-		border-bottom-right-radius: 0;
-		border-top-right-radius: 4px;
-	}
 }
 
 .user-profile-icon {
