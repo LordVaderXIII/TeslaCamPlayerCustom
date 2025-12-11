@@ -4,7 +4,7 @@
 <div class="viewer @(_is360Mode ? "viewer--360" : "")">
     <!-- Camera Switch Button (Mobile Only) -->
     <div class="camera-switch-btn d-md-none" style="@(_is360Mode ? "display:none" : "")">
-        <MudIconButton Icon="@Icons.Material.Filled.Cameraswitch" Variant="Variant.Filled" Color="Color.Secondary" OnClick="@ToggleCameraOverlay" />
+        <MudIconButton Icon="@Icons.Material.Filled.Cameraswitch" Variant="Variant.Filled" Color="Color.Secondary" OnClick="@ToggleCameraOverlay" AriaLabel="Switch Camera" />
     </div>
 
     <!-- 3D Toggle Button -->
@@ -14,7 +14,8 @@
                             Variant="Variant.Filled"
                             Color="Color.Primary"
                             OnClick="@Toggle360Mode"
-                            Class="mode-toggle-icon"/>
+                            Class="mode-toggle-icon"
+                            AriaLabel="@(_is360Mode ? "Exit 3D View" : "Enter 3D View")" />
          </MudTooltip>
     </div>
 
@@ -126,7 +127,7 @@
             @if (_showCameraOverlay)
             {
                 <div style="position: sticky; bottom: 0; left: 0; right: 0; text-align: center; padding: 10px; z-index: 1000;">
-                     <MudIconButton Icon="@Icons.Material.Filled.Close" Variant="Variant.Filled" Color="Color.Error" OnClick="@ToggleCameraOverlay" />
+                     <MudIconButton Icon="@Icons.Material.Filled.Close" Variant="Variant.Filled" Color="Color.Error" OnClick="@ToggleCameraOverlay" AriaLabel="Close Camera Overlay" />
                 </div>
             }
 		</div>
@@ -134,12 +135,12 @@
 
 	<div class="controls" style="@(_is360Mode ? "z-index: 10001; position: relative;" : "")">
 		<div class="play-pause">
-			<MudIconButton Icon="@Icons.Material.Filled.SkipPrevious" Size="Size.Medium" OnClick="@PreviousButtonClicked" />
-			<MudIconButton Icon="@Icons.Material.Filled.Replay5" Size="Size.Medium" OnClick="@SkipBackwardClicked" />
-			<MudIconButton Icon="@(_isPlaying ? Icons.Material.Filled.PauseCircleOutline : Icons.Material.Filled.PlayCircleOutline)" Size="Size.Large" OnClick="@PlayPauseClicked" />
-			<MudIconButton Icon="@Icons.Material.Filled.Forward5" Size="Size.Medium" OnClick="@SkipForwardClicked" />
-			<MudIconButton Icon="@Icons.Material.Filled.SkipNext" Size="Size.Medium" OnClick="@NextButtonClicked" />
-			<MudButton OnClick="@CyclePlaybackRateAsync" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small">@($"x{PlaybackRate}")</MudButton>
+			<MudIconButton Icon="@Icons.Material.Filled.SkipPrevious" Size="Size.Medium" OnClick="@PreviousButtonClicked" AriaLabel="Previous Clip" />
+			<MudIconButton Icon="@Icons.Material.Filled.Replay5" Size="Size.Medium" OnClick="@SkipBackwardClicked" AriaLabel="Jump Back 5 Seconds" />
+			<MudIconButton Icon="@(_isPlaying ? Icons.Material.Filled.PauseCircleOutline : Icons.Material.Filled.PlayCircleOutline)" Size="Size.Large" OnClick="@PlayPauseClicked" AriaLabel="@(_isPlaying ? "Pause" : "Play")" />
+			<MudIconButton Icon="@Icons.Material.Filled.Forward5" Size="Size.Medium" OnClick="@SkipForwardClicked" AriaLabel="Jump Forward 5 Seconds" />
+			<MudIconButton Icon="@Icons.Material.Filled.SkipNext" Size="Size.Medium" OnClick="@NextButtonClicked" AriaLabel="Next Clip" />
+			<MudButton OnClick="@CyclePlaybackRateAsync" Variant="Variant.Filled" Color="Color.Primary" Size="Size.Small" AriaLabel="@($"Playback Speed: x{PlaybackRate}")">@($"x{PlaybackRate}")</MudButton>
 		</div>
 		<div class="seeker-slider-container">
 			<div class="time-container">@_clip?.StartDate.ToString("hh:mm:ss tt")</div>
