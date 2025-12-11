@@ -25,7 +25,12 @@ public class ApiController : ControllerBase
 		=> await _clipsService.GetClipsAsync(syncMode);
 
 	private bool IsUnderRootPath(string path)
-		=> path.StartsWith(_rootFullPath);
+	{
+		var root = _rootFullPath.EndsWith(Path.DirectorySeparatorChar)
+			? _rootFullPath
+			: _rootFullPath + Path.DirectorySeparatorChar;
+		return path.StartsWith(root, StringComparison.Ordinal);
+	}
 
 	[HttpGet("{path}.mp4")]
 	public IActionResult Video(string path)
