@@ -123,11 +123,10 @@ public partial class ClipsService : IClipsService
 			.Where(vfi => vfi.ClipType == ClipType.Recent).ToList());
 		
 		var clips = videoFiles
-			.Select(vfi => vfi.EventFolderName)
-			.Distinct()
+			.Where(v => !string.IsNullOrWhiteSpace(v.EventFolderName))
+			.GroupBy(v => v.EventFolderName)
 			.AsParallel()
-			.Where(e => !string.IsNullOrWhiteSpace(e))
-			.Select(e => ParseClip(e, videoFiles))
+			.Select(g => ParseClip(g.Key, g.ToList()))
 			.Concat(recentClips.AsParallel())
 			.OrderByDescending(c => c.StartDate)
 			.ToArray();
@@ -259,13 +258,8 @@ public partial class ClipsService : IClipsService
 		};
 	}
 
-	private static Clip ParseClip(string eventFolderName, IEnumerable<VideoFile> videoFiles)
+	private static Clip ParseClip(string eventFolderName, List<VideoFile> eventVideoFiles)
 	{
-		var eventVideoFiles = videoFiles
-			.AsParallel()
-			.Where(v => v.EventFolderName == eventFolderName)
-			.ToList();
-		
 		var segments = eventVideoFiles
 			.GroupBy(v => v.StartDate)
 			.AsParallel()
