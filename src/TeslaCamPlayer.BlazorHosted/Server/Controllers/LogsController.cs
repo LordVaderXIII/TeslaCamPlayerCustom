@@ -5,12 +5,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TeslaCamPlayer.BlazorHosted.Server.Filters;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Controllers
 {
-    [Authorize]
+    [TeslaCamAuth]
     [Route("api/[controller]")]
     [ApiController]
     public class LogsController : ControllerBase
