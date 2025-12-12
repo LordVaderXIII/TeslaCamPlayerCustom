@@ -11,10 +11,20 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
 
     public static class VersionInfo
     {
-        public const string CurrentVersion = "2025-12-1.3.2";
+        public const string CurrentVersion = "2025-12-1.3.3";
 
         public static readonly List<VersionRelease> Releases = new List<VersionRelease>
         {
+            new VersionRelease
+            {
+                Version = "2025-12-1.3.3",
+                Date = "2025-12-11",
+                Changes = new List<string>
+                {
+                    "Fix broken access control by enforcing authentication on API endpoints",
+                    "Fix logs inaccessibility when authentication is disabled"
+                }
+            },
             new VersionRelease
             {
                 Version = "2025-12-1.3.2",

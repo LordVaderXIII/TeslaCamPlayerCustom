@@ -1,5 +1,6 @@
 using System.Web;
 using Microsoft.AspNetCore.Mvc;
+using TeslaCamPlayer.BlazorHosted.Server.Filters;
 using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Services;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
@@ -7,6 +8,7 @@ using TeslaCamPlayer.BlazorHosted.Shared.Models;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Controllers;
 
+[TeslaCamAuth]
 [ApiController]
 [Route("Api/[action]")]
 public class ApiController : ControllerBase
