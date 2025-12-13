@@ -7,3 +7,8 @@
 **Vulnerability:** The application supports toggleable authentication (via `Users` table), but the API controllers (`ApiController`, `ExportController`) lacked authorization checks. This meant that even when authentication was enabled, the API endpoints were publicly accessible to anyone who knew the URLs, bypassing the login requirement.
 **Learning:** Toggleable authentication requires dynamic authorization policies. Standard `[Authorize]` attributes are static and might be omitted if the developer relies on the "login required" UI state rather than backend enforcement.
 **Prevention:** Implement a custom authorization filter or policy that checks the dynamic authentication setting and enforces access control on all sensitive endpoints. Ensure that "Auth Enabled" means "Backend Enforced", not just "Frontend Hidden".
+
+## 2025-12-14 - Missing Rate Limiting on Authentication Endpoint
+**Vulnerability:** The `AuthController.Login` endpoint lacked rate limiting, allowing unlimited password guessing attempts (brute-force attacks) against the admin account.
+**Learning:** Single-user authentication systems often overlook rate limiting because of their simplicity ("it's just me"), but they are equally susceptible to automated attacks.
+**Prevention:** Implement rate limiting (e.g., using `IMemoryCache` or a middleware) on all authentication endpoints, tracking failed attempts by IP address.
