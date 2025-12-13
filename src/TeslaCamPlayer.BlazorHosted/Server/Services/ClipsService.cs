@@ -136,13 +136,19 @@ public partial class ClipsService : IClipsService
 
 	private static IEnumerable<Clip> GetRecentClips(List<VideoFile> recentVideoFiles)
 	{
-		recentVideoFiles = recentVideoFiles.OrderByDescending(f => f.StartDate).ToList();
+		// Optimize: Group by StartDate first to avoid O(N^2) scan in the loop
+		var groupedSegments = recentVideoFiles
+			.GroupBy(f => f.StartDate)
+			.OrderByDescending(g => g.Key)
+			.ToList();
 
 		var currentClipSegments = new List<ClipVideoSegment>();
-		for (var i = 0; i < recentVideoFiles.Count;)
+		for (var i = 0; i < groupedSegments.Count; i++)
 		{
-			var currentVideoFile = recentVideoFiles[i];
-			var segmentVideos = recentVideoFiles.Where(f => f.StartDate == currentVideoFile.StartDate).ToList();
+			var segmentVideos = groupedSegments[i].ToList();
+			// Use the first video in the group for reference properties (Start, Duration)
+			var currentVideoFile = segmentVideos[0];
+
 			var segment = new ClipVideoSegment
 			{
 				StartDate = currentVideoFile.StartDate,
@@ -159,11 +165,8 @@ public partial class ClipsService : IClipsService
 			
 			currentClipSegments.Add(segment);
 
-			// Set i to the video after the last video in this clip segment, ie: the first video of the next segment.
-			i += segmentVideos.Count;
-			
-			// No more recent video files
-			if (i >= recentVideoFiles.Count)
+			// No more groups
+			if (i + 1 >= groupedSegments.Count)
 			{
 				yield return new Clip(ClipType.Recent, currentClipSegments.ToArray())
 				{
@@ -174,7 +177,7 @@ public partial class ClipsService : IClipsService
 			}
 
 			const int segmentVideoGapToleranceInSeconds = 5;
-			var nextSegmentFirstVideo = recentVideoFiles[i];
+			var nextSegmentFirstVideo = groupedSegments[i + 1].First();
 			// Next video is within X seconds of last video of current segment, continue building clip segments
 			if (nextSegmentFirstVideo.StartDate <= segment.EndDate.AddSeconds(segmentVideoGapToleranceInSeconds))
 				continue;
