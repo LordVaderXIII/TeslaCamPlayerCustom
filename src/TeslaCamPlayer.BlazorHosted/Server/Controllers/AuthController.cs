@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using TeslaCamPlayer.BlazorHosted.Server.Data;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Caching.Memory;
 using UserModel = TeslaCamPlayer.BlazorHosted.Shared.Models.User;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Controllers;
@@ -14,10 +15,12 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly TeslaCamDbContext _dbContext;
+    private readonly IMemoryCache _cache;
 
-    public AuthController(TeslaCamDbContext dbContext)
+    public AuthController(TeslaCamDbContext dbContext, IMemoryCache cache)
     {
         _dbContext = dbContext;
+        _cache = cache;
     }
 
     [HttpGet("status")]
@@ -58,6 +61,14 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+        var cacheKey = $"LoginAttempts_{ip}";
+
+        if (!string.IsNullOrEmpty(ip) && _cache.TryGetValue(cacheKey, out int attempts) && attempts >= 5)
+        {
+            return StatusCode(429, "Too many login attempts. Please try again later.");
+        }
+
         var user = _dbContext.Users.Find("Admin");
         if (user == null) return Unauthorized();
 
@@ -74,6 +85,8 @@ public class AuthController : ControllerBase
 
         if (user.Username == request.Username && result == PasswordVerificationResult.Success)
         {
+            if (!string.IsNullOrEmpty(ip)) _cache.Remove(cacheKey);
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Username),
@@ -94,6 +107,12 @@ public class AuthController : ControllerBase
                 authProperties);
 
             return Ok();
+        }
+
+        if (!string.IsNullOrEmpty(ip))
+        {
+            _cache.TryGetValue(cacheKey, out int currentAttempts);
+            _cache.Set(cacheKey, currentAttempts + 1, TimeSpan.FromMinutes(15));
         }
 
         return Unauthorized();
