@@ -52,7 +52,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
 	private VideoPlayer _videoPlayerFisheye;
 	private VideoPlayer _videoPlayerNarrow;
 	private VideoPlayer _videoPlayerCabin;
-	private int _videoLoadedEventCount = 0;
+    private readonly HashSet<Cameras> _loadedCameras = new();
 	private bool _isPlaying;
 	private ClipVideoSegment _currentSegment;
 	private MudSlider<double> _timelineSlider;
@@ -62,6 +62,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
 	private bool _isScrubbing;
 	private double _timelineValue;
 	private System.Timers.Timer _setVideoTimeDebounceTimer;
+    private System.Timers.Timer _syncTimer;
 	private CancellationTokenSource _loadSegmentCts = new();
 	private Cameras _mainCamera = Cameras.Front;
     private bool _showCameraOverlay; // Mobile camera switch overlay
@@ -94,6 +95,10 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		_setVideoTimeDebounceTimer = new(500);
 		_setVideoTimeDebounceTimer.Elapsed += ScrubVideoDebounceTick;
 
+        _syncTimer = new(1000);
+        _syncTimer.Elapsed += SyncVideosTick;
+        _syncTimer.Enabled = true;
+
 		foreach (Cameras cam in Enum.GetValues(typeof(Cameras)))
 		{
 			_cameraSelection[cam] = new SelectionState { IsSelected = true };
@@ -114,15 +119,15 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		if (!firstRender)
 			return;
 
-		if (_videoPlayerFront != null) _videoPlayerFront.Loaded += () => { Console.WriteLine("Loaded: Front"); _videoLoadedEventCount++; };
-		if (_videoPlayerLeftRepeater != null) _videoPlayerLeftRepeater.Loaded += () => { Console.WriteLine("Loaded: Left"); _videoLoadedEventCount++; };
-		if (_videoPlayerRightRepeater != null) _videoPlayerRightRepeater.Loaded += () => { Console.WriteLine("Loaded: Right"); _videoLoadedEventCount++; };
-		if (_videoPlayerBack != null) _videoPlayerBack.Loaded += () => { Console.WriteLine("Loaded: Back"); _videoLoadedEventCount++; };
-		if (_videoPlayerLeftBPillar != null) _videoPlayerLeftBPillar.Loaded += () => { Console.WriteLine("Loaded: LeftBPillar"); _videoLoadedEventCount++; };
-		if (_videoPlayerRightBPillar != null) _videoPlayerRightBPillar.Loaded += () => { Console.WriteLine("Loaded: RightBPillar"); _videoLoadedEventCount++; };
-		if (_videoPlayerFisheye != null) _videoPlayerFisheye.Loaded += () => { Console.WriteLine("Loaded: Fisheye"); _videoLoadedEventCount++; };
-		if (_videoPlayerNarrow != null) _videoPlayerNarrow.Loaded += () => { Console.WriteLine("Loaded: Narrow"); _videoLoadedEventCount++; };
-		if (_videoPlayerCabin != null) _videoPlayerCabin.Loaded += () => { Console.WriteLine("Loaded: Cabin"); _videoLoadedEventCount++; };
+		if (_videoPlayerFront != null) _videoPlayerFront.Loaded += () => { Console.WriteLine("Loaded: Front"); _loadedCameras.Add(Cameras.Front); };
+		if (_videoPlayerLeftRepeater != null) _videoPlayerLeftRepeater.Loaded += () => { Console.WriteLine("Loaded: Left"); _loadedCameras.Add(Cameras.LeftRepeater); };
+		if (_videoPlayerRightRepeater != null) _videoPlayerRightRepeater.Loaded += () => { Console.WriteLine("Loaded: Right"); _loadedCameras.Add(Cameras.RightRepeater); };
+		if (_videoPlayerBack != null) _videoPlayerBack.Loaded += () => { Console.WriteLine("Loaded: Back"); _loadedCameras.Add(Cameras.Back); };
+		if (_videoPlayerLeftBPillar != null) _videoPlayerLeftBPillar.Loaded += () => { Console.WriteLine("Loaded: LeftBPillar"); _loadedCameras.Add(Cameras.LeftBPillar); };
+		if (_videoPlayerRightBPillar != null) _videoPlayerRightBPillar.Loaded += () => { Console.WriteLine("Loaded: RightBPillar"); _loadedCameras.Add(Cameras.RightBPillar); };
+		if (_videoPlayerFisheye != null) _videoPlayerFisheye.Loaded += () => { Console.WriteLine("Loaded: Fisheye"); _loadedCameras.Add(Cameras.Fisheye); };
+		if (_videoPlayerNarrow != null) _videoPlayerNarrow.Loaded += () => { Console.WriteLine("Loaded: Narrow"); _loadedCameras.Add(Cameras.Narrow); };
+		if (_videoPlayerCabin != null) _videoPlayerCabin.Loaded += () => { Console.WriteLine("Loaded: Cabin"); _loadedCameras.Add(Cameras.Cabin); };
 	}
 
 	private static Task AwaitUiUpdate()
@@ -149,7 +154,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		await _loadSegmentCts.CancelAsync();
 		_loadSegmentCts = new();
 		
-		_videoLoadedEventCount = 0;
+		_loadedCameras.Clear();
 		var cameraCount = _currentSegment.CameraAnglesCount();
 
 		var wasPlaying = _isPlaying;
@@ -164,16 +169,17 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		var timeout = Task.Delay(10000);
 		var completedTask = await Task.WhenAny(Task.Run(async () =>
 		{
-			while (_videoLoadedEventCount < cameraCount && !_loadSegmentCts.IsCancellationRequested)
+            // Optimize: Wait only for Main Camera to load
+			while (!_loadedCameras.Contains(_mainCamera) && !_loadSegmentCts.IsCancellationRequested)
 				await Task.Delay(10, _loadSegmentCts.Token);
 			
-			Console.WriteLine("Loading done");
+			Console.WriteLine("Main camera loaded, playing...");
 		}, _loadSegmentCts.Token), timeout);
 
 		if (completedTask == timeout)
 		{
 			Console.WriteLine("Loading timed out");
-			return false;
+            // Proceed anyway, maybe others loaded?
 		}
 
 		if (wasPlaying)
@@ -304,6 +310,77 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		if (!_isPlaying && _wasPlayingBeforeScrub)
 			await TogglePlayingAsync(true);
 	}
+
+    private async void SyncVideosTick(object _, ElapsedEventArgs __)
+    {
+        if (!_isPlaying || _isScrubbing || _currentSegment == null)
+            return;
+
+        await InvokeAsync(async () =>
+        {
+            try
+            {
+                // Get Main Camera Time
+                var mainPlayer = GetPlayerForCamera(_mainCamera);
+                if (mainPlayer == null) return;
+
+                var mainTime = await mainPlayer.GetTimeAsync();
+
+                // Check and Sync others in parallel
+                var tasks = new List<Task>
+                {
+                    CheckAndSyncPlayer(_videoPlayerFront, Cameras.Front, mainTime),
+                    CheckAndSyncPlayer(_videoPlayerLeftRepeater, Cameras.LeftRepeater, mainTime),
+                    CheckAndSyncPlayer(_videoPlayerRightRepeater, Cameras.RightRepeater, mainTime),
+                    CheckAndSyncPlayer(_videoPlayerBack, Cameras.Back, mainTime),
+                    CheckAndSyncPlayer(_videoPlayerLeftBPillar, Cameras.LeftBPillar, mainTime),
+                    CheckAndSyncPlayer(_videoPlayerRightBPillar, Cameras.RightBPillar, mainTime),
+                    CheckAndSyncPlayer(_videoPlayerFisheye, Cameras.Fisheye, mainTime),
+                    CheckAndSyncPlayer(_videoPlayerNarrow, Cameras.Narrow, mainTime),
+                    CheckAndSyncPlayer(_videoPlayerCabin, Cameras.Cabin, mainTime)
+                };
+
+                await Task.WhenAll(tasks);
+            }
+            catch
+            {
+                // Ignore sync errors
+            }
+        });
+    }
+
+    private VideoPlayer GetPlayerForCamera(Cameras camera)
+    {
+        return camera switch
+        {
+            Cameras.Front => _videoPlayerFront,
+            Cameras.LeftRepeater => _videoPlayerLeftRepeater,
+            Cameras.RightRepeater => _videoPlayerRightRepeater,
+            Cameras.Back => _videoPlayerBack,
+            Cameras.LeftBPillar => _videoPlayerLeftBPillar,
+            Cameras.RightBPillar => _videoPlayerRightBPillar,
+            Cameras.Fisheye => _videoPlayerFisheye,
+            Cameras.Narrow => _videoPlayerNarrow,
+            Cameras.Cabin => _videoPlayerCabin,
+            _ => null
+        };
+    }
+
+    private async Task CheckAndSyncPlayer(VideoPlayer player, Cameras camera, double mainTime)
+    {
+        if (player == null || camera == _mainCamera) return;
+
+        try
+        {
+            var time = await player.GetTimeAsync();
+            if (Math.Abs(time - mainTime) > 0.4) // 400ms drift tolerance
+            {
+                Console.WriteLine($"Syncing {camera} (Diff: {time - mainTime:F3}s)");
+                await player.SetTimeAsync(mainTime);
+            }
+        }
+        catch { /* Player might not be ready */ }
+    }
 
 	private async void ScrubVideoDebounceTick(object _, ElapsedEventArgs __)
 		=> await ScrubToSliderTime();
@@ -555,6 +632,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
         // Cleanup if component is destroyed while in 360 mode
          _ = JsRuntime.InvokeVoidAsync("teslaPano.dispose").AsTask().ContinueWith(t => { /* ignore */ });
          _setVideoTimeDebounceTimer?.Dispose();
+         _syncTimer?.Dispose();
          _loadSegmentCts?.Dispose();
     }
 }
