@@ -67,6 +67,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
 	private Cameras _mainCamera = Cameras.Front;
     private bool _showCameraOverlay; // Mobile camera switch overlay
     private bool _is360Mode = false;
+    private bool _isCalibration = false;
 	private double _playbackRate = 1.0;
 	private double PlaybackRate
 	{
@@ -618,12 +619,48 @@ public partial class ClipViewer : ComponentBase, IDisposable
         try
         {
             await JsRuntime.InvokeVoidAsync("teslaPano.init", "pano-container", videoElements);
+            // Restore calibration state if we re-enter mode
+            if (_isCalibration)
+            {
+                await JsRuntime.InvokeVoidAsync("teslaPano.enableCalibration", true);
+            }
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Failed to init 3D mode: {ex}");
             _is360Mode = false;
             await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ToggleCalibration()
+    {
+        _isCalibration = !_isCalibration;
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("teslaPano.enableCalibration", _isCalibration);
+            if (_isCalibration)
+                await TogglePlayingAsync(false); // Pause when calibrating
+            else
+                await TogglePlayingAsync(true);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to toggle calibration: {ex}");
+        }
+    }
+
+    private async Task SaveCalibration()
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("teslaPano.saveConfigs");
+            // Optionally toggle out of calibration mode
+            await ToggleCalibration();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Failed to save calibration: {ex}");
         }
     }
 
