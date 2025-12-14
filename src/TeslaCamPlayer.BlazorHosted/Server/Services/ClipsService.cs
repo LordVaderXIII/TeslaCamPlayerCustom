@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Serilog;
@@ -26,12 +27,18 @@ public partial class ClipsService : IClipsService
 	private readonly ISettingsProvider _settingsProvider;
 	private readonly IFfProbeService _ffProbeService;
 	private readonly IServiceScopeFactory _scopeFactory;
+	private readonly IMemoryCache _memoryCache;
 
-	public ClipsService(ISettingsProvider settingsProvider, IFfProbeService ffProbeService, IServiceScopeFactory scopeFactory)
+	public ClipsService(
+		ISettingsProvider settingsProvider,
+		IFfProbeService ffProbeService,
+		IServiceScopeFactory scopeFactory,
+		IMemoryCache memoryCache)
 	{
 		_settingsProvider = settingsProvider;
 		_ffProbeService = ffProbeService;
 		_scopeFactory = scopeFactory;
+		_memoryCache = memoryCache;
 	}
 
 	public async Task<Clip[]> GetClipsAsync(SyncMode syncMode = SyncMode.None)
@@ -261,7 +268,7 @@ public partial class ClipsService : IClipsService
 		};
 	}
 
-	private static Clip ParseClip(string eventFolderName, List<VideoFile> eventVideoFiles)
+	private Clip ParseClip(string eventFolderName, List<VideoFile> eventVideoFiles)
 	{
 		var segments = eventVideoFiles
 			.GroupBy(v => v.StartDate)
@@ -297,21 +304,27 @@ public partial class ClipsService : IClipsService
 		};
 	}
 
-	private static Event TryReadEvent(string path)
+	private Event TryReadEvent(string path)
 	{
-		try
+		return _memoryCache.GetOrCreate(path, entry =>
 		{
-			if (!File.Exists(path))
-				return null;
+			// Cache for 1 hour as event files are static
+			entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
 
-			var json = File.ReadAllText(path);
-			return JsonConvert.DeserializeObject<Event>(json);
-		}
-		catch (Exception e)
-		{
-			Log.Error(e, "Failed to read {EventJsonPath}", path);
-			return null;
-		}
+			try
+			{
+				if (!File.Exists(path))
+					return null;
+
+				var json = File.ReadAllText(path);
+				return JsonConvert.DeserializeObject<Event>(json);
+			}
+			catch (Exception e)
+			{
+				Log.Error(e, "Failed to read {EventJsonPath}", path);
+				return null;
+			}
+		});
 	}
 
 	/*
