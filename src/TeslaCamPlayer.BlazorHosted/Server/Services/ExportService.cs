@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services;
 
 public class ExportService : IExportService
 {
+    private static readonly SemaphoreSlim _exportSemaphore = new(1);
     private readonly ISettingsProvider _settingsProvider;
     private readonly IClipsService _clipsService;
     private readonly IServiceScopeFactory _scopeFactory;
@@ -76,7 +78,18 @@ public class ExportService : IExportService
         }
 
         // Run in background
-        _ = Task.Run(() => ProcessExportAsync(jobId, request));
+        _ = Task.Run(async () =>
+        {
+            await _exportSemaphore.WaitAsync();
+            try
+            {
+                await ProcessExportAsync(jobId, request);
+            }
+            finally
+            {
+                _exportSemaphore.Release();
+            }
+        });
 
         return job;
     }
