@@ -20,7 +20,8 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services;
 public partial class ClipsService : IClipsService
 {
 	private const string NoThumbnailImageUrl = "/img/no-thumbnail.png";
-	
+    private const string ClipsCacheKey = "Clips_All";
+
 	private static readonly Regex FileNameRegex = FileNameRegexGenerated();
 	private static readonly SemaphoreSlim FfProbeSemaphore = new(10);
 	
@@ -49,6 +50,14 @@ public partial class ClipsService : IClipsService
 
         try
         {
+            if (syncMode == SyncMode.None)
+            {
+                if (_memoryCache.TryGetValue(ClipsCacheKey, out Clip[] cachedClips))
+                {
+                    return cachedClips;
+                }
+            }
+
             if (syncMode == SyncMode.Full)
             {
                 // Clear all video files from DB
@@ -61,7 +70,14 @@ public partial class ClipsService : IClipsService
             }
 
             var videoFiles = await dbContext.VideoFiles.ToListAsync();
-            return BuildClips(videoFiles);
+            var clips = BuildClips(videoFiles);
+
+            _memoryCache.Set(ClipsCacheKey, clips, new MemoryCacheEntryOptions
+            {
+                SlidingExpiration = TimeSpan.FromHours(1)
+            });
+
+            return clips;
         }
         catch (Exception ex)
         {
@@ -73,6 +89,8 @@ public partial class ClipsService : IClipsService
 
 	private async Task SyncClipsAsync(TeslaCamDbContext dbContext)
 	{
+        _memoryCache.Remove(ClipsCacheKey);
+
 		var knownVideoFiles = await dbContext.VideoFiles
 			.ToDictionaryAsync(v => v.FilePath, v => v);
 
