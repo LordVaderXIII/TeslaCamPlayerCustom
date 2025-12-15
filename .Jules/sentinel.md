@@ -17,3 +17,8 @@
 **Vulnerability:** The `ExportService` launched a background FFmpeg process for every export request immediately via `Task.Run`, without any concurrency limit. This allowed a Denial of Service (DoS) attack where a user (or attacker) could trigger multiple export jobs, exhausting server CPU and memory resources.
 **Learning:** "Fire-and-forget" background tasks (`Task.Run`) are dangerous for resource-intensive operations. They bypass the natural backpressure of the request-response cycle.
 **Prevention:** Always implement a queue or concurrency limiter (like `SemaphoreSlim` or `Channel<T>`) for background jobs that consume significant system resources.
+
+## 2025-12-16 - Improper Argument Handling in FfProbeService
+**Vulnerability:** `FfProbeService` used `ProcessStartInfo.Arguments` to pass the video file path directly. This is unsafe as it allows argument injection (if the filename starts with `-`) and fails for filenames containing spaces (since they are split into multiple arguments).
+**Learning:** `ProcessStartInfo.Arguments` is a legacy API that requires manual quoting and escaping, which is error-prone. Modern .NET applications should use `ArgumentList` to safely pass arguments.
+**Prevention:** Always use `ProcessStartInfo.ArgumentList` when constructing process arguments to ensure they are properly escaped and treated as individual arguments by the operating system.
