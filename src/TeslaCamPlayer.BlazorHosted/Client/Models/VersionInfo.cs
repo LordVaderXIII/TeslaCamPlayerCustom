@@ -11,10 +11,19 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
 
     public static class VersionInfo
     {
-        public const string CurrentVersion = "2025-12-1.3.4";
+        public const string CurrentVersion = "2025-12-1.3.5";
 
         public static readonly List<VersionRelease> Releases = new List<VersionRelease>
         {
+            new VersionRelease
+            {
+                Version = "2025-12-1.3.5",
+                Date = "2025-12-11",
+                Changes = new List<string>
+                {
+                    "Fix cache issue preventing 3D calibration mode from loading (missing JS function)"
+                }
+            },
             new VersionRelease
             {
                 Version = "2025-12-1.3.4",
