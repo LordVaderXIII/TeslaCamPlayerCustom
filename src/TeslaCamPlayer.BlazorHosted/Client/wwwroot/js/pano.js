@@ -3,9 +3,14 @@ window.teslaPano = {
     camera: null,
     renderer: null,
     controls: null,
-    dragControls: null,
+    transformControl: null,
+    raycaster: null,
+    mouse: null,
+    selectedMesh: null,
+    selectionBox: null,
     requestId: null,
     meshes: {},
+    isCalibrationEnabled: false,
 
     init: function (containerId, videoElements) {
         this.dispose(); // Ensure clean state
@@ -54,21 +59,23 @@ window.teslaPano = {
         this.controls.maxDistance = 20;
         this.controls.target.set(0, 0, 0); // Look at center (car)
 
-        // 5. Setup DragControls
-        if (typeof THREE.DragControls !== 'undefined') {
-            this.dragControls = new THREE.DragControls([], this.camera, this.renderer.domElement);
-            this.dragControls.enabled = false;
+        // 5. Setup TransformControls and Raycaster
+        if (typeof THREE.TransformControls !== 'undefined') {
+            this.transformControl = new THREE.TransformControls(this.camera, this.renderer.domElement);
+            this.transformControl.setMode('translate'); // Restrict to translation as requested
 
-            // Disable OrbitControls while dragging
-            this.dragControls.addEventListener('dragstart', () => {
-                this.controls.enabled = false;
+            // Disable OrbitControls while dragging the gizmo
+            this.transformControl.addEventListener('dragging-changed', (event) => {
+                this.controls.enabled = !event.value;
             });
-            this.dragControls.addEventListener('dragend', () => {
-                this.controls.enabled = true;
-            });
+
+            this.scene.add(this.transformControl);
         } else {
-            console.error("DragControls not loaded");
+            console.error("TransformControls not loaded");
         }
+
+        this.raycaster = new THREE.Raycaster();
+        this.mouse = new THREE.Vector2();
 
         // 6. Create Plane Meshes
         // Scaled size in meters. Tesla video is ~4:3 or 16:9?
@@ -99,51 +106,11 @@ window.teslaPano = {
             this.scene.add(mesh);
         });
 
-        // Add meshes to drag controls
-        if (this.dragControls) {
-            this.dragControls.getObjects().push(...Object.values(this.meshes));
-        }
-
         // 7. Set Default Transforms
-        // Note: Coordinates are X (Right), Y (Up), Z (Forward/Back?).
-        // Three.js standard: Y is Up. Z is usually depth.
-        // Prompt said: +z forward, +x right, +y up.
-
-        // Front: Forward (+Z)
         this.setMeshTransform('Front', { position: [0, 1.4, 2.2], rotation: [0, 0, 0] });
-        // Back: Backward (-Z). Rotate 180 (PI) around Y.
         this.setMeshTransform('Back', { position: [0, 0.8, -2.3], rotation: [0, Math.PI, 0] });
-
-        // Left Repeater: Left (-X). Angled rearward.
-        // Position: -0.9, 1.0, 1.2
-        // Rotation: 45 deg rearward. Facing generally back-left?
-        // If facing back-left, rotation around Y.
-        // 0 is facing +Z (Front).
-        // +90 is Left (+X? No, standard Right Hand Rule: Thumb=Y, Index=Z? No.)
-        // Three.js: Right Handed system. Y up, X right, Z out of screen (towards viewer).
-        // Wait, "Z out of screen" is standard. But prompt said "+z forward".
-        // If +Z is forward, then we are looking down -Z usually?
-        // Let's assume the prompt's coordinate system: +Z forward.
-        // Then Back is -Z.
-        // Front mesh at +2.2 Z. Facing +Z? If plane normal is +Z, and camera is at +inf Z looking -Z, we see front of plane.
-        // If Front cam looks FORWARD, the image should be displayed on a plane that faces the viewer who is standing in front of the car?
-        // No, in a 360 view, we want to see what the camera sees.
-        // If I am at origin (driver seat), looking forward (+Z), I see the Front camera feed.
-        // So the Front camera plane should be at +Z distance, facing -Z (towards origin)?
-        // Or if I orbit *outside* the car, I see the car. The cameras project outwards.
-        // Let's stick to the prompt's suggested defaults:
-        // Front: rot [0,0,0]. If plane creates normally facing +Z, then [0,0,0] faces +Z.
-        // If we want to view it from outside (looking at the car), we want the texture facing OUT.
-        // If Front is at Z=2.2, facing Z=0, rotation should be PI?
-        // The prompt says: "Front... rotation: [0, 0, 0]".
-        // "Back... rotation: [0, Math.PI, 0]".
-        // This suggests the planes face "Forward" by default (0,0,0) and we rotate them to face the direction of the camera.
-        // The prompt assumes we orbit *around* the car.
-
         this.setMeshTransform('LeftRepeater', { position: [-0.9, 1.0, 1.2], rotation: [0, Math.PI / 4, 0] });
         this.setMeshTransform('RightRepeater', { position: [0.9, 1.0, 1.2], rotation: [0, -Math.PI / 4, 0] });
-
-        // Pillars: Side facing.
         this.setMeshTransform('LeftBPillar', { position: [-0.9, 1.3, -0.5], rotation: [0, Math.PI / 2, 0] });
         this.setMeshTransform('RightBPillar', { position: [0.9, 1.3, -0.5], rotation: [0, -Math.PI / 2, 0] });
 
@@ -161,13 +128,76 @@ window.teslaPano = {
         };
         window.addEventListener('resize', this.onResize);
 
-        // 10. Animation Loop
+        // 10. Click Handler for Selection
+        this.onPointerDown = (event) => {
+            if (!this.isCalibrationEnabled) return;
+
+            // Calculate mouse position in normalized device coordinates
+            // (-1 to +1) for both components
+            const rect = this.renderer.domElement.getBoundingClientRect();
+            this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            this.raycaster.setFromCamera(this.mouse, this.camera);
+
+            const intersects = this.raycaster.intersectObjects(Object.values(this.meshes));
+
+            if (intersects.length > 0) {
+                const object = intersects[0].object;
+                this.selectObject(object);
+            } else {
+                // Deselect if clicked in empty space (optional, but good UX)
+                // However, clicking on Gizmo should not deselect.
+                // Raycaster won't hit gizmo lines easily.
+                // But wait, if we click on Gizmo, we might be dragging.
+                // TransformControls 'dragging-changed' handles the drag state.
+                // But the initial click might be intercepted here?
+                // TransformControls usually handles its own interaction.
+                // We should only deselect if we didn't hit anything relevant.
+                // Check if we are hovering over the gizmo? simpler: don't auto-deselect for now.
+                // Or: TransformControls doesn't block raycaster?
+                // Let's rely on explicit selection.
+            }
+        };
+        this.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
+
+        // 11. Animation Loop
         const animate = () => {
             this.requestId = requestAnimationFrame(animate);
             this.controls.update();
+            if (this.selectionBox) {
+                this.selectionBox.update();
+            }
             this.renderer.render(this.scene, this.camera);
         };
         animate();
+    },
+
+    selectObject: function(object) {
+        if (this.selectedMesh === object) return;
+
+        // Cleanup previous selection
+        if (this.selectionBox) {
+            this.scene.remove(this.selectionBox);
+            this.selectionBox = null;
+        }
+
+        this.selectedMesh = object;
+
+        if (object) {
+            // Attach gizmo
+            if (this.transformControl) {
+                this.transformControl.attach(object);
+            }
+
+            // Create visual outline (BoxHelper)
+            this.selectionBox = new THREE.BoxHelper(object, 0xffff00);
+            this.scene.add(this.selectionBox);
+        } else {
+            if (this.transformControl) {
+                this.transformControl.detach();
+            }
+        }
     },
 
     setMeshTransform: function(key, { position, rotation }) {
@@ -190,8 +220,16 @@ window.teslaPano = {
     },
 
     enableCalibration: function(enabled) {
-        if (this.dragControls) {
-            this.dragControls.enabled = enabled;
+        this.isCalibrationEnabled = enabled;
+
+        if (!enabled) {
+            // Deselect everything when calibration stops
+            this.selectObject(null);
+        }
+
+        if (this.transformControl) {
+            this.transformControl.enabled = enabled;
+            this.transformControl.visible = enabled;
         }
     },
 
@@ -228,6 +266,9 @@ window.teslaPano = {
         if (this.onResize) {
             window.removeEventListener('resize', this.onResize);
         }
+        if (this.onPointerDown && this.renderer && this.renderer.domElement) {
+            this.renderer.domElement.removeEventListener('pointerdown', this.onPointerDown);
+        }
 
         if (this.renderer) {
             if (this.renderer.domElement && this.renderer.domElement.parentNode) {
@@ -251,12 +292,14 @@ window.teslaPano = {
              this.controls.dispose();
         }
 
-        if (this.dragControls) {
-            this.dragControls.dispose();
+        if (this.transformControl) {
+            this.transformControl.dispose();
         }
 
         this.camera = null;
         this.renderer = null;
         this.meshes = {};
+        this.selectedMesh = null;
+        this.selectionBox = null;
     }
 };
