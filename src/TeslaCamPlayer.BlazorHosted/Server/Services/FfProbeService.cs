@@ -15,16 +15,18 @@ public abstract class FfProbeService : IFfProbeService
 		{
 			Log.Information("Get video duration for video {Path}", videoFilePath);
 
+			var startInfo = new ProcessStartInfo(ExePath)
+			{
+				RedirectStandardError = true,
+				RedirectStandardOutput = true,
+				CreateNoWindow = true,
+				UseShellExecute = false
+			};
+			startInfo.ArgumentList.Add(videoFilePath);
+
 			var process = new Process
 			{
-				StartInfo = new ProcessStartInfo(ExePath)
-				{
-					RedirectStandardError = true,
-					RedirectStandardOutput = true,
-					CreateNoWindow = true,
-					UseShellExecute = false,
-					Arguments = videoFilePath
-				}
+				StartInfo = startInfo
 			};
 
 			process.Start();
