@@ -290,7 +290,8 @@ public partial class ClipsService : IClipsService
 	{
 		var segments = eventVideoFiles
 			.GroupBy(v => v.StartDate)
-			.AsParallel()
+			// Optimize: Remove AsParallel() as this is already called within a parallel loop (BuildClips)
+			// and the collection size (files per event) is small.
 			.Select(g => new ClipVideoSegment
 			{
 				StartDate = g.Key,
