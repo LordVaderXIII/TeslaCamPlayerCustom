@@ -94,6 +94,7 @@
 		flex-direction: column;
 		align-items: center;
 		padding: 10px;
+        z-index: 10001; // Ensure controls are above everything else
 		
 		.play-pause {
 			display: flex;
@@ -275,16 +276,19 @@
             height: 100vh !important;
             z-index: 5000;
             background: black;
-
-            // Ensure controls stay at bottom
-            .controls {
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                background: rgba(0,0,0,0.5);
-                z-index: 10001;
-            }
         }
+    }
+}
+
+// 360 Mode styles (Desktop & Mobile)
+// Ensure controls are always at the bottom in 360 mode
+.viewer.viewer--360 {
+    .controls {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 10001;
     }
 }

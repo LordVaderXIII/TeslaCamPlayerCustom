@@ -151,9 +151,9 @@ window.teslaPano = {
             mesh.name = key;
 
             // Create Halo (Edges)
-            // Use EdgesGeometry
-            const edges = new THREE.EdgesGeometry(geometry);
-            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.8, linewidth: 2 }));
+            // Use EdgesGeometry with threshold to avoid internal grid lines (15 degrees)
+            const edges = new THREE.EdgesGeometry(geometry, 15);
+            const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x0088ff, transparent: true, opacity: 0.8, linewidth: 2 }));
             line.visible = true; // Default
             mesh.add(line);
             this.halos[key] = line;
