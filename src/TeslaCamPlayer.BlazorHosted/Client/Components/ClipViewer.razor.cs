@@ -68,6 +68,9 @@ public partial class ClipViewer : ComponentBase, IDisposable
     private bool _showCameraOverlay; // Mobile camera switch overlay
     private bool _is360Mode = false;
     private bool _isCalibration = false;
+	private bool _isHaloEnabled = true;
+	private double _opacity = 0.9;
+	private bool _isRotateMode = false; // Translate vs Rotate
 	private double _playbackRate = 1.0;
 	private double PlaybackRate
 	{
@@ -619,10 +622,16 @@ public partial class ClipViewer : ComponentBase, IDisposable
         try
         {
             await JsRuntime.InvokeVoidAsync("teslaPano.init", "pano-container", videoElements);
+
+			// Apply current settings
+			await OnHaloToggled(_isHaloEnabled);
+			await OnOpacityChanged(_opacity);
+
             // Restore calibration state if we re-enter mode
             if (_isCalibration)
             {
                 await JsRuntime.InvokeVoidAsync("teslaPano.enableCalibration", true);
+				await OnTransformModeChanged(_isRotateMode);
             }
         }
         catch (Exception ex)
@@ -663,6 +672,34 @@ public partial class ClipViewer : ComponentBase, IDisposable
             Console.Error.WriteLine($"Failed to save calibration: {ex}");
         }
     }
+
+	private async Task OnHaloToggled(bool enabled)
+	{
+		_isHaloEnabled = enabled;
+		if (_is360Mode)
+		{
+			try { await JsRuntime.InvokeVoidAsync("teslaPano.setHalo", enabled); } catch { /* ignore */ }
+		}
+	}
+
+	private async Task OnOpacityChanged(double opacity)
+	{
+		_opacity = opacity;
+		if (_is360Mode)
+		{
+			try { await JsRuntime.InvokeVoidAsync("teslaPano.setOpacity", opacity); } catch { /* ignore */ }
+		}
+	}
+
+	private async Task OnTransformModeChanged(bool isRotate)
+	{
+		_isRotateMode = isRotate;
+		if (_is360Mode && _isCalibration)
+		{
+			var mode = isRotate ? "rotate" : "translate";
+			try { await JsRuntime.InvokeVoidAsync("teslaPano.setTransformMode", mode); } catch { /* ignore */ }
+		}
+	}
 
     public void Dispose()
     {

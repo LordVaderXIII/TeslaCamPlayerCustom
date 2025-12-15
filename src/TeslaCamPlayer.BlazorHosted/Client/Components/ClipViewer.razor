@@ -11,27 +11,50 @@
     <div class="mode-switch-btn @(_is360Mode ? "d-none d-md-block" : "")" style="@(_is360Mode ? "z-index: 10002; position: absolute;" : "")">
          @if (_is360Mode)
          {
-            <MudTooltip Text="Calibration Mode">
-                <MudIconButton Icon="@Icons.Material.Filled.Settings"
-                               Variant="Variant.Filled"
-                               Color="@(_isCalibration ? Color.Warning : Color.Secondary)"
-                               OnClick="@ToggleCalibration"
-                               Class="calibration-btn"
-                               Style="margin-right: 10px;"
-                               AriaLabel="Calibration Mode" />
-            </MudTooltip>
-            @if (_isCalibration)
-            {
-                <MudTooltip Text="Save Calibration">
-                    <MudIconButton Icon="@Icons.Material.Filled.Save"
-                                   Variant="Variant.Filled"
-                                   Color="Color.Success"
-                                   OnClick="@SaveCalibration"
-                                   Class="save-calibration-btn"
-                                   Style="margin-right: 10px;"
-                                   AriaLabel="Save Calibration" />
+             <div class="d-flex align-center gap-2 mr-4" style="background: rgba(0,0,0,0.5); padding: 4px; border-radius: 4px; display: inline-flex;">
+                <MudTooltip Text="Halo Effect">
+                     <MudToggleIconButton Toggled="@_isHaloEnabled" ToggledChanged="@OnHaloToggled"
+                                          Icon="@Icons.Material.Filled.BlurOff" Color="@Color.Default"
+                                          ToggledIcon="@Icons.Material.Filled.BlurOn" ToggledColor="@Color.Warning"
+                                          Variant="Variant.Filled" Size="Size.Small"
+                                          AriaLabel="Toggle Halo" />
                 </MudTooltip>
-            }
+
+                <div style="width: 80px; display: flex; align-items: center;">
+                    <MudSlider T="double" Value="@_opacity" ValueChanged="@OnOpacityChanged" Min="0.1" Max="1.0" Step="0.1" Size="Size.Small" Color="Color.Info" />
+                </div>
+
+                <MudTooltip Text="Calibration Mode">
+                    <MudIconButton Icon="@Icons.Material.Filled.Settings"
+                                   Variant="Variant.Filled"
+                                   Color="@(_isCalibration ? Color.Warning : Color.Secondary)"
+                                   OnClick="@ToggleCalibration"
+                                   Class="calibration-btn"
+                                   Size="Size.Small"
+                                   AriaLabel="Calibration Mode" />
+                </MudTooltip>
+
+                @if (_isCalibration)
+                {
+                     <MudTooltip Text="Transform Mode">
+                        <MudToggleIconButton Toggled="@_isRotateMode" ToggledChanged="@OnTransformModeChanged"
+                                             Icon="@Icons.Material.Filled.OpenWith" Color="@Color.Info"
+                                             ToggledIcon="@Icons.Material.Filled.RotateRight" ToggledColor="@Color.Warning"
+                                             Variant="Variant.Filled" Size="Size.Small"
+                                             AriaLabel="Transform Mode" />
+                    </MudTooltip>
+
+                    <MudTooltip Text="Save Calibration">
+                        <MudIconButton Icon="@Icons.Material.Filled.Save"
+                                       Variant="Variant.Filled"
+                                       Color="Color.Success"
+                                       OnClick="@SaveCalibration"
+                                       Class="save-calibration-btn"
+                                       Size="Size.Small"
+                                       AriaLabel="Save Calibration" />
+                    </MudTooltip>
+                }
+             </div>
          }
          <MudTooltip Text="@(_is360Mode ? "Exit 3D View" : "Enter 3D View")">
              <MudIconButton Icon="@(_is360Mode ? Icons.Material.Filled.ViewModule : Icons.Material.Filled.Panorama)"
