@@ -17,3 +17,8 @@
 **Vulnerability:** The `ExportService` launched a background FFmpeg process for every export request immediately via `Task.Run`, without any concurrency limit. This allowed a Denial of Service (DoS) attack where a user (or attacker) could trigger multiple export jobs, exhausting server CPU and memory resources.
 **Learning:** "Fire-and-forget" background tasks (`Task.Run`) are dangerous for resource-intensive operations. They bypass the natural backpressure of the request-response cycle.
 **Prevention:** Always implement a queue or concurrency limiter (like `SemaphoreSlim` or `Channel<T>`) for background jobs that consume significant system resources.
+
+## 2025-12-16 - Arbitrary File Read in JulesApiService
+**Vulnerability:** The `JulesApiService.ExtractSnippet` method parsed file paths from user-provided stack traces and read file content without validation. This allowed an attacker to read any file on the server (Arbitrary File Read) by supplying a crafted stack trace pointing to the target file.
+**Learning:** Never trust file paths extracted from user input, even if they look like system-generated strings (like stack traces). Stack traces can be forged or manipulated.
+**Prevention:** Validate file paths against an allowlist of extensions or directories. In this case, we restricted access to known source code extensions (`.cs`, `.razor`, etc.) as the feature is intended for code context only.
