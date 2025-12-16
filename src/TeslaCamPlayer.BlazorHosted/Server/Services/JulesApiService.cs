@@ -159,7 +159,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
                             if (fileIndex != -1)
                             {
                                 var filePath = filePart.Substring(fileIndex + 4).Trim();
-                                if (File.Exists(filePath))
+                                if (File.Exists(filePath) && IsSafeSourceFile(filePath))
                                 {
                                     var fileLines = File.ReadAllLines(filePath);
                                     var start = Math.Max(0, lineNumber - 25);
@@ -183,6 +183,14 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
                 // Ignore errors in snippet extraction
             }
             return null;
+        }
+
+        private bool IsSafeSourceFile(string filePath)
+        {
+            // Limit to code files to prevent arbitrary file read (e.g. /etc/passwd)
+            var allowedExtensions = new[] { ".cs", ".razor", ".cshtml", ".js", ".ts", ".css", ".scss" };
+            var ext = Path.GetExtension(filePath);
+            return allowedExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase);
         }
 
         private async Task<bool> CheckAndIncrementDailyLimitAsync()
