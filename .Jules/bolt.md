@@ -9,3 +9,7 @@
 ## 2025-12-12 - Nested Parallelism Overhead
 **Learning:** Found nested `AsParallel()` calls where the inner loop processed small collections (< 50 items). The overhead of partitioning and task scheduling outweighed the benefits of parallel execution.
 **Action:** Remove inner `AsParallel()` when the outer loop is already parallelized and the inner workload is lightweight/small.
+
+## 2025-12-14 - High Frequency Blazor Events
+**Learning:** High-frequency events like `ontimeupdate` (~4-60Hz) cause "Event Storms" in Blazor, triggering excessive `StateHasChanged` calls and JS Interop round-trips.
+**Action:** Throttle these events inside the component (e.g., every 200ms) before invoking the `EventCallback` to the parent.

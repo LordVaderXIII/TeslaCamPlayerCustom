@@ -86,8 +86,18 @@
 	private Task VideoEndedHandler()
 		=> VideoEnded.InvokeAsync();
 
-	private Task TimeUpdateHandler()
-		=> TimeUpdate.InvokeAsync();
+	private DateTime _lastTimeUpdateInvoked;
+
+	private async Task TimeUpdateHandler()
+	{
+		var now = DateTime.UtcNow;
+		// Throttle updates to ~5 times per second (200ms) to reduce re-renders and JS Interop
+		if ((now - _lastTimeUpdateInvoked).TotalMilliseconds < 200)
+			return;
+
+		_lastTimeUpdateInvoked = now;
+		await TimeUpdate.InvokeAsync();
+	}
 
 	private Task OnClickHandler()
 		=> Clickable ? OnClick.InvokeAsync() : Task.CompletedTask;
