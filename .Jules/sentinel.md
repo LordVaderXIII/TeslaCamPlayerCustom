@@ -22,3 +22,8 @@
 **Vulnerability:** The `JulesApiService.ExtractSnippet` method parsed file paths from user-provided stack traces and read file content without validation. This allowed an attacker to read any file on the server (Arbitrary File Read) by supplying a crafted stack trace pointing to the target file.
 **Learning:** Never trust file paths extracted from user input, even if they look like system-generated strings (like stack traces). Stack traces can be forged or manipulated.
 **Prevention:** Validate file paths against an allowlist of extensions or directories. In this case, we restricted access to known source code extensions (`.cs`, `.razor`, etc.) as the feature is intended for code context only.
+
+## 2025-12-16 - Missing Rate Limiting on Error Reporting Endpoint
+**Vulnerability:** The public `ErrorController.ReportError` endpoint lacked rate limiting, allowing a malicious actor to flood the backend with error reports, exhausting the daily Jules API quota (DoS) and filling disk logs.
+**Learning:** Publicly exposed utility endpoints (like error reporting or feedback) are often overlooked for rate limiting but are trivial vectors for resource exhaustion DoS.
+**Prevention:** Apply rate limiting (e.g., per IP) to all public endpoints that trigger resource-intensive operations or external API calls.
