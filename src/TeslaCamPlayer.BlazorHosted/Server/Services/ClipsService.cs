@@ -94,8 +94,9 @@ public partial class ClipsService : IClipsService
 		var knownVideoFiles = await dbContext.VideoFiles
 			.ToDictionaryAsync(v => v.FilePath, v => v);
 
+		// Optimization: Use EnumerateFiles to reduce memory allocation compared to GetFiles
 		var filePaths = Directory
-			.GetFiles(_settingsProvider.Settings.ClipsRootPath, "*.mp4", SearchOption.AllDirectories)
+			.EnumerateFiles(_settingsProvider.Settings.ClipsRootPath, "*.mp4", SearchOption.AllDirectories)
 			.ToHashSet();
 
 		// Remove files that no longer exist
@@ -144,11 +145,25 @@ public partial class ClipsService : IClipsService
 
 	private Clip[] BuildClips(List<VideoFile> videoFiles)
 	{
-		var recentClips = GetRecentClips(videoFiles
-			.Where(vfi => vfi.ClipType == ClipType.Recent).ToList());
+		var recentFiles = new List<VideoFile>();
+		var eventFiles = new List<VideoFile>();
+
+		// Optimization: Iterate the list once to separate files, avoiding multiple LINQ passes (O(N) vs O(2N))
+		foreach (var videoFile in videoFiles)
+		{
+			if (videoFile.ClipType == ClipType.Recent)
+			{
+				recentFiles.Add(videoFile);
+			}
+			else if (!string.IsNullOrWhiteSpace(videoFile.EventFolderName))
+			{
+				eventFiles.Add(videoFile);
+			}
+		}
+
+		var recentClips = GetRecentClips(recentFiles);
 		
-		var clips = videoFiles
-			.Where(v => !string.IsNullOrWhiteSpace(v.EventFolderName))
+		var clips = eventFiles
 			.GroupBy(v => v.EventFolderName)
 			.AsParallel()
 			.Select(g => ParseClip(g.Key, g.ToList()))
