@@ -27,3 +27,8 @@
 **Vulnerability:** The public `ErrorController.ReportError` endpoint lacked rate limiting, allowing a malicious actor to flood the backend with error reports, exhausting the daily Jules API quota (DoS) and filling disk logs.
 **Learning:** Publicly exposed utility endpoints (like error reporting or feedback) are often overlooked for rate limiting but are trivial vectors for resource exhaustion DoS.
 **Prevention:** Apply rate limiting (e.g., per IP) to all public endpoints that trigger resource-intensive operations or external API calls.
+
+## 2025-12-18 - Rate Limiting Bypass and HSTS Failure in Docker
+**Vulnerability:** The application relied on `HttpContext.Connection.RemoteIpAddress` for rate limiting and `UseHsts`/`UseHttpsRedirection`, but lacked `ForwardedHeadersMiddleware`. In a Docker container behind a reverse proxy, this caused the app to see the Docker Gateway IP for all requests, leading to a DoS vulnerability (one failed login blocks everyone) and preventing HSTS activation.
+**Learning:** Containerized applications almost always run behind a proxy. Default ASP.NET Core templates do not enable `ForwardedHeadersMiddleware`, causing standard security features to malfunction.
+**Prevention:** Always configure `ForwardedHeadersMiddleware` in container-ready applications, explicitly clearing `KnownNetworks` if the proxy IP is dynamic.
