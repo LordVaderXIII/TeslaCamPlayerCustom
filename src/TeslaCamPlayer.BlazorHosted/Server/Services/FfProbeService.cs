@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Serilog;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 
@@ -15,6 +15,13 @@ public abstract class FfProbeService : IFfProbeService
 		{
 			Log.Information("Get video duration for video {Path}", videoFilePath);
 
+			// Optimization: Use specific ffprobe flags to output only the duration in seconds.
+			// This reduces process output parsing overhead and avoids reading the entire file metadata.
+			// -v error: Suppress logging
+			// -show_entries format=duration: Show only duration
+			// -of default=noprint_wrappers=1:nokey=1: specific format (value only)
+			var args = $"-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{videoFilePath}\"";
+
 			var process = new Process
 			{
 				StartInfo = new ProcessStartInfo(ExePath)
@@ -23,25 +30,30 @@ public abstract class FfProbeService : IFfProbeService
 					RedirectStandardOutput = true,
 					CreateNoWindow = true,
 					UseShellExecute = false,
-					Arguments = videoFilePath
+					Arguments = args
 				}
 			};
 
 			process.Start();
 
 			// To avoid deadlocks, always read the output stream first.
-			var outputTask = process.StandardError.ReadToEndAsync();
-
-			// We also need to consume StandardOutput to prevent deadlock if the buffer fills up,
-			// even though we don't use it.
+			var stdErrTask = process.StandardError.ReadToEndAsync();
 			var stdOutTask = process.StandardOutput.ReadToEndAsync();
 
 			await process.WaitForExitAsync();
 
-			var output = await outputTask;
-			await stdOutTask;
+			var stdErr = await stdErrTask;
+			var stdOut = await stdOutTask;
 
-			return Helpers.ParseFfProbeOutputHelper.GetDuration(output);
+			// Try to parse from stdout (optimized path)
+			var duration = Helpers.ParseFfProbeOutputHelper.GetDuration(stdOut);
+			if (duration.HasValue)
+			{
+				return duration;
+			}
+
+			// Fallback to stderr parsing (legacy behavior or if optimized args failed silently but stderr has info)
+			return Helpers.ParseFfProbeOutputHelper.GetDuration(stdErr);
 		}
 		catch (Exception e)
 		{

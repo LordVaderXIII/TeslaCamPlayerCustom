@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Helpers;
@@ -9,6 +10,12 @@ public static partial class ParseFfProbeOutputHelper
 	
 	public static TimeSpan? GetDuration(string output)
 	{
+		// Optimize: Try parsing as simple double first (output from ffprobe -show_entries format=duration)
+		if (double.TryParse(output.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var durationSeconds))
+		{
+			return TimeSpan.FromSeconds(durationSeconds);
+		}
+
 		using var reader = new StringReader(output);
 		while (reader.ReadLine() is { } line)
 		{
