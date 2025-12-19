@@ -73,6 +73,14 @@ public class ExportService : IExportService
         using (var scope = _scopeFactory.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<TeslaCamDbContext>();
+
+            // SECURITY: Prevent DoS by limiting the number of queued jobs
+            var queuedCount = await dbContext.ExportJobs.CountAsync(j => j.Status == ExportStatus.Queued || j.Status == ExportStatus.Processing);
+            if (queuedCount >= 5)
+            {
+                throw new InvalidOperationException("Export queue is full (max 5 jobs). Please wait for current jobs to finish.");
+            }
+
             dbContext.ExportJobs.Add(job);
             await dbContext.SaveChangesAsync();
         }
