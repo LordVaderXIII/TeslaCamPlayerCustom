@@ -11,10 +11,19 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
 
     public static class VersionInfo
     {
-        public const string CurrentVersion = "2025-12-1.3.5";
+        public const string CurrentVersion = "2025-12-1.3.6";
 
         public static readonly List<VersionRelease> Releases = new List<VersionRelease>
         {
+            new VersionRelease
+            {
+                Version = "2025-12-1.3.6",
+                Date = "2025-12-19",
+                Changes = new List<string>
+                {
+                    "perf: Optimize video player event binding to reduce JS Interop overhead"
+                }
+            },
             new VersionRelease
             {
                 Version = "2025-12-1.3.5",

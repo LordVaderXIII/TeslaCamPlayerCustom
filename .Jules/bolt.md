@@ -13,3 +13,7 @@
 ## 2025-12-14 - High Frequency Blazor Events
 **Learning:** High-frequency events like `ontimeupdate` (~4-60Hz) cause "Event Storms" in Blazor, triggering excessive `StateHasChanged` calls and JS Interop round-trips.
 **Action:** Throttle these events inside the component (e.g., every 200ms) before invoking the `EventCallback` to the parent.
+
+## 2025-12-19 - Conditional Event Binding
+**Learning:** Even with throttling, attaching high-frequency event listeners (like `@ontimeupdate`) in Blazor incurs JS Interop overhead for every event fired by the browser, because the event is marshaled to C# before the handler decides to return.
+**Action:** Use conditional attribute binding `@ontimeupdate="@(Callback.HasDelegate ? Handler : null)"` to prevent the event listener from being attached at all when the parent component doesn't need it.
