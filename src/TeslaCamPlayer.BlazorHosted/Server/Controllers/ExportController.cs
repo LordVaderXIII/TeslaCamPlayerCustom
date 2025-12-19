@@ -22,9 +22,16 @@ public class ExportController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ExportJob> StartExport([FromBody] ExportRequest request)
+    public async Task<ActionResult<ExportJob>> StartExport([FromBody] ExportRequest request)
     {
-        return await _exportService.StartExportAsync(request);
+        try
+        {
+            return await _exportService.StartExportAsync(request);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(429, ex.Message);
+        }
     }
 
     [HttpGet]

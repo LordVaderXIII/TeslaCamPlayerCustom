@@ -32,3 +32,8 @@
 **Vulnerability:** The application relied on `HttpContext.Connection.RemoteIpAddress` for rate limiting and `UseHsts`/`UseHttpsRedirection`, but lacked `ForwardedHeadersMiddleware`. In a Docker container behind a reverse proxy, this caused the app to see the Docker Gateway IP for all requests, leading to a DoS vulnerability (one failed login blocks everyone) and preventing HSTS activation.
 **Learning:** Containerized applications almost always run behind a proxy. Default ASP.NET Core templates do not enable `ForwardedHeadersMiddleware`, causing standard security features to malfunction.
 **Prevention:** Always configure `ForwardedHeadersMiddleware` in container-ready applications, explicitly clearing `KnownNetworks` if the proxy IP is dynamic.
+
+## 2025-12-18 - Missing Queue Limit for Export Jobs
+**Vulnerability:** `ExportService.StartExportAsync` allowed adding unlimited jobs to the export queue, launching a `Task.Run` for each. This created a Denial of Service (DoS) vulnerability where an attacker could exhaust server memory and storage by spamming export requests.
+**Learning:** Limiting concurrency (e.g., via `SemaphoreSlim`) protects CPU, but does not protect against queue exhaustion. Unbounded queues (in memory or DB) are a resource exhaustion vector.
+**Prevention:** Enforce strict limits on the size of background job queues, and reject new requests when the queue is full (Backpressure).
