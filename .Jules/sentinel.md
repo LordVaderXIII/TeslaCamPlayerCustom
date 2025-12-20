@@ -37,3 +37,8 @@
 **Vulnerability:** `ExportService.StartExportAsync` allowed adding unlimited jobs to the export queue, launching a `Task.Run` for each. This created a Denial of Service (DoS) vulnerability where an attacker could exhaust server memory and storage by spamming export requests.
 **Learning:** Limiting concurrency (e.g., via `SemaphoreSlim`) protects CPU, but does not protect against queue exhaustion. Unbounded queues (in memory or DB) are a resource exhaustion vector.
 **Prevention:** Enforce strict limits on the size of background job queues, and reject new requests when the queue is full (Backpressure).
+
+## 2025-12-19 - Transient Service Concurrency Control
+**Vulnerability:** Transient services (`IClipsService`) executing resource-intensive operations (`SyncClipsAsync`) were not thread-safe or rate-limited globally, allowing DoS via concurrent requests spawning parallel instances.
+**Learning:** Transient services create new instances per request. Instance-level locks (`SemaphoreSlim`) are ineffective. Concurrency control for shared resources (Disk/DB) in transient services requires `static` locks or a Singleton coordinator.
+**Prevention:** Use `static readonly SemaphoreSlim` for transient services or move the logic to a Singleton service.
