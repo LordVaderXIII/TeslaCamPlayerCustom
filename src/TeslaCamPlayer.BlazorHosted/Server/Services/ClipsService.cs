@@ -24,6 +24,7 @@ public partial class ClipsService : IClipsService
 
 	private static readonly Regex FileNameRegex = FileNameRegexGenerated();
 	private static readonly SemaphoreSlim FfProbeSemaphore = new(10);
+	private static readonly SemaphoreSlim _syncSemaphore = new(1);
 	
 	private readonly ISettingsProvider _settingsProvider;
 	private readonly IFfProbeService _ffProbeService;
@@ -58,15 +59,29 @@ public partial class ClipsService : IClipsService
                 }
             }
 
-            if (syncMode == SyncMode.Full)
-            {
-                // Clear all video files from DB
-                await dbContext.VideoFiles.ExecuteDeleteAsync();
-            }
-
             if (syncMode == SyncMode.Incremental || syncMode == SyncMode.Full || !dbContext.VideoFiles.Any())
             {
-                await SyncClipsAsync(dbContext);
+                // SECURITY: Prevent DoS by serializing sync operations
+                await _syncSemaphore.WaitAsync();
+                try
+                {
+                    if (syncMode == SyncMode.Full)
+                    {
+                        // Clear all video files from DB
+                        await dbContext.VideoFiles.ExecuteDeleteAsync();
+                    }
+
+                    // Double-check if we still need to sync (in case another thread just finished populating DB)
+                    // This prevents redundant scans when multiple threads hit SyncMode.None simultaneously
+                    if (syncMode != SyncMode.None || !await dbContext.VideoFiles.AnyAsync())
+                    {
+                        await SyncClipsAsync(dbContext);
+                    }
+                }
+                finally
+                {
+                    _syncSemaphore.Release();
+                }
             }
 
             var videoFiles = await dbContext.VideoFiles.ToListAsync();
