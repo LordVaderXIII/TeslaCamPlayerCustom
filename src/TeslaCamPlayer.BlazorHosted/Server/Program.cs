@@ -41,6 +41,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 builder.Services.AddMemoryCache();
+builder.Services.AddResponseCompression();
 builder.Services.AddControllersWithViews().AddNewtonsoftJson();
 builder.Services.AddRazorPages();
 builder.Services.AddSingleton<ISettingsProvider, SettingsProvider>();
@@ -147,6 +148,7 @@ else
 
 app.UseHttpsRedirection();
 
+app.UseResponseCompression();
 app.UseMiddleware<JulesErrorReportingMiddleware>();
 
 app.UseBlazorFrameworkFiles();
