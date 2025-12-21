@@ -42,3 +42,8 @@
 **Vulnerability:** Transient services (`IClipsService`) executing resource-intensive operations (`SyncClipsAsync`) were not thread-safe or rate-limited globally, allowing DoS via concurrent requests spawning parallel instances.
 **Learning:** Transient services create new instances per request. Instance-level locks (`SemaphoreSlim`) are ineffective. Concurrency control for shared resources (Disk/DB) in transient services requires `static` locks or a Singleton coordinator.
 **Prevention:** Use `static readonly SemaphoreSlim` for transient services or move the logic to a Singleton service.
+
+## 2025-12-20 - Unbounded Resource Consumption in LogsController
+**Vulnerability:** The `LogsController.GetLogs` endpoint allowed an unbounded `count` parameter, enabling users to request a massive number of log entries. This could lead to memory exhaustion (Denial of Service) as the server loaded the entire dataset into memory.
+**Learning:** Pagination or list size parameters must always have a hard server-side limit (cap). Never trust the client to request a reasonable amount of data.
+**Prevention:** Implement input validation to clamp query parameters (like `count`, `limit`, `take`) to a safe maximum value.
