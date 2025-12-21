@@ -17,3 +17,7 @@
 ## 2025-12-19 - Conditional Event Binding
 **Learning:** Even with throttling, attaching high-frequency event listeners (like `@ontimeupdate`) in Blazor incurs JS Interop overhead for every event fired by the browser, because the event is marshaled to C# before the handler decides to return.
 **Action:** Use conditional attribute binding `@ontimeupdate="@(Callback.HasDelegate ? Handler : null)"` to prevent the event listener from being attached at all when the parent component doesn't need it.
+
+## 2025-12-20 - N+1 JS Interop in Synchronization Loops
+**Learning:** Polling state from multiple UI components (like video players) individually via JS Interop inside a frequent timer loop creates massive overhead (N calls per tick).
+**Action:** Batch these operations into a single JS function call that returns an array of values (e.g., `getVideoTimes`), reducing Interop calls from N to 1 per tick.
