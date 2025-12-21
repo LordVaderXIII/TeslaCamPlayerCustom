@@ -26,6 +26,10 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Controllers
         [HttpGet]
         public async Task<ActionResult<List<LogEntry>>> GetLogs([FromQuery] int count = 1000)
         {
+            // Security: Limit count to prevent memory exhaustion (DoS)
+            if (count > 5000) count = 5000;
+            if (count < 1) count = 100;
+
             var logs = new Queue<LogEntry>();
             var logsDir = Path.Combine(Directory.GetCurrentDirectory(), "Logs");
 
