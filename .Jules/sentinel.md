@@ -47,3 +47,8 @@
 **Vulnerability:** The `LogsController.GetLogs` endpoint allowed an unbounded `count` parameter, enabling users to request a massive number of log entries. This could lead to memory exhaustion (Denial of Service) as the server loaded the entire dataset into memory.
 **Learning:** Pagination or list size parameters must always have a hard server-side limit (cap). Never trust the client to request a reasonable amount of data.
 **Prevention:** Implement input validation to clamp query parameters (like `count`, `limit`, `take`) to a safe maximum value.
+
+## 2025-12-21 - Command Injection via Process Arguments
+**Vulnerability:** `FfProbeService` constructed process arguments by concatenating strings (`$"-v ... \"{videoFilePath}\""`). This is vulnerable to Command Injection if the filename contains quotes, potentially allowing attackers to inject arbitrary flags or break execution.
+**Learning:** Using `ProcessStartInfo.Arguments` with string concatenation is insecure when handling user-supplied or filesystem data.
+**Prevention:** Always use `ProcessStartInfo.ArgumentList` (available in .NET Core 2.1+) to pass arguments as a collection, ensuring automatic and safe escaping of values.
