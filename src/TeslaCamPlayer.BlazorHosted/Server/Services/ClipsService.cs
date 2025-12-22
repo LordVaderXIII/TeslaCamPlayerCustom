@@ -85,7 +85,7 @@ public partial class ClipsService : IClipsService
             }
 
             var videoFiles = await dbContext.VideoFiles.ToListAsync();
-            var clips = BuildClips(videoFiles);
+            var clips = await BuildClipsAsync(videoFiles);
 
             _memoryCache.Set(ClipsCacheKey, clips, new MemoryCacheEntryOptions
             {
@@ -158,7 +158,7 @@ public partial class ClipsService : IClipsService
 		await dbContext.SaveChangesAsync();
 	}
 
-	private Clip[] BuildClips(List<VideoFile> videoFiles)
+	private async Task<Clip[]> BuildClipsAsync(List<VideoFile> videoFiles)
 	{
 		var recentFiles = new List<VideoFile>();
 		var eventFiles = new List<VideoFile>();
@@ -177,11 +177,16 @@ public partial class ClipsService : IClipsService
 		}
 
 		var recentClips = GetRecentClips(recentFiles);
-		
-		var clips = eventFiles
+
+		// Optimization: Process event clips in parallel using Task.WhenAll to support async I/O
+		var eventTasks = eventFiles
 			.GroupBy(v => v.EventFolderName)
+			.Select(g => ParseClipAsync(g.Key, g.ToList()));
+
+		var eventClips = await Task.WhenAll(eventTasks);
+
+		var clips = eventClips
 			.AsParallel()
-			.Select(g => ParseClip(g.Key, g.ToList()))
 			.Concat(recentClips.AsParallel())
 			.OrderByDescending(c => c.StartDate)
 			.ToArray();
@@ -316,7 +321,7 @@ public partial class ClipsService : IClipsService
 		};
 	}
 
-	private Clip ParseClip(string eventFolderName, List<VideoFile> eventVideoFiles)
+	private async Task<Clip> ParseClipAsync(string eventFolderName, List<VideoFile> eventVideoFiles)
 	{
 		var segments = eventVideoFiles
 			.GroupBy(v => v.StartDate)
@@ -339,9 +344,10 @@ public partial class ClipsService : IClipsService
 
 		var eventFolderPath = Path.GetDirectoryName(eventVideoFiles.First().FilePath)!;
 		var expectedEventJsonPath = Path.Combine(eventFolderPath, "event.json");
-		var eventInfo = TryReadEvent(expectedEventJsonPath);
+		var eventInfo = await TryReadEventAsync(expectedEventJsonPath);
 
 		var expectedEventThumbnailPath = Path.Combine(eventFolderPath, "thumb.png");
+		// File.Exists is fast (metadata only), so synchronous call is acceptable here.
 		var thumbnailUrl = File.Exists(expectedEventThumbnailPath)
 			? $"/Api/Thumbnail/{Uri.EscapeDataString(expectedEventThumbnailPath)}"
 			: NoThumbnailImageUrl;
@@ -353,9 +359,9 @@ public partial class ClipsService : IClipsService
 		};
 	}
 
-	private Event TryReadEvent(string path)
+	private async Task<Event> TryReadEventAsync(string path)
 	{
-		return _memoryCache.GetOrCreate(path, entry =>
+		return await _memoryCache.GetOrCreateAsync(path, async entry =>
 		{
 			// Cache for 1 hour as event files are static
 			entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1);
@@ -365,7 +371,7 @@ public partial class ClipsService : IClipsService
 				if (!File.Exists(path))
 					return null;
 
-				var json = File.ReadAllText(path);
+				var json = await File.ReadAllTextAsync(path);
 				return JsonConvert.DeserializeObject<Event>(json);
 			}
 			catch (Exception e)
