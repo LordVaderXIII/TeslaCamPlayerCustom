@@ -267,27 +267,55 @@ public class ExportService : IExportService
                 }
             }
 
-            var inputArgs = new StringBuilder();
+            var outputFilePath = GetExportFilePath(job.FileName);
+            var arguments = new List<string>();
+
             foreach (var cam in activeCameras)
             {
                  var concatPath = tempFiles[cameraInputMap[cam]];
-                 inputArgs.Append($"-f concat -safe 0 -i \"{concatPath}\" ");
+                 arguments.Add("-f");
+                 arguments.Add("concat");
+                 arguments.Add("-safe");
+                 arguments.Add("0");
+                 arguments.Add("-i");
+                 arguments.Add(concatPath);
             }
 
-            var outputFilePath = GetExportFilePath(job.FileName);
+            arguments.Add("-filter_complex");
+            arguments.Add(filterComplex.ToString());
+            arguments.Add("-map");
+            arguments.Add("[outv]");
+            arguments.Add("-ss");
+            arguments.Add(startOffset.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            arguments.Add("-t");
+            arguments.Add(duration.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            arguments.Add("-c:v");
+            arguments.Add("libx264");
+            arguments.Add("-preset");
+            arguments.Add("veryfast");
+            arguments.Add("-crf");
+            arguments.Add("23");
+            arguments.Add("-pix_fmt");
+            arguments.Add("yuv420p");
+            arguments.Add(outputFilePath);
 
-            var ffmpegArgs = $"{inputArgs} -filter_complex \"{filterComplex}\" -map \"[outv]\" -ss {startOffset} -t {duration} -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p \"{outputFilePath}\"";
+            Log.Information("Starting FFmpeg with args: {Args}", string.Join(" ", arguments));
 
-            Log.Information("Starting FFmpeg with args: {Args}", ffmpegArgs);
+            var startInfo = new ProcessStartInfo("ffmpeg")
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            foreach (var arg in arguments)
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
+
             var process = new Process
             {
-                StartInfo = new ProcessStartInfo("ffmpeg", ffmpegArgs)
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                }
+                StartInfo = startInfo
             };
 
             process.Start();
