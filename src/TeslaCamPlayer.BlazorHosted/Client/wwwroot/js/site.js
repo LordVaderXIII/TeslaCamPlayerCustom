@@ -12,3 +12,7 @@ function getSliderPercentage(clientX, element) {
     var percentage = x / rect.width;
     return Math.max(0, Math.min(1, percentage));
 }
+
+function getVideoTimes(elements) {
+    return elements.map(e => e ? e.currentTime : 0);
+}
