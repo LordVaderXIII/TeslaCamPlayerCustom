@@ -324,27 +324,50 @@ public partial class ClipViewer : ComponentBase, IDisposable
         {
             try
             {
-                // Get Main Camera Time
-                var mainPlayer = GetPlayerForCamera(_mainCamera);
-                if (mainPlayer == null) return;
+                var activePlayers = new List<(Cameras Camera, VideoPlayer Player)>();
+                void Add(Cameras c, VideoPlayer p) { if (p != null) activePlayers.Add((c, p)); }
 
-                var mainTime = await mainPlayer.GetTimeAsync();
+                Add(Cameras.Front, _videoPlayerFront);
+                Add(Cameras.LeftRepeater, _videoPlayerLeftRepeater);
+                Add(Cameras.RightRepeater, _videoPlayerRightRepeater);
+                Add(Cameras.Back, _videoPlayerBack);
+                Add(Cameras.LeftBPillar, _videoPlayerLeftBPillar);
+                Add(Cameras.RightBPillar, _videoPlayerRightBPillar);
+                Add(Cameras.Fisheye, _videoPlayerFisheye);
+                Add(Cameras.Narrow, _videoPlayerNarrow);
+                Add(Cameras.Cabin, _videoPlayerCabin);
 
-                // Check and Sync others in parallel
-                var tasks = new List<Task>
+                var mainPlayerEntry = activePlayers.FirstOrDefault(p => p.Camera == _mainCamera);
+                if (mainPlayerEntry.Player == null) return;
+
+                // Optimization: Batch retrieve all video times in one JS Interop call
+                // Reduces overhead from ~9 calls to 1 call per second
+                var elements = activePlayers.Select(p => p.Player.VideoElement).ToArray();
+                var times = await JsRuntime.InvokeAsync<double[]>("getVideoTimes", elements);
+
+                var mainIndex = activePlayers.IndexOf(mainPlayerEntry);
+                if (mainIndex < 0 || mainIndex >= times.Length) return;
+
+                var mainTime = times[mainIndex];
+                var syncTasks = new List<Task>();
+
+                for (var i = 0; i < activePlayers.Count; i++)
                 {
-                    CheckAndSyncPlayer(_videoPlayerFront, Cameras.Front, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerLeftRepeater, Cameras.LeftRepeater, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerRightRepeater, Cameras.RightRepeater, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerBack, Cameras.Back, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerLeftBPillar, Cameras.LeftBPillar, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerRightBPillar, Cameras.RightBPillar, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerFisheye, Cameras.Fisheye, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerNarrow, Cameras.Narrow, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerCabin, Cameras.Cabin, mainTime)
-                };
+                    if (i == mainIndex) continue;
 
-                await Task.WhenAll(tasks);
+                    var time = times[i];
+                    if (Math.Abs(time - mainTime) > 0.4) // 400ms drift tolerance
+                    {
+                        var (camera, player) = activePlayers[i];
+                        Console.WriteLine($"Syncing {camera} (Diff: {time - mainTime:F3}s)");
+                        syncTasks.Add(player.SetTimeAsync(mainTime).AsTask());
+                    }
+                }
+
+                if (syncTasks.Any())
+                {
+                    await Task.WhenAll(syncTasks);
+                }
             }
             catch
             {
@@ -368,22 +391,6 @@ public partial class ClipViewer : ComponentBase, IDisposable
             Cameras.Cabin => _videoPlayerCabin,
             _ => null
         };
-    }
-
-    private async Task CheckAndSyncPlayer(VideoPlayer player, Cameras camera, double mainTime)
-    {
-        if (player == null || camera == _mainCamera) return;
-
-        try
-        {
-            var time = await player.GetTimeAsync();
-            if (Math.Abs(time - mainTime) > 0.4) // 400ms drift tolerance
-            {
-                Console.WriteLine($"Syncing {camera} (Diff: {time - mainTime:F3}s)");
-                await player.SetTimeAsync(mainTime);
-            }
-        }
-        catch { /* Player might not be ready */ }
     }
 
 	private async void ScrubVideoDebounceTick(object _, ElapsedEventArgs __)
