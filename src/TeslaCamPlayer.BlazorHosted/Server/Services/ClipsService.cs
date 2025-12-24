@@ -104,18 +104,30 @@ public partial class ClipsService : IClipsService
 
 	private async Task SyncClipsAsync(TeslaCamDbContext dbContext)
 	{
-        _memoryCache.Remove(ClipsCacheKey);
+		_memoryCache.Remove(ClipsCacheKey);
 
 		var knownVideoFiles = await dbContext.VideoFiles
 			.ToDictionaryAsync(v => v.FilePath, v => v);
 
-		// Optimization: Use EnumerateFiles to reduce memory allocation compared to GetFiles
-		var filePaths = Directory
-			.EnumerateFiles(_settingsProvider.Settings.ClipsRootPath, "*.mp4", SearchOption.AllDirectories)
-			.ToHashSet();
+		var visitedFiles = new HashSet<string>();
+		var newFiles = new List<string>();
 
-		// Remove files that no longer exist
-		var filesToRemove = knownVideoFiles.Keys.Where(k => !filePaths.Contains(k)).ToList();
+		// Optimization: Stream EnumerateFiles to avoid allocating a massive HashSet of all file paths.
+		// This reduces memory pressure and starts processing faster.
+		foreach (var path in Directory.EnumerateFiles(_settingsProvider.Settings.ClipsRootPath, "*.mp4", SearchOption.AllDirectories))
+		{
+			if (knownVideoFiles.ContainsKey(path))
+			{
+				visitedFiles.Add(path);
+			}
+			else
+			{
+				newFiles.Add(path);
+			}
+		}
+
+		// Remove files that no longer exist (In DB but not visited on disk)
+		var filesToRemove = knownVideoFiles.Keys.Where(k => !visitedFiles.Contains(k)).ToList();
 		if (filesToRemove.Any())
 		{
 			foreach (var fileToRemove in filesToRemove)
@@ -126,33 +138,36 @@ public partial class ClipsService : IClipsService
 			}
 		}
 
-		// Find new files
-		var newFiles = filePaths
-			.Where(path => !knownVideoFiles.ContainsKey(path))
-			.Select(path => new { Path = path, RegexMatch = FileNameRegex.Match(path) })
-			.Where(f => f.RegexMatch.Success)
-			.ToList();
-
+		// Process new files
 		if (newFiles.Any())
 		{
-			var newVideoFiles = (await Task.WhenAll(newFiles
-				.AsParallel()
-				.Select(async f =>
-				{
-					await FfProbeSemaphore.WaitAsync();
-					try
-					{
-						return await TryParseVideoFileAsync(f.Path, f.RegexMatch);
-					}
-					finally
-					{
-						FfProbeSemaphore.Release();
-					}
-				})))
-				.Where(v => v != null)
+			// Filter and parse new files
+			var validNewFiles = newFiles
+				.Select(path => new { Path = path, RegexMatch = FileNameRegex.Match(path) })
+				.Where(f => f.RegexMatch.Success)
 				.ToList();
 
-			await dbContext.VideoFiles.AddRangeAsync(newVideoFiles);
+			if (validNewFiles.Any())
+			{
+				var newVideoFiles = (await Task.WhenAll(validNewFiles
+					.AsParallel()
+					.Select(async f =>
+					{
+						await FfProbeSemaphore.WaitAsync();
+						try
+						{
+							return await TryParseVideoFileAsync(f.Path, f.RegexMatch);
+						}
+						finally
+						{
+							FfProbeSemaphore.Release();
+						}
+					})))
+					.Where(v => v != null)
+					.ToList();
+
+				await dbContext.VideoFiles.AddRangeAsync(newVideoFiles);
+			}
 		}
 
 		await dbContext.SaveChangesAsync();
@@ -178,16 +193,38 @@ public partial class ClipsService : IClipsService
 
 		var recentClips = GetRecentClips(recentFiles);
 
-		// Optimization: Process event clips in parallel using Task.WhenAll to support async I/O
-		var eventTasks = eventFiles
+		// Optimization: Process event clips in parallel with a concurrency limit.
+		// Use a SemaphoreSlim to prevent thread pool exhaustion and disk thrashing when parsing thousands of events.
+		var eventGroups = eventFiles
 			.GroupBy(v => v.EventFolderName)
-			.Select(g => ParseClipAsync(g.Key, g.ToList()));
+			.ToList();
 
-		var eventClips = await Task.WhenAll(eventTasks);
+		var eventClipTasks = new List<Task<Clip>>(eventGroups.Count);
+		// Limit concurrency to avoid choking I/O
+		using var semaphore = new SemaphoreSlim(20);
 
+		foreach (var group in eventGroups)
+		{
+			eventClipTasks.Add(Task.Run(async () =>
+			{
+				await semaphore.WaitAsync();
+				try
+				{
+					return await ParseClipAsync(group.Key, group.ToList());
+				}
+				finally
+				{
+					semaphore.Release();
+				}
+			}));
+		}
+
+		var eventClips = await Task.WhenAll(eventClipTasks);
+
+		// Optimization: Removed .AsParallel() as it adds overhead for simple concatenation.
+		// The collections are already in memory, and OrderByDescending is efficient enough.
 		var clips = eventClips
-			.AsParallel()
-			.Concat(recentClips.AsParallel())
+			.Concat(recentClips)
 			.OrderByDescending(c => c.StartDate)
 			.ToArray();
 
