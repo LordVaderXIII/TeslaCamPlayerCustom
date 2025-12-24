@@ -198,7 +198,7 @@ public partial class Index : ComponentBase
 
 	private async Task DatePicked(DateTime? pickedDate)
 	{
-		if (!pickedDate.HasValue || _ignoreDatePicked == pickedDate)
+		if (!pickedDate.HasValue || _ignoreDatePicked == pickedDate || _filteredclips == null)
 			return;
 
 		var firstClipAtDate = _filteredclips.FirstOrDefault(c => c.StartDate.Date == pickedDate);
@@ -212,8 +212,14 @@ public partial class Index : ComponentBase
 
 	private async Task ScrollListToActiveClip()
 	{
+		if (_filteredclips == null)
+			return;
+
 		var listBoundingRect = await _eventsList.MudGetBoundingClientRectAsync();
 		var index = Array.IndexOf(_filteredclips, _activeClip);
+		if (index < 0)
+			return;
+
 		var top = (int)(index * EventItemHeight - listBoundingRect.Height / 2 + EventItemHeight / 2);
 
 		await JsRuntime.InvokeVoidAsync("HTMLElement.prototype.scrollTo.call", _eventsList, new ScrollToOptions
@@ -247,6 +253,9 @@ public partial class Index : ComponentBase
 
 	private async void ScrollDebounceTimerTick(object _, ElapsedEventArgs __)
 	{
+		if (_filteredclips == null || _filteredclips.Length == 0)
+			return;
+
 		var scrollTop = await JsRuntime.InvokeAsync<double>("getProperty", _eventsList, "scrollTop");
 		var listBoundingRect = await _eventsList.MudGetBoundingClientRectAsync();
 		var centerScrollPosition = scrollTop + listBoundingRect.Height / 2 + EventItemHeight / 2;
@@ -261,6 +270,9 @@ public partial class Index : ComponentBase
 
 	private async Task PreviousButtonClicked()
 	{
+		if (_filteredclips == null)
+			return;
+
 		// Go to an OLDER clip, so start date should be GREATER than current
 		var previous = _filteredclips
 			.OrderByDescending(c => c.StartDate)
@@ -275,6 +287,9 @@ public partial class Index : ComponentBase
 
 	private async Task NextButtonClicked()
 	{
+		if (_filteredclips == null)
+			return;
+
 		// Go to a NEWER clip, so start date should be LESS than current
 		var next = _filteredclips
 			.OrderBy(c => c.StartDate)
@@ -289,7 +304,7 @@ public partial class Index : ComponentBase
 
 	private async Task DatePickerOnMouseWheel(WheelEventArgs e)
 	{
-		if (e.DeltaY == 0 && e.DeltaX == 0 || !_datePicker.PickerMonth.HasValue)
+		if (e.DeltaY == 0 && e.DeltaX == 0 || !_datePicker.PickerMonth.HasValue || _filteredclips == null)
 			return;
 
 		var goToNextMonth = e.DeltaY + e.DeltaX * -1 < 0;
