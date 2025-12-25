@@ -25,8 +25,8 @@
                 <MudText Typo="Typo.caption">@Data.AutopilotState.ToString()</MudText>
             </div>
             <div class="speed">
-                <MudText Typo="Typo.h5">@Math.Round(Data.SpeedMph)</MudText>
-                <MudText Typo="Typo.caption">MPH</MudText>
+                <MudText Typo="Typo.h5">@Math.Round(Data.SpeedKmph)</MudText>
+                <MudText Typo="Typo.caption">KM/H</MudText>
             </div>
         </div>
 
@@ -34,8 +34,8 @@
         <div class="steering-container">
              <!-- Simple Steering Wheel SVG rotated -->
              <svg viewBox="0 0 24 24" class="steering-wheel" style="@($"transform: rotate({Data.SteeringWheelAngle}deg); transition: transform 0.1s linear;")">
-                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
-                 <path d="M12 2 L12 12 L4 18 M12 12 L20 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.5" fill="rgba(255,255,255,0.1)" />
+                 <path d="M12 2 L12 12 L4 18 M12 12 L20 18" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
              </svg>
         </div>
 
