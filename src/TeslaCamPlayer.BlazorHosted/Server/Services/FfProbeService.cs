@@ -20,18 +20,26 @@ public abstract class FfProbeService : IFfProbeService
 			// -v error: Suppress logging
 			// -show_entries format=duration: Show only duration
 			// -of default=noprint_wrappers=1:nokey=1: specific format (value only)
-			var args = $"-v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 \"{videoFilePath}\"";
+			// SECURITY: Use ArgumentList to prevent command injection via malicious filenames
+			var processStartInfo = new ProcessStartInfo(ExePath)
+			{
+				RedirectStandardError = true,
+				RedirectStandardOutput = true,
+				CreateNoWindow = true,
+				UseShellExecute = false
+			};
+
+			processStartInfo.ArgumentList.Add("-v");
+			processStartInfo.ArgumentList.Add("error");
+			processStartInfo.ArgumentList.Add("-show_entries");
+			processStartInfo.ArgumentList.Add("format=duration");
+			processStartInfo.ArgumentList.Add("-of");
+			processStartInfo.ArgumentList.Add("default=noprint_wrappers=1:nokey=1");
+			processStartInfo.ArgumentList.Add(videoFilePath);
 
 			var process = new Process
 			{
-				StartInfo = new ProcessStartInfo(ExePath)
-				{
-					RedirectStandardError = true,
-					RedirectStandardOutput = true,
-					CreateNoWindow = true,
-					UseShellExecute = false,
-					Arguments = args
-				}
+				StartInfo = processStartInfo
 			};
 
 			process.Start();
