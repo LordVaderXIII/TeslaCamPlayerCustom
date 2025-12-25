@@ -1,0 +1,168 @@
+@using TeslaCamPlayer.BlazorHosted.Shared.Models
+
+@if (Data != null)
+{
+    <div class="telemetry-overlay">
+        <!-- Turn Signal Left -->
+        <MudIcon Icon="@Icons.Material.Filled.ArrowBack"
+                 Color="@(Data.BlinkerOnLeft ? Color.Success : Color.Default)"
+                 Class="@($"signal-icon {(Data.BlinkerOnLeft ? "blink" : "dim")}")" />
+
+        <!-- Gear -->
+        <div class="gear-selector">
+            <span class="@(Data.Gear == GearState.Park ? "active" : "")">P</span>
+            <span class="@(Data.Gear == GearState.Reverse ? "active" : "")">R</span>
+            <span class="@(Data.Gear == GearState.Neutral ? "active" : "")">N</span>
+            <span class="@(Data.Gear == GearState.Drive ? "active" : "")">D</span>
+        </div>
+
+        <!-- Speed & Autopilot -->
+        <div class="center-info">
+            <div class="autopilot-status">
+                <MudIcon Icon="@Icons.Material.Filled.DirectionsCar"
+                         Color="@GetAutopilotColor(Data.AutopilotState)"
+                         Size="Size.Large" />
+                <MudText Typo="Typo.caption">@Data.AutopilotState.ToString()</MudText>
+            </div>
+            <div class="speed">
+                <MudText Typo="Typo.h5">@Math.Round(Data.SpeedMph)</MudText>
+                <MudText Typo="Typo.caption">MPH</MudText>
+            </div>
+        </div>
+
+        <!-- Steering Wheel -->
+        <div class="steering-container">
+             <!-- Simple Steering Wheel SVG rotated -->
+             <svg viewBox="0 0 24 24" class="steering-wheel" style="@($"transform: rotate({Data.SteeringWheelAngle}deg); transition: transform 0.1s linear;")">
+                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+                 <path d="M12 2 L12 12 L4 18 M12 12 L20 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+             </svg>
+        </div>
+
+        <!-- Pedals -->
+        <div class="pedals">
+            <div class="pedal brake @(Data.BrakeApplied ? "active" : "")">
+                <MudText Typo="Typo.caption">BRAKE</MudText>
+            </div>
+            <div class="pedal accel">
+                <div class="accel-bar-bg">
+                    <div class="accel-bar-fill" style="height: @(Data.AcceleratorPedalPosition)%"></div>
+                </div>
+                <MudText Typo="Typo.caption">ACCEL</MudText>
+            </div>
+        </div>
+
+        <!-- Turn Signal Right -->
+        <MudIcon Icon="@Icons.Material.Filled.ArrowForward"
+                 Color="@(Data.BlinkerOnRight ? Color.Success : Color.Default)"
+                 Class="@($"signal-icon {(Data.BlinkerOnRight ? "blink" : "dim")}")" />
+    </div>
+
+    <style>
+        .telemetry-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 80px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 2000;
+            pointer-events: none; /* Let clicks pass through */
+            color: white;
+        }
+
+        .signal-icon.dim { opacity: 0.2; }
+        .signal-icon.blink { animation: blinker 0.5s linear infinite; }
+
+        @@keyframes blinker {
+            50% { opacity: 0.3; }
+        }
+
+        .gear-selector {
+            display: flex;
+            gap: 10px;
+            font-weight: bold;
+            font-family: monospace;
+            font-size: 1.2rem;
+        }
+        .gear-selector span { opacity: 0.3; }
+        .gear-selector span.active { opacity: 1; color: var(--mud-palette-info); transform: scale(1.2); }
+
+        .center-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .steering-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .steering-wheel {
+            width: 48px;
+            height: 48px;
+        }
+
+        .pedals {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+            height: 50px;
+        }
+        .pedal {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+        .pedal.brake {
+            border: 2px solid #555;
+            padding: 4px;
+            border-radius: 4px;
+            background: rgba(0,0,0,0.5);
+        }
+        .pedal.brake.active {
+            background: var(--mud-palette-error);
+            border-color: var(--mud-palette-error);
+            box-shadow: 0 0 10px var(--mud-palette-error);
+        }
+        .pedal.accel {
+
+        }
+        .accel-bar-bg {
+            width: 20px;
+            height: 40px;
+            background: #333;
+            border: 1px solid #555;
+            border-radius: 2px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+        }
+        .accel-bar-fill {
+            width: 100%;
+            background: var(--mud-palette-success);
+            transition: height 0.1s linear;
+        }
+    </style>
+}
+
+@code {
+    [Parameter] public TelemetryData Data { get; set; }
+
+    private Color GetAutopilotColor(AutopilotState state)
+    {
+        return state switch
+        {
+            AutopilotState.SelfDriving => Color.Info,
+            AutopilotState.Autosteer => Color.Info,
+            AutopilotState.Tacc => Color.Primary,
+            _ => Color.Default
+        };
+    }
+}

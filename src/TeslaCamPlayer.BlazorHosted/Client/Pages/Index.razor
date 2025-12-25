@@ -36,9 +36,26 @@ else
 			            PreviousButtonClicked="PreviousButtonClicked"
 			            NextButtonClicked="NextButtonClicked"
 			            IsExportMode="_isExportMode"
-			            OnExportRequested="OnExportRequested" />
+			            OnExportRequested="OnExportRequested"
+                        OnTelemetryUpdated="OnTelemetryUpdated"
+                        OnPathAvailable="OnPathAvailable" />
 		</div>
 		<div class="browser @(_isBrowserVisible ? "visible" : "")">
+            <div class="browser-mode-switch px-4 py-2 d-flex justify-center">
+                <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small">
+                    <MudButton Variant="@(!_isMapVisible ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick="@(() => _isMapVisible = false)">Events</MudButton>
+                    <MudButton Variant="@(_isMapVisible ? Variant.Filled : Variant.Outlined)" Color="Color.Primary" OnClick="@(() => _isMapVisible = true)">Map</MudButton>
+                </MudButtonGroup>
+            </div>
+
+            @if (_isMapVisible)
+            {
+                <div style="flex: 1; height: 100%; width: 100%; min-height: 400px;">
+                    <MapViewer @ref="_mapViewer" CurrentData="_currentTelemetry" Path="_currentPath" />
+                </div>
+            }
+            else
+            {
 			<MudDatePicker
 				@ref="_datePicker"
 				PickerVariant="PickerVariant.Static"
@@ -123,6 +140,7 @@ else
 					</Placeholder>
 				</Virtualize>
 			</div>
+            }
 		</div>
 	</div>
 }

@@ -2,6 +2,8 @@
 @inject IJSRuntime JSRuntime
 
 <div class="viewer @(_is360Mode ? "viewer--360" : "")">
+    <TelemetryOverlay Data="_currentTelemetry" />
+
     <!-- Camera Switch Button (Mobile Only) -->
     <div class="camera-switch-btn d-md-none" style="@(_is360Mode ? "display:none" : "")">
         <MudIconButton Icon="@Icons.Material.Filled.Cameraswitch" Variant="Variant.Filled" Color="Color.Secondary" OnClick="@ToggleCameraOverlay" AriaLabel="Switch Camera" />
