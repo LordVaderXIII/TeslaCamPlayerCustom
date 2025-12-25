@@ -1,0 +1,64 @@
+@inject IJSRuntime JSRuntime
+@using TeslaCamPlayer.BlazorHosted.Shared.Models
+
+<div id="map-container" style="width: 100%; height: 100%;"></div>
+
+@code {
+    [Parameter] public TelemetryData CurrentData { get; set; }
+    [Parameter] public List<double[]> Path { get; set; }
+
+    private bool _initialized;
+    private List<double[]> _lastSetPath;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("mapInterop.initMap", "map-container");
+            _initialized = true;
+            // Apply pending path if any
+            if (Path != null)
+            {
+                await SetPathAsync(Path);
+            }
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_initialized)
+        {
+            if (CurrentData != null)
+            {
+                await JSRuntime.InvokeVoidAsync("mapInterop.updatePosition", CurrentData.Latitude, CurrentData.Longitude, CurrentData.Heading);
+            }
+
+            if (Path != _lastSetPath)
+            {
+                await SetPathAsync(Path);
+            }
+        }
+    }
+
+    private async Task SetPathAsync(List<double[]> path)
+    {
+        _lastSetPath = path;
+        if (_initialized && path != null)
+        {
+            await JSRuntime.InvokeVoidAsync("mapInterop.setPath", path);
+        }
+    }
+
+    public async Task RefreshSizeAsync()
+    {
+         if (_initialized)
+            await JSRuntime.InvokeVoidAsync("mapInterop.invalidateSize");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try {
+            await JSRuntime.InvokeVoidAsync("mapInterop.destroy");
+        } catch {}
+    }
+}

@@ -52,6 +52,8 @@ public partial class Index : ComponentBase
 	private System.Timers.Timer _jobsCheckTimer;
     private bool _isBrowserVisible;
 	private string _userInitials = "AD";
+    private bool _isMapVisible;
+    private TelemetryData _currentTelemetry;
 
 	protected override async Task OnInitializedAsync()
 	{
@@ -352,6 +354,26 @@ public partial class Index : ComponentBase
     private void ToggleBrowser()
     {
         _isBrowserVisible = !_isBrowserVisible;
+    }
+
+    private void ToggleMap()
+    {
+        _isMapVisible = !_isMapVisible;
+    }
+
+    private void OnTelemetryUpdated(TelemetryData data)
+    {
+        _currentTelemetry = data;
+        StateHasChanged();
+    }
+
+    private MapViewer _mapViewer;
+    private List<double[]> _currentPath;
+
+    private void OnPathAvailable(List<double[]> path)
+    {
+        _currentPath = path;
+        StateHasChanged();
     }
 
 	private void ShowChangelog()

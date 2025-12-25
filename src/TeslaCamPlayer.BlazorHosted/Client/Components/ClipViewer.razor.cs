@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using MudBlazor;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
+using TeslaCamPlayer.BlazorHosted.Client.Services;
 
 namespace TeslaCamPlayer.BlazorHosted.Client.Components;
 
@@ -18,6 +19,9 @@ public partial class ClipViewer : ComponentBase, IDisposable
 	
 	[Inject]
 	public IJSRuntime JsRuntime { get; set; }
+
+    [Inject]
+    public ITelemetryService TelemetryService { get; set; }
 	
 	[Parameter]
 	public EventCallback PreviousButtonClicked { get; set; }
@@ -30,6 +34,14 @@ public partial class ClipViewer : ComponentBase, IDisposable
 
 	[Parameter]
 	public EventCallback<ExportRequest> OnExportRequested { get; set; }
+
+    [Parameter]
+    public EventCallback<TelemetryData> OnTelemetryUpdated { get; set; }
+
+    [Parameter]
+    public EventCallback<List<double[]>> OnPathAvailable { get; set; }
+
+    private TelemetryData _currentTelemetry;
 
 	private double TimelineValue
 	{
@@ -191,6 +203,17 @@ public partial class ClipViewer : ComponentBase, IDisposable
 
 		await ExecuteOnPlayers(async p => await p.SetPlaybackRateAsync(PlaybackRate));
 
+        // Init Telemetry for this segment
+        if (_currentSegment?.CameraFront?.Url != null)
+        {
+            var telemetryInit = await TelemetryService.InitAsync(_currentSegment.CameraFront.Url);
+            if (telemetryInit)
+            {
+                var path = await TelemetryService.GetPathAsync();
+                await OnPathAvailable.InvokeAsync(path);
+            }
+        }
+
 		if (_is360Mode)
 		{
 			await Update360ModeAsync();
@@ -286,6 +309,16 @@ public partial class ClipViewer : ComponentBase, IDisposable
         if (_videoPlayerFront == null) return;
 
 		var seconds = await _videoPlayerFront.GetTimeAsync();
+
+        // Update Telemetry
+        var telemetry = await TelemetryService.GetTelemetryAsync(seconds);
+        if (telemetry != _currentTelemetry)
+        {
+            _currentTelemetry = telemetry;
+            await OnTelemetryUpdated.InvokeAsync(telemetry);
+            StateHasChanged(); // Update Overlay
+        }
+
 		var currentTime = _currentSegment.StartDate.AddSeconds(seconds);
 		var secondsSinceClipStart = (currentTime - _clip.StartDate).TotalSeconds;
 		
