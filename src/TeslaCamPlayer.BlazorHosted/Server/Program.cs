@@ -34,6 +34,14 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     .AddCookie(options =>
     {
         options.Cookie.Name = "TeslaCamAuth";
+        // Security Hardening:
+        // HttpOnly: Prevents XSS scripts from accessing the cookie
+        // SameSite: Strict prevents CSRF attacks by not sending cookie on cross-site requests
+        // SecurePolicy: Ensures cookie is only sent over HTTPS (when request is HTTPS)
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+
         options.Events.OnRedirectToLogin = context =>
         {
             context.Response.StatusCode = 401;
