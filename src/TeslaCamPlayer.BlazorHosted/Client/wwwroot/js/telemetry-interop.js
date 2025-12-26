@@ -85,15 +85,16 @@ window.telemetryInterop = {
         return {
             timestamp: new Date().toISOString(), // Placeholder
             gearState: this.mapGear(sei.gear_state),
-            speedMph: (sei.vehicle_speed_mps || 0) * 2.23694,
-            lat: sei.latitude_deg || 0,
-            lon: sei.longitude_deg || 0,
+            vehicleSpeedMps: sei.vehicle_speed_mps || 0,
+            latitudeDeg: sei.latitude_deg || 0,
+            longitudeDeg: sei.longitude_deg || 0,
+            headingDeg: sei.heading_deg || 0,
             autopilotState: this.mapAutopilot(sei.autopilot_state),
-            steeringAngle: sei.steering_wheel_angle || 0,
+            steeringWheelAngle: sei.steering_wheel_angle || 0,
             brakeApplied: sei.brake_applied || false,
             acceleratorPedalPosition: sei.accelerator_pedal_position || 0,
-            blinkerLeft: sei.blinker_on_left || false,
-            blinkerRight: sei.blinker_on_right || false
+            blinkerOnLeft: sei.blinker_on_left || false,
+            blinkerOnRight: sei.blinker_on_right || false
         };
     },
 
