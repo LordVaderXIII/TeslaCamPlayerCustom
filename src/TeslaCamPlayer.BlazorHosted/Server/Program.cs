@@ -1,5 +1,6 @@
 using Serilog;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.StaticFiles;
 using Serilog.Events;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -152,7 +153,13 @@ app.UseResponseCompression();
 app.UseMiddleware<JulesErrorReportingMiddleware>();
 
 app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
+
+var provider = new FileExtensionContentTypeProvider();
+provider.Mappings[".proto"] = "text/plain";
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = provider
+});
 
 app.UseRouting();
 
