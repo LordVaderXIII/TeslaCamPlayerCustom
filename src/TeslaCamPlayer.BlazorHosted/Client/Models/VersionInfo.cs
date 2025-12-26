@@ -11,10 +11,20 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
 
     public static class VersionInfo
     {
-        public const string CurrentVersion = "2025-12-1.3.7";
+        public const string CurrentVersion = "2025-12-1.3.8";
 
         public static readonly List<VersionRelease> Releases = new List<VersionRelease>
         {
+            new VersionRelease
+            {
+                Version = "2025-12-1.3.8",
+                Date = "2025-12-20",
+                Changes = new List<string>
+                {
+                    "Fix Map layout: Map now replaces the Calendar only (keeping Clip List visible) and has a fixed height",
+                    "Fix Telemetry extraction: Ensure DashcamHelpers dependency is correctly utilized"
+                }
+            },
             new VersionRelease
             {
                 Version = "2025-12-1.3.7",

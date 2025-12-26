@@ -17,8 +17,13 @@ window.telemetryInterop = {
         this.currentUrl = videoUrl;
 
         try {
+            // Verify DashcamHelpers dependency
+            if (!window.DashcamHelpers) {
+                throw new Error("DashcamHelpers not loaded");
+            }
+
             // Ensure Protobuf is ready
-            await window.DashcamHelpers.initProtobuf('/dashcam.proto');
+            await window.DashcamHelpers.initProtobuf('dashcam.proto'); // Use relative path
             const { SeiMetadata } = window.DashcamHelpers.getProtobuf();
 
             // Fetch video file
