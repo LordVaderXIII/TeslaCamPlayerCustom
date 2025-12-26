@@ -50,7 +50,7 @@ else
 
             @if (_isMapVisible)
             {
-                <div style="flex: 1; height: 100%; width: 100%; min-height: 400px;">
+                <div style="flex: none; height: 350px; width: 100%;">
                     <MapViewer @ref="_mapViewer" CurrentData="_currentTelemetry" Path="_currentPath" />
                 </div>
             }
@@ -64,6 +64,7 @@ else
 				Class="browser-date-picker"
 				DateChanged="DatePicked"
 				@onmousewheel="@DatePickerOnMouseWheel"/>
+            }
 
 			<MudToolBar Class="py-2">
 				<MudTooltip Text="Scan for new files only">
@@ -140,7 +141,6 @@ else
 					</Placeholder>
 				</Virtualize>
 			</div>
-            }
 		</div>
 	</div>
 }
