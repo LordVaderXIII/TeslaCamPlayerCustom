@@ -28,7 +28,7 @@ window.telemetryInterop = {
 
             // Fetch video file
             // Note: This fetches the whole file. For large files, this might be slow.
-            const response = await fetch(videoUrl);
+            const response = await fetch(videoUrl, { credentials: 'include' });
             if (!response.ok) throw new Error(`Failed to fetch video: ${response.statusText}`);
             const buffer = await response.arrayBuffer();
 
