@@ -49,7 +49,7 @@ public class ApiController : ControllerBase
 
 		path = Path.GetFullPath(path);
 		if (!IsUnderRootPath(path))
-			return BadRequest($"File must be in subdirectory under \"{_rootFullPath}\", but was \"{path}\"");
+			return BadRequest("File must be in subdirectory under the clips root path.");
 
 		if (!System.IO.File.Exists(path))
 			return NotFound();
