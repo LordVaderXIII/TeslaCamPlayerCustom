@@ -129,11 +129,13 @@ public partial class Index : ComponentBase
 			.Where(_eventFilter.IsInFilter)
 			.ToArray();
 
-		_eventDates = _filteredclips
-			.Select(c => c.StartDate.Date)
-			.Concat(_filteredclips.Select(c => c.EndDate.Date))
-			.Distinct()
-			.ToHashSet();
+		// Optimization: Avoid multiple LINQ passes (Select, Concat, Distinct) by populating the HashSet directly.
+		_eventDates = new HashSet<DateTime>(_filteredclips.Length * 2);
+		foreach (var clip in _filteredclips)
+		{
+			_eventDates.Add(clip.StartDate.Date);
+			_eventDates.Add(clip.EndDate.Date);
+		}
 	}
 
 	private async Task ToggleFilter()
