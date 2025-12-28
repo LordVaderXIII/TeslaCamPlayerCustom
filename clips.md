@@ -59,3 +59,13 @@ A clip is shown if **any** of the following are true:
 2.  **Acceleration:** `Values.SentryAccelerationDetection` is true AND reason starts with `sentry_aware_accel_`.
 3.  **Other:** `Values.SentryOther` is true AND clip type is `ClipType.Sentry`.
     *   **Implementation Note:** Similar to Dashcam, enabling **Sentry Other** will display *all* Sentry clips. This effectively overrides the specific detection toggles (showing them even if disabled) as long as "Other" is enabled.
+
+## 4. Naming & Display (Client-Side)
+
+Clips do not have a specific human-readable name in the backend. In the user interface (Clips Menu), they are identified and displayed by their timestamp.
+
+*   **Display Logic:** `(Clip.Event.Timestamp ?? Clip.StartDate).ToString("yyyy-MM-dd HH:mm:ss")`
+*   **Explanation:**
+    *   If the clip has associated Event data (e.g., Sentry or Saved clips with `event.json`), the **Event Timestamp** is used.
+    *   Otherwise (e.g., Recent clips or missing event data), the **Clip Start Date** is used.
+    *   The format is always `YYYY-MM-DD HH:mm:ss`.
