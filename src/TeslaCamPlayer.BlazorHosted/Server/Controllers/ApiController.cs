@@ -47,13 +47,15 @@ public class ApiController : ControllerBase
 		path = HttpUtility.UrlDecode(path);
 		path += extension;
 
-		path = Path.GetFullPath(path);
-		if (!IsUnderRootPath(path))
+		// SECURITY: Prevent Path Traversal by combining with root path and checking normalized path
+		var fullPath = Path.GetFullPath(Path.Combine(_rootFullPath, path));
+
+		if (!IsUnderRootPath(fullPath))
 			return BadRequest("File must be in subdirectory under the clips root path.");
 
-		if (!System.IO.File.Exists(path))
+		if (!System.IO.File.Exists(fullPath))
 			return NotFound();
 
-		return PhysicalFile(path, contentType, enableRangeProcessing);
+		return PhysicalFile(fullPath, contentType, enableRangeProcessing);
 	}
 }

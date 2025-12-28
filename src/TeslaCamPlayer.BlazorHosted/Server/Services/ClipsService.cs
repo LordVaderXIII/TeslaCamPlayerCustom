@@ -309,10 +309,12 @@ public partial class ClipsService : IClipsService
 			? regexMatch.Groups["event"].Value
 			: null;
 		
+		var relativePath = Path.GetRelativePath(_settingsProvider.Settings.ClipsRootPath, path);
+
 		return new VideoFile
 		{
 			FilePath = path,
-			Url = $"/Api/Video/{Uri.EscapeDataString(path)}",
+			Url = $"/Api/Video/{Uri.EscapeDataString(relativePath)}",
 			EventFolderName = eventFolderName,
 			ClipType = clipType,
 			StartDate = date,
@@ -348,9 +350,12 @@ public partial class ClipsService : IClipsService
 
 		var expectedEventThumbnailPath = Path.Combine(eventFolderPath, "thumb.png");
 		// File.Exists is fast (metadata only), so synchronous call is acceptable here.
-		var thumbnailUrl = File.Exists(expectedEventThumbnailPath)
-			? $"/Api/Thumbnail/{Uri.EscapeDataString(expectedEventThumbnailPath)}"
-			: NoThumbnailImageUrl;
+		var thumbnailUrl = NoThumbnailImageUrl;
+		if (File.Exists(expectedEventThumbnailPath))
+		{
+			var relativeThumbPath = Path.GetRelativePath(_settingsProvider.Settings.ClipsRootPath, expectedEventThumbnailPath);
+			thumbnailUrl = $"/Api/Thumbnail/{Uri.EscapeDataString(relativeThumbPath)}";
+		}
 
 		return new Clip(eventVideoFiles.First().ClipType, segments)
 		{

@@ -1,0 +1,4 @@
+## 2024-05-23 - Internal Path Disclosure & Traversal Hardening
+**Vulnerability:** The server was exposing full absolute filesystem paths (e.g., `C:\Users\...\video.mp4`) in API responses (Information Disclosure). It also relied on fragile logic for serving files that could be susceptible to Path Traversal if the input path was absolute or manipulated.
+**Learning:** Sending absolute paths to the client is unnecessary and risky. It reveals server structure. Also, relying on `Path.GetFullPath(input)` without a base path resolving against CWD is dangerous for file serving endpoints.
+**Prevention:** Always use `Path.GetRelativePath` when sending file references to the client. Always use `Path.GetFullPath(Path.Combine(root, input))` when resolving user inputs to files, and verify the result is under the root.
