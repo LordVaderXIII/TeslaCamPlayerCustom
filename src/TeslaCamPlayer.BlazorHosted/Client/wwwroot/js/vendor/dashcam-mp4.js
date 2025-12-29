@@ -216,14 +216,15 @@ class DashcamMP4 {
     }
 }
 
-window.DashcamMP4 = DashcamMP4;
+// Support both Window (browser) and WorkerGlobalScope
+(typeof self !== 'undefined' ? self : window).DashcamMP4 = DashcamMP4;
 
 // -------------------------------------------------------------
 // Tesla Dashcam Helpers
 // Protobuf initialization, field formatting, and CSV export utilities.
 // -------------------------------------------------------------
 
-(function () {
+(function (global) {
     let SeiMetadata = null;
     let enumFields = null;
 
@@ -335,7 +336,7 @@ window.DashcamMP4 = DashcamMP4;
         return { files, directoryName };
     }
 
-    window.DashcamHelpers = {
+    global.DashcamHelpers = {
         initProtobuf,
         getProtobuf,
         deriveFieldInfo,
@@ -344,4 +345,4 @@ window.DashcamMP4 = DashcamMP4;
         downloadBlob,
         getFilesFromDataTransfer
     };
-})();
+})(typeof self !== 'undefined' ? self : window);
