@@ -1,69 +1,57 @@
 window.telemetryInterop = {
-    dashcam: null,
+    worker: null,
     frames: [],
+    currentVideoUrl: null,
 
-    init: async function (videoUrl) {
-        try {
-            console.log("Initializing telemetry for: " + videoUrl);
-
-            // 1. Fetch the video file
-            const response = await fetch(videoUrl);
-            if (!response.ok) {
-                console.error("Failed to fetch video:", response.statusText);
-                return false;
-            }
-            const buffer = await response.arrayBuffer();
-
-            // 2. Initialize Protobuf
-            // Ensure DashcamHelpers is loaded
-            if (!window.DashcamHelpers) {
-                console.error("DashcamHelpers not found. Ensure dashcam-mp4.js is loaded.");
-                return false;
+    init: function (videoUrl) {
+        return new Promise((resolve, reject) => {
+            if (this.currentVideoUrl === videoUrl && this.frames.length > 0) {
+                // Already loaded
+                resolve(true);
+                return;
             }
 
-            const { SeiMetadata } = await window.DashcamHelpers.initProtobuf('dashcam.proto');
-            if (!SeiMetadata) {
-                console.error("Failed to initialize Protobuf metadata.");
-                return false;
+            console.log("Initializing telemetry worker for: " + videoUrl);
+            this.frames = [];
+            this.currentVideoUrl = videoUrl;
+
+            // Terminate existing worker if any
+            if (this.worker) {
+                this.worker.terminate();
             }
 
-            // 3. Initialize Parser
-            if (!window.DashcamMP4) {
-                 console.error("DashcamMP4 not found.");
-                 return false;
-            }
-            this.dashcam = new window.DashcamMP4(buffer);
+            // Create new worker
+            this.worker = new Worker('js/telemetry.worker.js');
 
-            // 4. Parse Frames & Build Timeline
-            const rawFrames = this.dashcam.parseFrames(SeiMetadata);
-            const config = this.dashcam.getConfig();
+            this.worker.onmessage = (e) => {
+                const result = e.data;
+                if (result.success) {
+                    this.frames = result.frames;
+                    console.log(`Telemetry worker initialized. Found ${this.frames.length} data points.`);
+                    resolve(this.frames.length > 0);
+                } else {
+                    console.error("Telemetry worker failed:", result.error);
+                    resolve(false);
+                }
+            };
 
-            // Expand frame durations to absolute timestamps
-            const timestamps = [];
-            let t = 0;
-            // config.durations contains the duration of each frame in ms
-            for (const d of config.durations) {
-                timestamps.push(t);
-                t += d / 1000.0;
-            }
+            this.worker.onerror = (e) => {
+                console.error("Telemetry worker error:", e);
+                resolve(false);
+            };
 
-            // Filter only frames with SEI data and map them
-            this.frames = rawFrames
-                .filter(f => f.sei)
-                .map(f => {
-                    return {
-                        time: timestamps[f.index] || 0,
-                        data: f.sei
-                    };
-                });
+            // Resolve absolute path for proto file
+            const protoUrl = new URL('dashcam.proto', document.baseURI).href;
+            // Resolve absolute path for video file
+            // videoUrl is likely relative (e.g. /Api/Video/...)
+            const absoluteVideoUrl = new URL(videoUrl, document.baseURI).href;
 
-            console.log(`Telemetry initialized. Found ${this.frames.length} data points.`);
-            return this.frames.length > 0;
-
-        } catch (e) {
-            console.error("Error initializing telemetry:", e);
-            return false;
-        }
+            // Start the worker
+            this.worker.postMessage({
+                videoUrl: absoluteVideoUrl,
+                protoUrl: protoUrl
+            });
+        });
     },
 
     getTelemetry: function (timeSeconds) {
@@ -71,6 +59,7 @@ window.telemetryInterop = {
 
         // Find the closest frame
         // Assuming relatively small number of frames (e.g. 60 sec * 30 fps = 1800), linear search or reduce is fast enough.
+        // Optimization: Could use binary search since frames are sorted by time
         const closest = this.frames.reduce((prev, curr) => {
             return (Math.abs(curr.time - timeSeconds) < Math.abs(prev.time - timeSeconds) ? curr : prev);
         });
