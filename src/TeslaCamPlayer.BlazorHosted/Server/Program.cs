@@ -150,6 +150,7 @@ else
 app.UseHttpsRedirection();
 
 app.UseResponseCompression();
+app.UseMiddleware<SecurityHeadersMiddleware>();
 app.UseMiddleware<JulesErrorReportingMiddleware>();
 
 app.UseBlazorFrameworkFiles();
