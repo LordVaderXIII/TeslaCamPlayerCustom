@@ -69,11 +69,36 @@ window.telemetryInterop = {
     getTelemetry: function (timeSeconds) {
         if (!this.frames || this.frames.length === 0) return null;
 
-        // Find the closest frame
-        // Assuming relatively small number of frames (e.g. 60 sec * 30 fps = 1800), linear search or reduce is fast enough.
-        const closest = this.frames.reduce((prev, curr) => {
-            return (Math.abs(curr.time - timeSeconds) < Math.abs(prev.time - timeSeconds) ? curr : prev);
-        });
+        // Find the closest frame using binary search
+        let low = 0;
+        let high = this.frames.length - 1;
+        let closest = null;
+
+        while (low <= high) {
+            const mid = Math.floor((low + high) / 2);
+            if (this.frames[mid].time === timeSeconds) {
+                closest = this.frames[mid];
+                break;
+            }
+
+            if (this.frames[mid].time < timeSeconds) {
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+
+        if (!closest) {
+            const idx1 = high;
+            const idx2 = low;
+
+            const frame1 = (idx1 >= 0 && idx1 < this.frames.length) ? this.frames[idx1] : null;
+            const frame2 = (idx2 >= 0 && idx2 < this.frames.length) ? this.frames[idx2] : null;
+
+            if (!frame1) closest = frame2;
+            else if (!frame2) closest = frame1;
+            else closest = (Math.abs(frame2.time - timeSeconds) < Math.abs(frame1.time - timeSeconds)) ? frame2 : frame1;
+        }
 
         // If the closest frame is more than 1 second away, treat as no data
         if (Math.abs(closest.time - timeSeconds) > 1.0) {
