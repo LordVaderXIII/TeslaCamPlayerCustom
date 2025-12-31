@@ -70,10 +70,36 @@ window.telemetryInterop = {
         if (!this.frames || this.frames.length === 0) return null;
 
         // Find the closest frame
-        // Assuming relatively small number of frames (e.g. 60 sec * 30 fps = 1800), linear search or reduce is fast enough.
-        const closest = this.frames.reduce((prev, curr) => {
-            return (Math.abs(curr.time - timeSeconds) < Math.abs(prev.time - timeSeconds) ? curr : prev);
-        });
+        // Optimized: Binary search is O(log N) vs Reduce O(N).
+        // For a 10 min clip (18k frames), this is significantly faster (~14 ops vs 18000 ops).
+        let low = 0;
+        let high = this.frames.length - 1;
+
+        // Find first element where frame.time >= timeSeconds
+        while (low <= high) {
+            const mid = (low + high) >>> 1;
+            if (this.frames[mid].time < timeSeconds) {
+                low = mid + 1;
+            } else {
+                high = mid - 1;
+            }
+        }
+
+        let closest;
+        if (low >= this.frames.length) {
+            closest = this.frames[this.frames.length - 1];
+        } else if (low === 0) {
+            closest = this.frames[0];
+        } else {
+            const after = this.frames[low];
+            const before = this.frames[low - 1];
+            // If diffs are equal, prefer 'before' to match original behavior
+            if ((after.time - timeSeconds) < (timeSeconds - before.time)) {
+                 closest = after;
+            } else {
+                 closest = before;
+            }
+        }
 
         // If the closest frame is more than 1 second away, treat as no data
         if (Math.abs(closest.time - timeSeconds) > 1.0) {
