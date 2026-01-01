@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.StaticFiles;
 using Serilog.Events;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using TeslaCamPlayer.BlazorHosted.Server.Data;
 using TeslaCamPlayer.BlazorHosted.Server.Middleware;
 using TeslaCamPlayer.BlazorHosted.Server.Providers;
@@ -54,6 +56,33 @@ builder.Services.AddTransient<IFfProbeService, FfProbeServiceWindows>();
 #elif DOCKER
 builder.Services.AddTransient<IFfProbeService, FfProbeServiceDocker>();
 #endif
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("AuthPolicy", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(15)
+            }));
+
+    options.AddPolicy("LoginPolicy", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(15)
+            }));
+});
 
 builder.Services.AddDbContext<TeslaCamDbContext>((sp, options) =>
 {
@@ -163,6 +192,8 @@ app.UseStaticFiles(new StaticFileOptions
 });
 
 app.UseRouting();
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
