@@ -361,23 +361,22 @@ public partial class ClipViewer : ComponentBase, IDisposable
                 var mainPlayer = GetPlayerForCamera(_mainCamera);
                 if (mainPlayer == null) return;
 
-                var mainTime = await mainPlayer.GetTimeAsync();
-
-                // Check and Sync others in parallel
-                var tasks = new List<Task>
+                // Optimization: Batch synchronize all videos in JS to avoid multiple Interop calls
+                var otherVideos = new List<ElementReference>();
+                foreach (Cameras cam in Enum.GetValues(typeof(Cameras)))
                 {
-                    CheckAndSyncPlayer(_videoPlayerFront, Cameras.Front, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerLeftRepeater, Cameras.LeftRepeater, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerRightRepeater, Cameras.RightRepeater, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerBack, Cameras.Back, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerLeftBPillar, Cameras.LeftBPillar, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerRightBPillar, Cameras.RightBPillar, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerFisheye, Cameras.Fisheye, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerNarrow, Cameras.Narrow, mainTime),
-                    CheckAndSyncPlayer(_videoPlayerCabin, Cameras.Cabin, mainTime)
-                };
+                    if (cam == _mainCamera) continue;
+                    var p = GetPlayerForCamera(cam);
+                    if (p != null)
+                    {
+                        otherVideos.Add(p.VideoElement);
+                    }
+                }
 
-                await Task.WhenAll(tasks);
+                if (otherVideos.Count > 0)
+                {
+                    await JsRuntime.InvokeVoidAsync("syncVideos", mainPlayer.VideoElement, otherVideos.ToArray(), 0.4);
+                }
             }
             catch
             {
