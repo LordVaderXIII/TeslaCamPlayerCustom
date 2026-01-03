@@ -2,6 +2,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -267,27 +268,61 @@ public class ExportService : IExportService
                 }
             }
 
-            var inputArgs = new StringBuilder();
-            foreach (var cam in activeCameras)
-            {
-                 var concatPath = tempFiles[cameraInputMap[cam]];
-                 inputArgs.Append($"-f concat -safe 0 -i \"{concatPath}\" ");
-            }
-
             var outputFilePath = GetExportFilePath(job.FileName);
 
-            var ffmpegArgs = $"{inputArgs} -filter_complex \"{filterComplex}\" -map \"[outv]\" -ss {startOffset} -t {duration} -c:v libx264 -preset veryfast -crf 23 -pix_fmt yuv420p \"{outputFilePath}\"";
+            // SECURITY: Use ArgumentList to prevent command injection
+            var processStartInfo = new ProcessStartInfo("ffmpeg")
+            {
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
 
-            Log.Information("Starting FFmpeg with args: {Args}", ffmpegArgs);
+            foreach (var cam in activeCameras)
+            {
+                var concatPath = tempFiles[cameraInputMap[cam]];
+                processStartInfo.ArgumentList.Add("-f");
+                processStartInfo.ArgumentList.Add("concat");
+                processStartInfo.ArgumentList.Add("-safe");
+                processStartInfo.ArgumentList.Add("0");
+                processStartInfo.ArgumentList.Add("-i");
+                processStartInfo.ArgumentList.Add(concatPath);
+            }
+
+            processStartInfo.ArgumentList.Add("-filter_complex");
+            processStartInfo.ArgumentList.Add(filterComplex.ToString());
+
+            processStartInfo.ArgumentList.Add("-map");
+            processStartInfo.ArgumentList.Add("[outv]");
+
+            processStartInfo.ArgumentList.Add("-ss");
+            processStartInfo.ArgumentList.Add(startOffset.ToString(CultureInfo.InvariantCulture));
+
+            processStartInfo.ArgumentList.Add("-t");
+            processStartInfo.ArgumentList.Add(duration.ToString(CultureInfo.InvariantCulture));
+
+            processStartInfo.ArgumentList.Add("-c:v");
+            processStartInfo.ArgumentList.Add("libx264");
+
+            processStartInfo.ArgumentList.Add("-preset");
+            processStartInfo.ArgumentList.Add("veryfast");
+
+            processStartInfo.ArgumentList.Add("-crf");
+            processStartInfo.ArgumentList.Add("23");
+
+            processStartInfo.ArgumentList.Add("-pix_fmt");
+            processStartInfo.ArgumentList.Add("yuv420p");
+
+            processStartInfo.ArgumentList.Add(outputFilePath);
+
+            // Reconstruct args string for logging only
+            var argsLog = string.Join(" ", processStartInfo.ArgumentList.Select(a => a.Contains(" ") ? $"\"{a}\"" : a));
+            Log.Information("Starting FFmpeg with args: {Args}", argsLog);
+
             var process = new Process
             {
-                StartInfo = new ProcessStartInfo("ffmpeg", ffmpegArgs)
-                {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    CreateNoWindow = true
-                }
+                StartInfo = processStartInfo
             };
 
             process.Start();
