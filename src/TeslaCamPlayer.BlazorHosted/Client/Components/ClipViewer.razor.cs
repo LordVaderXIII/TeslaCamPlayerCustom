@@ -308,10 +308,12 @@ public partial class ClipViewer : ComponentBase, IDisposable
         // Ensure player is valid
         if (_videoPlayerFront == null) return;
 
-		var seconds = await _videoPlayerFront.GetTimeAsync();
+		// Optimization: Use batched JS interop call to get time AND telemetry in one go
+		// This reduces JS Interop calls by 50% in the playback loop (5 calls/sec * 2 ops -> 5 calls/sec * 1 op)
+		var result = await TelemetryService.GetTelemetryForVideoAsync(_videoPlayerFront.VideoElement);
+		var seconds = result.Time;
+		var telemetry = result.Telemetry;
 
-        // Update Telemetry
-        var telemetry = await TelemetryService.GetTelemetryAsync(seconds);
         if (telemetry != _currentTelemetry)
         {
             _currentTelemetry = telemetry;
