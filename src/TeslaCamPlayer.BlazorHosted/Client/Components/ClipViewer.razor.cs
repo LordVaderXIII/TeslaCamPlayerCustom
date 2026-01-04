@@ -308,10 +308,14 @@ public partial class ClipViewer : ComponentBase, IDisposable
         // Ensure player is valid
         if (_videoPlayerFront == null) return;
 
-		var seconds = await _videoPlayerFront.GetTimeAsync();
+        // Optimization: Combined JS Interop call to get time and telemetry in one go
+        var playbackState = await TelemetryService.GetPlaybackStateAsync(_videoPlayerFront.VideoElement);
+        if (playbackState == null) return;
+
+        var seconds = playbackState.Time;
 
         // Update Telemetry
-        var telemetry = await TelemetryService.GetTelemetryAsync(seconds);
+        var telemetry = playbackState.Telemetry;
         if (telemetry != _currentTelemetry)
         {
             _currentTelemetry = telemetry;
