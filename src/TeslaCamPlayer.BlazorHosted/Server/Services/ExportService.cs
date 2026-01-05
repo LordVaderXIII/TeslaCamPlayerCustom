@@ -186,7 +186,10 @@ public class ExportService : IExportService
 
                     if (videoFile != null)
                     {
-                         sb.AppendLine($"file '{videoFile.FilePath}'");
+                         // SECURITY: Escape single quotes in filename to prevent breaking out of the quoted string in FFmpeg concat file
+                         // e.g. "file 'foo'bar.mp4'" -> "file 'foo'\''bar.mp4'"
+                         var escapedPath = videoFile.FilePath.Replace("'", "'\\''");
+                         sb.AppendLine($"file '{escapedPath}'");
                     }
                 }
 
