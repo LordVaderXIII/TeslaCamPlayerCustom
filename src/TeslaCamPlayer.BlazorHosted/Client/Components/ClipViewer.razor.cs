@@ -76,6 +76,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
 	private System.Timers.Timer _setVideoTimeDebounceTimer;
     private System.Timers.Timer _syncTimer;
 	private CancellationTokenSource _loadSegmentCts = new();
+    private TaskCompletionSource _mainCameraLoadedTcs;
 	private Cameras _mainCamera = Cameras.Front;
     private bool _showCameraOverlay; // Mobile camera switch overlay
     private bool _is360Mode = false;
@@ -135,16 +136,26 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		if (!firstRender)
 			return;
 
-		if (_videoPlayerFront != null) _videoPlayerFront.Loaded += () => { Console.WriteLine("Loaded: Front"); _loadedCameras.Add(Cameras.Front); };
-		if (_videoPlayerLeftRepeater != null) _videoPlayerLeftRepeater.Loaded += () => { Console.WriteLine("Loaded: Left"); _loadedCameras.Add(Cameras.LeftRepeater); };
-		if (_videoPlayerRightRepeater != null) _videoPlayerRightRepeater.Loaded += () => { Console.WriteLine("Loaded: Right"); _loadedCameras.Add(Cameras.RightRepeater); };
-		if (_videoPlayerBack != null) _videoPlayerBack.Loaded += () => { Console.WriteLine("Loaded: Back"); _loadedCameras.Add(Cameras.Back); };
-		if (_videoPlayerLeftBPillar != null) _videoPlayerLeftBPillar.Loaded += () => { Console.WriteLine("Loaded: LeftBPillar"); _loadedCameras.Add(Cameras.LeftBPillar); };
-		if (_videoPlayerRightBPillar != null) _videoPlayerRightBPillar.Loaded += () => { Console.WriteLine("Loaded: RightBPillar"); _loadedCameras.Add(Cameras.RightBPillar); };
-		if (_videoPlayerFisheye != null) _videoPlayerFisheye.Loaded += () => { Console.WriteLine("Loaded: Fisheye"); _loadedCameras.Add(Cameras.Fisheye); };
-		if (_videoPlayerNarrow != null) _videoPlayerNarrow.Loaded += () => { Console.WriteLine("Loaded: Narrow"); _loadedCameras.Add(Cameras.Narrow); };
-		if (_videoPlayerCabin != null) _videoPlayerCabin.Loaded += () => { Console.WriteLine("Loaded: Cabin"); _loadedCameras.Add(Cameras.Cabin); };
+		if (_videoPlayerFront != null) _videoPlayerFront.Loaded += () => OnCameraLoaded(Cameras.Front);
+		if (_videoPlayerLeftRepeater != null) _videoPlayerLeftRepeater.Loaded += () => OnCameraLoaded(Cameras.LeftRepeater);
+		if (_videoPlayerRightRepeater != null) _videoPlayerRightRepeater.Loaded += () => OnCameraLoaded(Cameras.RightRepeater);
+		if (_videoPlayerBack != null) _videoPlayerBack.Loaded += () => OnCameraLoaded(Cameras.Back);
+		if (_videoPlayerLeftBPillar != null) _videoPlayerLeftBPillar.Loaded += () => OnCameraLoaded(Cameras.LeftBPillar);
+		if (_videoPlayerRightBPillar != null) _videoPlayerRightBPillar.Loaded += () => OnCameraLoaded(Cameras.RightBPillar);
+		if (_videoPlayerFisheye != null) _videoPlayerFisheye.Loaded += () => OnCameraLoaded(Cameras.Fisheye);
+		if (_videoPlayerNarrow != null) _videoPlayerNarrow.Loaded += () => OnCameraLoaded(Cameras.Narrow);
+		if (_videoPlayerCabin != null) _videoPlayerCabin.Loaded += () => OnCameraLoaded(Cameras.Cabin);
 	}
+
+    private void OnCameraLoaded(Cameras camera)
+    {
+        Console.WriteLine($"Loaded: {camera}");
+        _loadedCameras.Add(camera);
+        if (camera == _mainCamera)
+        {
+            _mainCameraLoadedTcs?.TrySetResult();
+        }
+    }
 
 	private static Task AwaitUiUpdate()
 		=> Task.Delay(100);
@@ -169,6 +180,8 @@ public partial class ClipViewer : ComponentBase, IDisposable
 
 		await _loadSegmentCts.CancelAsync();
 		_loadSegmentCts = new();
+
+        _mainCameraLoadedTcs = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 		
 		_loadedCameras.Clear();
 		var cameraCount = _currentSegment.CameraAnglesCount();
@@ -182,21 +195,27 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		
 		await InvokeAsync(StateHasChanged);
 
-		var timeout = Task.Delay(10000);
-		var completedTask = await Task.WhenAny(Task.Run(async () =>
-		{
-            // Optimize: Wait only for Main Camera to load
-			while (!_loadedCameras.Contains(_mainCamera) && !_loadSegmentCts.IsCancellationRequested)
-				await Task.Delay(10, _loadSegmentCts.Token);
-			
-			Console.WriteLine("Main camera loaded, playing...");
-		}, _loadSegmentCts.Token), timeout);
+        // Optimization: Wait for TCS signal instead of polling
+        if (!_loadedCameras.Contains(_mainCamera))
+        {
+            var timeoutTask = Task.Delay(10000, _loadSegmentCts.Token);
+            // We use WhenAny to wait for either completion or timeout/cancellation
+            var completedTask = await Task.WhenAny(_mainCameraLoadedTcs.Task, timeoutTask);
 
-		if (completedTask == timeout)
-		{
-			Console.WriteLine("Loading timed out");
-            // Proceed anyway, maybe others loaded?
-		}
+            if (completedTask == timeoutTask)
+            {
+                Console.WriteLine("Loading timed out or cancelled");
+                // Proceed anyway, maybe others loaded?
+            }
+            else
+            {
+                 Console.WriteLine("Main camera loaded, playing...");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Main camera already loaded");
+        }
 
 		if (wasPlaying)
 			await TogglePlayingAsync(true);
