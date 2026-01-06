@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TeslaCamPlayer.BlazorHosted.Server.Filters;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
@@ -21,6 +22,7 @@ public class ExportController : ControllerBase
         _exportService = exportService;
     }
 
+    [EnableRateLimiting("ExportPolicy")]
     [HttpPost]
     public async Task<ActionResult<ExportJob>> StartExport([FromBody] ExportRequest request)
     {
