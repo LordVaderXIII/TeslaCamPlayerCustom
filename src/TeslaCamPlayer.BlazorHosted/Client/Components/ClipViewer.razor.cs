@@ -107,6 +107,8 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		public bool IsSelected { get; set; }
 	}
 
+	private static readonly Cameras[] AllCameras = Enum.GetValues<Cameras>();
+
 	protected override void OnInitialized()
 	{
 		_setVideoTimeDebounceTimer = new(500);
@@ -116,7 +118,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
         _syncTimer.Elapsed += SyncVideosTick;
         _syncTimer.Enabled = true;
 
-		foreach (Cameras cam in Enum.GetValues(typeof(Cameras)))
+		foreach (Cameras cam in AllCameras)
 		{
 			_cameraSelection[cam] = new SelectionState { IsSelected = true };
 		}
@@ -382,7 +384,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
 
                 // Optimization: Batch synchronize all videos in JS to avoid multiple Interop calls
                 var otherVideos = new List<ElementReference>();
-                foreach (Cameras cam in Enum.GetValues(typeof(Cameras)))
+                foreach (Cameras cam in AllCameras)
                 {
                     if (cam == _mainCamera) continue;
                     var p = GetPlayerForCamera(cam);
