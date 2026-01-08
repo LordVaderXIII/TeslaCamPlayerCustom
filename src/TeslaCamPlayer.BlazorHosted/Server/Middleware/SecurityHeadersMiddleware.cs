@@ -35,6 +35,25 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Middleware
                 context.Response.Headers["Permissions-Policy"] = "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()";
             }
 
+            // CSP
+            if (!context.Response.Headers.ContainsKey("Content-Security-Policy"))
+            {
+                // Blazor WASM requires unsafe-eval and unsafe-inline for scripts.
+                // We also need external CDNs for Leaflet, Three.js, etc.
+                var csp = "default-src 'self'; " +
+                          "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
+                          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; " +
+                          "img-src 'self' data: https://tile.openstreetmap.org https://unpkg.com; " +
+                          "font-src 'self' https://fonts.gstatic.com; " +
+                          "connect-src 'self'; " +
+                          "media-src 'self' blob:; " +
+                          "frame-ancestors 'none'; " +
+                          "base-uri 'self'; " +
+                          "form-action 'self';";
+
+                context.Response.Headers["Content-Security-Policy"] = csp;
+            }
+
             await _next(context);
         }
     }
