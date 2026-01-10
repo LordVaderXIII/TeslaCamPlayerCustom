@@ -277,10 +277,24 @@ public partial class Index : ComponentBase
 		if (_filteredclips == null)
 			return;
 
-		// Go to an OLDER clip, so start date should be GREATER than current
-		var previous = _filteredclips
-			.OrderByDescending(c => c.StartDate)
-			.FirstOrDefault(c => c.StartDate < _activeClip.StartDate);
+		// Optimization: Avoid LINQ OrderByDescending (O(N log N)). The list is already sorted Newest -> Oldest.
+		// Previous (Older) clip is at index + 1.
+		var index = Array.IndexOf(_filteredclips, _activeClip);
+		Clip previous = null;
+
+		if (index >= 0)
+		{
+			if (index + 1 < _filteredclips.Length)
+			{
+				previous = _filteredclips[index + 1];
+			}
+		}
+		else
+		{
+			// Fallback: If active clip is not in the filtered list.
+			// Find the first clip strictly older (StartDate < Active).
+			previous = _filteredclips.FirstOrDefault(c => c.StartDate < _activeClip.StartDate);
+		}
 
 		if (previous != null)
 		{
@@ -294,10 +308,25 @@ public partial class Index : ComponentBase
 		if (_filteredclips == null)
 			return;
 
-		// Go to a NEWER clip, so start date should be LESS than current
-		var next = _filteredclips
-			.OrderBy(c => c.StartDate)
-			.FirstOrDefault(c => c.StartDate > _activeClip.StartDate);
+		// Optimization: Avoid LINQ OrderBy (O(N log N)). The list is already sorted Newest -> Oldest.
+		// Next (Newer) clip is at index - 1.
+		var index = Array.IndexOf(_filteredclips, _activeClip);
+		Clip next = null;
+
+		if (index >= 0)
+		{
+			if (index - 1 >= 0)
+			{
+				next = _filteredclips[index - 1];
+			}
+		}
+		else
+		{
+			// Fallback: If active clip is not in the filtered list.
+			// We want the oldest clip that is newer than active.
+			// In a Descending list [Newest...Oldest], this is the last item where Date > Active.
+			next = Array.FindLast(_filteredclips, c => c.StartDate > _activeClip.StartDate);
+		}
 
 		if (next != null)
 		{
