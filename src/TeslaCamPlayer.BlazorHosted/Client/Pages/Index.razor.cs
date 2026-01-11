@@ -277,9 +277,10 @@ public partial class Index : ComponentBase
 		if (_filteredclips == null)
 			return;
 
-		// Go to an OLDER clip, so start date should be GREATER than current
+		// Optimization: _filteredclips is already sorted descending by StartDate.
+		// Finding the first clip with StartDate < ActiveClip.StartDate gives us the next older clip.
+		// This avoids O(N log N) sorting.
 		var previous = _filteredclips
-			.OrderByDescending(c => c.StartDate)
 			.FirstOrDefault(c => c.StartDate < _activeClip.StartDate);
 
 		if (previous != null)
@@ -294,10 +295,18 @@ public partial class Index : ComponentBase
 		if (_filteredclips == null)
 			return;
 
-		// Go to a NEWER clip, so start date should be LESS than current
-		var next = _filteredclips
-			.OrderBy(c => c.StartDate)
-			.FirstOrDefault(c => c.StartDate > _activeClip.StartDate);
+		// Optimization: _filteredclips is already sorted descending by StartDate.
+		// We want the smallest StartDate that is still > ActiveClip.StartDate.
+		// Iterating the sorted list, we track the last item > active.
+		// This avoids O(N log N) sorting.
+		Clip next = null;
+		for (var i = 0; i < _filteredclips.Length; i++)
+		{
+			if (_filteredclips[i].StartDate > _activeClip.StartDate)
+				next = _filteredclips[i];
+			else
+				break;
+		}
 
 		if (next != null)
 		{
