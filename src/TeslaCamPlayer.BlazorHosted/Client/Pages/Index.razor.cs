@@ -125,17 +125,23 @@ public partial class Index : ComponentBase
 
 	private void FilterClips()
 	{
-		_filteredclips = (_clips ??= Array.Empty<Clip>())
-			.Where(_eventFilter.IsInFilter)
-			.ToArray();
+		var clips = _clips ??= Array.Empty<Clip>();
+		// Optimization: Combine filtering and date collection into a single pass to avoid multiple iterations and LINQ allocations.
+		var filteredList = new List<Clip>(clips.Length);
+		var eventDates = new HashSet<DateTime>(clips.Length * 2);
 
-		// Optimization: Avoid multiple LINQ passes (Select, Concat, Distinct) by populating the HashSet directly.
-		_eventDates = new HashSet<DateTime>(_filteredclips.Length * 2);
-		foreach (var clip in _filteredclips)
+		foreach (var clip in clips)
 		{
-			_eventDates.Add(clip.StartDate.Date);
-			_eventDates.Add(clip.EndDate.Date);
+			if (_eventFilter.IsInFilter(clip))
+			{
+				filteredList.Add(clip);
+				eventDates.Add(clip.StartDate.Date);
+				eventDates.Add(clip.EndDate.Date);
+			}
 		}
+
+		_filteredclips = filteredList.ToArray();
+		_eventDates = eventDates;
 	}
 
 	private async Task ToggleFilter()
@@ -158,6 +164,12 @@ public partial class Index : ComponentBase
 	private bool IsDateDisabledFunc(DateTime date)
 		=> !_eventDates.Contains(date);
 
+	// Cache common single-icon arrays to avoid allocation in hot path
+	private static readonly string[] IconsRecent = { Icons.Material.Filled.History };
+	private static readonly string[] IconsSaved = { Icons.Material.Filled.CameraAlt };
+	private static readonly string[] IconsSentry = { Icons.Material.Filled.RadioButtonChecked };
+	private static readonly string[] IconsUnknown = { Icons.Material.Filled.QuestionMark };
+
 	private static string[] GetClipIcons(Clip clip)
 	{
 		// sentry_aware_object_detection
@@ -166,29 +178,44 @@ public partial class Index : ComponentBase
 		// user_interaction_dashcam_icon_tapped
 		// sentry_aware_accel_0.532005
 
-		var baseIcon = clip.Type switch {
-			ClipType.Recent => Icons.Material.Filled.History,
-			ClipType.Saved => Icons.Material.Filled.CameraAlt,
-			ClipType.Sentry => Icons.Material.Filled.RadioButtonChecked,
-			_ => Icons.Material.Filled.QuestionMark
-		};
+		if (clip.Type == ClipType.Recent) return IconsRecent;
+		if (clip.Type == ClipType.Unknown) return IconsUnknown;
 
-		if (clip.Type == ClipType.Recent || clip.Type == ClipType.Unknown || clip.Event == null)
-			return new[] { baseIcon };
+		string baseIconStr;
+		string[] baseIconArray;
 
-		var secondIcon = clip.Event.Reason switch
+		switch (clip.Type)
 		{
-			CamEvents.SentryAwareObjectDetection => Icons.Material.Filled.Animation,
-			CamEvents.UserInteractionHonk => Icons.Material.Filled.Campaign,
-			CamEvents.UserInteractionDashcamPanelSave => Icons.Material.Filled.Archive,
-			CamEvents.UserInteractionDashcamIconTapped => Icons.Material.Filled.Archive,
-			_ => null
-		};
+			case ClipType.Saved:
+				baseIconStr = Icons.Material.Filled.CameraAlt;
+				baseIconArray = IconsSaved;
+				break;
+			case ClipType.Sentry:
+				baseIconStr = Icons.Material.Filled.RadioButtonChecked;
+				baseIconArray = IconsSentry;
+				break;
+			default:
+				baseIconStr = Icons.Material.Filled.QuestionMark;
+				baseIconArray = IconsUnknown;
+				break;
+		}
 
-		if (clip.Event.Reason.StartsWith(CamEvents.SentryAwareAccelerationPrefix))
+		if (clip.Event == null)
+			return baseIconArray;
+
+		var reason = clip.Event.Reason;
+		string secondIcon = null;
+
+		if (reason == CamEvents.SentryAwareObjectDetection)
+			secondIcon = Icons.Material.Filled.Animation;
+		else if (reason == CamEvents.UserInteractionHonk)
+			secondIcon = Icons.Material.Filled.Campaign;
+		else if (reason == CamEvents.UserInteractionDashcamPanelSave || reason == CamEvents.UserInteractionDashcamIconTapped)
+			secondIcon = Icons.Material.Filled.Archive;
+		else if (reason != null && reason.StartsWith(CamEvents.SentryAwareAccelerationPrefix, StringComparison.Ordinal))
 			secondIcon = Icons.Material.Filled.OpenWith;
 
-		return secondIcon == null ? new [] { baseIcon } : new[] { baseIcon, secondIcon };
+		return secondIcon == null ? baseIconArray : new[] { baseIconStr, secondIcon };
 	}
 
 	private class ScrollToOptions
