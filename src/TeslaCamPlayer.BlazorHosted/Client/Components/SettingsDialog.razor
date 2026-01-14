@@ -11,6 +11,11 @@
         <MudForm @ref="_form" @bind-IsValid="_isValid">
             <MudSwitch T="bool" @bind-Checked="_isEnabled" Label="Enable Authentication" Color="Color.Primary" Class="mb-4" />
 
+            @if (_isOriginallyEnabled)
+            {
+                <MudTextField @bind-Value="_currentPassword" Label="Current Password" InputType="InputType.Password" Required="true" RequiredError="Current password is required to make changes!" Variant="Variant.Outlined" Class="mb-4" />
+            }
+
             @if (_isEnabled)
             {
                 <MudAlert Severity="Severity.Info" Class="mb-4">
@@ -19,7 +24,7 @@
 
                 <MudTextField @bind-Value="_username" Label="Username" Required="true" RequiredError="Username is required!" Variant="Variant.Outlined" Class="mb-4" />
                 <MudTextField @bind-Value="_firstName" Label="First Name" Variant="Variant.Outlined" Class="mb-4" HelperText="Displayed in the top bar" />
-                <MudTextField @bind-Value="_password" Label="Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4"
+                <MudTextField @bind-Value="_password" Label="New Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4"
                               HelperText="@(_isOriginallyEnabled ? "Leave blank to keep current password" : "Required")"
                               Required="@(!_isOriginallyEnabled)" RequiredError="Password is required!" />
             }
@@ -43,6 +48,7 @@
     private bool _isOriginallyEnabled;
     private string _username;
     private string _password;
+    private string _currentPassword;
     private string _firstName;
     private bool _isValid;
     private MudForm _form;
@@ -78,6 +84,7 @@
             IsEnabled = _isEnabled,
             Username = _username,
             Password = _password,
+            CurrentPassword = _currentPassword,
             FirstName = _firstName
         };
 
@@ -91,6 +98,7 @@
         else
         {
             // Show error
+            DialogService.ShowMessageBox("Error", "Failed to update settings. Please check your current password.");
         }
     }
 

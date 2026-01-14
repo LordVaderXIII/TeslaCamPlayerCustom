@@ -116,9 +116,20 @@ public class AuthController : ControllerBase
         if (user == null) return NotFound();
 
         // If auth is currently enabled, user must be authenticated to change settings
-        if (user.IsEnabled && User.Identity?.IsAuthenticated != true)
+        // AND provide the current password for verification (Defense in Depth)
+        if (user.IsEnabled)
         {
-            return Unauthorized();
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                return Unauthorized();
+            }
+
+            var hasher = new PasswordHasher<UserModel>();
+            var verifyResult = hasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword ?? "");
+            if (verifyResult == PasswordVerificationResult.Failed)
+            {
+                return BadRequest("Invalid current password.");
+            }
         }
 
         user.IsEnabled = request.IsEnabled;
