@@ -14,8 +14,23 @@ public class Clip
 	{
 		Type = type;
 		Segments = segments.OrderBy(s => s.StartDate).ToArray();
-		StartDate = segments.Min(s => s.StartDate);
-		EndDate = segments.Max(s => s.EndDate);
+
+		if (Segments.Length == 0)
+		{
+			StartDate = default;
+			EndDate = default;
+			TotalSeconds = 0;
+			return;
+		}
+
+		// Optimization: Since Segments is already sorted by StartDate, accessing the first element is O(1)
+		// compared to .Min() which is O(N).
+		StartDate = Segments[0].StartDate;
+
+		// Optimization: TeslaCam segments are sequential chunks. The last segment (by StartDate) will
+		// also have the latest EndDate. Accessing by index is O(1) compared to .Max() which is O(N).
+		EndDate = Segments[Segments.Length - 1].EndDate;
+
 		TotalSeconds = EndDate.Subtract(StartDate).TotalSeconds;
 	}
 
