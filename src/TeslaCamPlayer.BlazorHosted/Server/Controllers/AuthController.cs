@@ -22,13 +22,20 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("status")]
-    public IActionResult GetStatus()
+    public async Task<IActionResult> GetStatus()
     {
         var user = _dbContext.Users.Find("Admin");
         if (user == null) return NotFound();
 
         if (!user.IsEnabled)
         {
+            // If auth is disabled, automatically sign in the user to establish a session.
+            // This ensures that even in "Trust" mode, we have a CSRF-protected session for sensitive operations.
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                await SignInUserAsync(user);
+            }
+
             return Ok(new AuthStatus
             {
                 IsAuthenticated = true,
@@ -65,8 +72,9 @@ public class AuthController : ControllerBase
 
         if (!user.IsEnabled)
         {
-            // If auth is disabled, allow login (though UI shouldn't really ask)
-             return Ok();
+            // If auth is disabled, allow login and establish session
+            await SignInUserAsync(user);
+            return Ok();
         }
 
         // Simple hash check (should use a better hasher in production, but requirement says "simple" and we just need it "securely stored")
@@ -76,29 +84,33 @@ public class AuthController : ControllerBase
 
         if (user.Username == request.Username && result == PasswordVerificationResult.Success)
         {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
-                new Claim("FirstName", user.FirstName ?? "Admin")
-            };
-
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var authProperties = new AuthenticationProperties
-            {
-                IsPersistent = true,
-                ExpiresUtc = DateTime.UtcNow.AddDays(30)
-            };
-
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity),
-                authProperties);
-
+            await SignInUserAsync(user);
             return Ok();
         }
 
         return Unauthorized();
+    }
+
+    private async Task SignInUserAsync(UserModel user)
+    {
+        var claims = new List<Claim>
+        {
+            new Claim(ClaimTypes.Name, user.Username),
+            new Claim(ClaimTypes.NameIdentifier, user.Id),
+            new Claim("FirstName", user.FirstName ?? "Admin")
+        };
+
+        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+        var authProperties = new AuthenticationProperties
+        {
+            IsPersistent = true,
+            ExpiresUtc = DateTime.UtcNow.AddDays(30)
+        };
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(claimsIdentity),
+            authProperties);
     }
 
     [HttpPost("logout")]
@@ -115,8 +127,8 @@ public class AuthController : ControllerBase
         var user = _dbContext.Users.Find("Admin");
         if (user == null) return NotFound();
 
-        // If auth is currently enabled, user must be authenticated to change settings
-        if (user.IsEnabled && User.Identity?.IsAuthenticated != true)
+        // User must be authenticated to change settings (even if auth is disabled, they should have an auto-session)
+        if (User.Identity?.IsAuthenticated != true)
         {
             return Unauthorized();
         }
