@@ -158,6 +158,24 @@ public partial class Index : ComponentBase
 	private bool IsDateDisabledFunc(DateTime date)
 		=> !_eventDates.Contains(date);
 
+	// Cached icon arrays to reduce allocations in the virtualized list rendering loop
+	private static readonly string[] IconsRecent = { Icons.Material.Filled.History };
+	private static readonly string[] IconsSaved = { Icons.Material.Filled.CameraAlt };
+	private static readonly string[] IconsSentry = { Icons.Material.Filled.RadioButtonChecked };
+	private static readonly string[] IconsUnknown = { Icons.Material.Filled.QuestionMark };
+
+	// Common Sentry combinations
+	private static readonly string[] IconsSentryObject = { Icons.Material.Filled.RadioButtonChecked, Icons.Material.Filled.Animation };
+	private static readonly string[] IconsSentryHonk = { Icons.Material.Filled.RadioButtonChecked, Icons.Material.Filled.Campaign };
+	private static readonly string[] IconsSentryArchive = { Icons.Material.Filled.RadioButtonChecked, Icons.Material.Filled.Archive };
+	private static readonly string[] IconsSentryOpenWith = { Icons.Material.Filled.RadioButtonChecked, Icons.Material.Filled.OpenWith };
+
+	// Common Saved combinations
+	private static readonly string[] IconsSavedObject = { Icons.Material.Filled.CameraAlt, Icons.Material.Filled.Animation };
+	private static readonly string[] IconsSavedHonk = { Icons.Material.Filled.CameraAlt, Icons.Material.Filled.Campaign };
+	private static readonly string[] IconsSavedArchive = { Icons.Material.Filled.CameraAlt, Icons.Material.Filled.Archive };
+	private static readonly string[] IconsSavedOpenWith = { Icons.Material.Filled.CameraAlt, Icons.Material.Filled.OpenWith };
+
 	private static string[] GetClipIcons(Clip clip)
 	{
 		// sentry_aware_object_detection
@@ -166,6 +184,17 @@ public partial class Index : ComponentBase
 		// user_interaction_dashcam_icon_tapped
 		// sentry_aware_accel_0.532005
 
+		if (clip.Type == ClipType.Recent || clip.Type == ClipType.Unknown || clip.Event == null)
+		{
+			return clip.Type switch
+			{
+				ClipType.Recent => IconsRecent,
+				ClipType.Saved => IconsSaved,
+				ClipType.Sentry => IconsSentry,
+				_ => IconsUnknown
+			};
+		}
+
 		var baseIcon = clip.Type switch {
 			ClipType.Recent => Icons.Material.Filled.History,
 			ClipType.Saved => Icons.Material.Filled.CameraAlt,
@@ -173,9 +202,25 @@ public partial class Index : ComponentBase
 			_ => Icons.Material.Filled.QuestionMark
 		};
 
-		if (clip.Type == ClipType.Recent || clip.Type == ClipType.Unknown || clip.Event == null)
-			return new[] { baseIcon };
+		// Try to use cached arrays for common combinations
+		if (clip.Type == ClipType.Sentry)
+		{
+			if (clip.Event.Reason == CamEvents.SentryAwareObjectDetection) return IconsSentryObject;
+			if (clip.Event.Reason == CamEvents.UserInteractionHonk) return IconsSentryHonk;
+			if (clip.Event.Reason == CamEvents.UserInteractionDashcamPanelSave) return IconsSentryArchive;
+			if (clip.Event.Reason == CamEvents.UserInteractionDashcamIconTapped) return IconsSentryArchive;
+			if (clip.Event.Reason.StartsWith(CamEvents.SentryAwareAccelerationPrefix)) return IconsSentryOpenWith;
+		}
+		else if (clip.Type == ClipType.Saved)
+		{
+			if (clip.Event.Reason == CamEvents.SentryAwareObjectDetection) return IconsSavedObject;
+			if (clip.Event.Reason == CamEvents.UserInteractionHonk) return IconsSavedHonk;
+			if (clip.Event.Reason == CamEvents.UserInteractionDashcamPanelSave) return IconsSavedArchive;
+			if (clip.Event.Reason == CamEvents.UserInteractionDashcamIconTapped) return IconsSavedArchive;
+			if (clip.Event.Reason.StartsWith(CamEvents.SentryAwareAccelerationPrefix)) return IconsSavedOpenWith;
+		}
 
+		// Fallback for custom/uncommon cases
 		var secondIcon = clip.Event.Reason switch
 		{
 			CamEvents.SentryAwareObjectDetection => Icons.Material.Filled.Animation,
