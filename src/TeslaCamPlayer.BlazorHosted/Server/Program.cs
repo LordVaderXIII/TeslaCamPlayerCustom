@@ -139,9 +139,10 @@ using (var scope = app.Services.CreateScope())
         if (!string.IsNullOrEmpty(resetAuth) && bool.TryParse(resetAuth, out var shouldReset) && shouldReset)
         {
             user.IsEnabled = false;
+            user.PasswordHash = null; // Also clear password to allow recovery/reconfiguration
             dbContext.Users.Update(user);
             dbContext.SaveChanges();
-            Log.Information("Authentication reset to OFF via RESET_AUTH environment variable.");
+            Log.Information("Authentication reset to OFF and password cleared via RESET_AUTH environment variable.");
         }
     }
     catch (Exception ex)

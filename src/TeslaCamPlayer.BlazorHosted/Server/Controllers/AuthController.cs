@@ -34,7 +34,8 @@ public class AuthController : ControllerBase
                 IsAuthenticated = true,
                 Username = user.Username,
                 FirstName = user.FirstName,
-                AuthRequired = false
+                AuthRequired = false,
+                HasPassword = !string.IsNullOrEmpty(user.PasswordHash)
             });
         }
 
@@ -45,14 +46,16 @@ public class AuthController : ControllerBase
                 IsAuthenticated = true,
                 Username = User.Identity.Name,
                 FirstName = user.FirstName,
-                AuthRequired = true
+                AuthRequired = true,
+                HasPassword = !string.IsNullOrEmpty(user.PasswordHash)
             });
         }
 
         return Ok(new AuthStatus
         {
             IsAuthenticated = false,
-            AuthRequired = true
+            AuthRequired = true,
+            HasPassword = !string.IsNullOrEmpty(user.PasswordHash)
         });
     }
 
@@ -116,9 +119,28 @@ public class AuthController : ControllerBase
         if (user == null) return NotFound();
 
         // If auth is currently enabled, user must be authenticated to change settings
-        if (user.IsEnabled && User.Identity?.IsAuthenticated != true)
+        if (user.IsEnabled)
         {
-            return Unauthorized();
+            if (User.Identity?.IsAuthenticated != true)
+            {
+                return Unauthorized();
+            }
+        }
+        else if (!string.IsNullOrEmpty(user.PasswordHash))
+        {
+            // Auth is disabled, but a password exists. Require current password to prevent unauthorized takeover.
+            // This prevents someone on the network from setting a password and locking out the owner.
+            if (string.IsNullOrEmpty(request.CurrentPassword))
+            {
+                return Unauthorized(new { message = "Current password is required to enable authentication." });
+            }
+
+            var hasher = new PasswordHasher<UserModel>();
+            var result = hasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
+            if (result != PasswordVerificationResult.Success)
+            {
+                return Unauthorized(new { message = "Invalid current password." });
+            }
         }
 
         user.IsEnabled = request.IsEnabled;
