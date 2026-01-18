@@ -9,12 +9,16 @@ using TeslaCamPlayer.BlazorHosted.Client.Helpers;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
 using TeslaCamPlayer.BlazorHosted.Client.Models;
 using TeslaCamPlayer.BlazorHosted.Client.Services.Interfaces;
+using System.Collections.Generic;
 
 namespace TeslaCamPlayer.BlazorHosted.Client.Pages;
 
 public partial class Index : ComponentBase
 {
 	private const int EventItemHeight = 60;
+
+	// Comparer for Descending order by StartDate
+	private static readonly Comparer<Clip> ReverseDateComparer = Comparer<Clip>.Create((x, y) => y.StartDate.CompareTo(x.StartDate));
 
 	[Inject]
 	private HttpClient HttpClient { get; set; }
@@ -214,13 +218,13 @@ public partial class Index : ComponentBase
 		await Task.Delay(500);
 	}
 
-	private async Task ScrollListToActiveClip()
+	private async Task ScrollListToActiveClip(int? knownIndex = null)
 	{
 		if (_filteredclips == null)
 			return;
 
 		var listBoundingRect = await _eventsList.MudGetBoundingClientRectAsync();
-		var index = Array.IndexOf(_filteredclips, _activeClip);
+		var index = knownIndex ?? Array.IndexOf(_filteredclips, _activeClip);
 		if (index < 0)
 			return;
 
@@ -274,44 +278,86 @@ public partial class Index : ComponentBase
 
 	private async Task PreviousButtonClicked()
 	{
-		if (_filteredclips == null)
+		if (_filteredclips == null || _activeClip == null)
 			return;
 
-		// Optimization: _filteredclips is already sorted descending by StartDate.
-		// Finding the first clip with StartDate < ActiveClip.StartDate gives us the next older clip.
-		// This avoids O(N log N) sorting.
-		var previous = _filteredclips
-			.FirstOrDefault(c => c.StartDate < _activeClip.StartDate);
+		// Optimization: Use BinarySearch instead of linear scan.
+		// _filteredclips is sorted Descending by StartDate.
+		// We want the previous clip (older), which means StartDate < Active.StartDate.
+		// In a descending list, older items have higher indices.
 
-		if (previous != null)
+		var index = Array.BinarySearch(_filteredclips, _activeClip, ReverseDateComparer);
+		int targetIndex = -1;
+
+		if (index >= 0)
 		{
+			// Exact match found. Scan forward for first strictly older clip.
+			for (int i = index + 1; i < _filteredclips.Length; i++)
+			{
+				if (_filteredclips[i].StartDate < _activeClip.StartDate)
+				{
+					targetIndex = i;
+					break;
+				}
+			}
+		}
+		else
+		{
+			// Not found. ~index is the index of the first element "larger" according to comparer.
+			// Comparer is descending, so "larger" means "comes after" -> Older.
+			// So ~index points to the first element strictly older than _activeClip.
+			targetIndex = ~index;
+		}
+
+		if (targetIndex >= 0 && targetIndex < _filteredclips.Length)
+		{
+			var previous = _filteredclips[targetIndex];
 			await SetActiveClip(previous);
-			await ScrollListToActiveClip();
+			await ScrollListToActiveClip(targetIndex);
 		}
 	}
 
 	private async Task NextButtonClicked()
 	{
-		if (_filteredclips == null)
+		if (_filteredclips == null || _activeClip == null)
 			return;
 
-		// Optimization: _filteredclips is already sorted descending by StartDate.
-		// We want the smallest StartDate that is still > ActiveClip.StartDate.
-		// Iterating the sorted list, we track the last item > active.
-		// This avoids O(N log N) sorting.
-		Clip next = null;
-		for (var i = 0; i < _filteredclips.Length; i++)
+		// Optimization: Use BinarySearch instead of linear scan.
+		// _filteredclips is sorted Descending by StartDate.
+		// We want the next clip (newer), which means StartDate > Active.StartDate.
+		// In a descending list, newer items have lower indices.
+
+		var index = Array.BinarySearch(_filteredclips, _activeClip, ReverseDateComparer);
+		int targetIndex = -1;
+
+		if (index >= 0)
 		{
-			if (_filteredclips[i].StartDate > _activeClip.StartDate)
-				next = _filteredclips[i];
-			else
-				break;
+			// Exact match found. Scan backward for first strictly newer clip.
+			for (int i = index - 1; i >= 0; i--)
+			{
+				if (_filteredclips[i].StartDate > _activeClip.StartDate)
+				{
+					targetIndex = i;
+					break;
+				}
+			}
+		}
+		else
+		{
+			// Not found. ~index is first element Older.
+			// The element immediately before it must be Newer.
+			targetIndex = (~index) - 1;
 		}
 
-		if (next != null)
+		if (targetIndex >= 0 && targetIndex < _filteredclips.Length)
 		{
-			await SetActiveClip(next);
-			await ScrollListToActiveClip();
+			// Verify strictly newer (it should be, but ensures correctness)
+			if (_filteredclips[targetIndex].StartDate > _activeClip.StartDate)
+			{
+				var next = _filteredclips[targetIndex];
+				await SetActiveClip(next);
+				await ScrollListToActiveClip(targetIndex);
+			}
 		}
 	}
 
