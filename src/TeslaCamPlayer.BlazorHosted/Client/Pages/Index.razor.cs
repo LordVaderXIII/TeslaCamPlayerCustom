@@ -43,6 +43,7 @@ public partial class Index : ComponentBase
 	private System.Timers.Timer _scrollDebounceTimer;
 	private DateTime _ignoreDatePicked;
 	private Clip _activeClip;
+	private int _activeClipIndex = -1;
 	private ClipViewer _clipViewer;
 	private bool _showFilter;
 	private bool _filterChanged;
@@ -128,6 +129,15 @@ public partial class Index : ComponentBase
 		_filteredclips = (_clips ??= Array.Empty<Clip>())
 			.Where(_eventFilter.IsInFilter)
 			.ToArray();
+
+		if (_activeClip != null)
+		{
+			_activeClipIndex = Array.IndexOf(_filteredclips, _activeClip);
+		}
+		else
+		{
+			_activeClipIndex = -1;
+		}
 
 		// Optimization: Avoid multiple LINQ passes (Select, Concat, Distinct) by populating the HashSet directly.
 		_eventDates = new HashSet<DateTime>(_filteredclips.Length * 2);
@@ -220,7 +230,7 @@ public partial class Index : ComponentBase
 			return;
 
 		var listBoundingRect = await _eventsList.MudGetBoundingClientRectAsync();
-		var index = Array.IndexOf(_filteredclips, _activeClip);
+		var index = _activeClipIndex >= 0 ? _activeClipIndex : Array.IndexOf(_filteredclips, _activeClip);
 		if (index < 0)
 			return;
 
@@ -236,6 +246,10 @@ public partial class Index : ComponentBase
 	private async Task SetActiveClip(Clip clip)
 	{
 		_activeClip = clip;
+		if (_filteredclips != null)
+		{
+			_activeClipIndex = Array.IndexOf(_filteredclips, clip);
+		}
 		await _clipViewer.SetClipAsync(_activeClip);
 		_ignoreDatePicked = clip.StartDate.Date;
 		await _datePicker.GoToDate(clip.StartDate.Date);
@@ -274,14 +288,26 @@ public partial class Index : ComponentBase
 
 	private async Task PreviousButtonClicked()
 	{
-		if (_filteredclips == null)
+		if (_filteredclips == null || _activeClip == null)
 			return;
 
-		// Optimization: _filteredclips is already sorted descending by StartDate.
-		// Finding the first clip with StartDate < ActiveClip.StartDate gives us the next older clip.
-		// This avoids O(N log N) sorting.
-		var previous = _filteredclips
-			.FirstOrDefault(c => c.StartDate < _activeClip.StartDate);
+		Clip previous = null;
+
+		// Optimization: Use cached index for O(1) lookup if possible.
+		// _filteredclips is sorted descending by StartDate (Newest to Oldest).
+		// "Previous" (Older) means moving to a higher index.
+		if (_activeClipIndex >= 0)
+		{
+			if (_activeClipIndex + 1 < _filteredclips.Length)
+			{
+				previous = _filteredclips[_activeClipIndex + 1];
+			}
+		}
+		else
+		{
+			// Fallback if active clip is filtered out: find first clip older than active clip.
+			previous = _filteredclips.FirstOrDefault(c => c.StartDate < _activeClip.StartDate);
+		}
 
 		if (previous != null)
 		{
@@ -292,20 +318,29 @@ public partial class Index : ComponentBase
 
 	private async Task NextButtonClicked()
 	{
-		if (_filteredclips == null)
+		if (_filteredclips == null || _activeClip == null)
 			return;
 
-		// Optimization: _filteredclips is already sorted descending by StartDate.
-		// We want the smallest StartDate that is still > ActiveClip.StartDate.
-		// Iterating the sorted list, we track the last item > active.
-		// This avoids O(N log N) sorting.
 		Clip next = null;
-		for (var i = 0; i < _filteredclips.Length; i++)
+
+		// Optimization: Use cached index for O(1) lookup if possible.
+		// _filteredclips is sorted descending by StartDate (Newest to Oldest).
+		// "Next" (Newer) means moving to a lower index.
+		if (_activeClipIndex > 0)
 		{
-			if (_filteredclips[i].StartDate > _activeClip.StartDate)
-				next = _filteredclips[i];
-			else
-				break;
+			next = _filteredclips[_activeClipIndex - 1];
+		}
+		else if (_activeClipIndex == -1)
+		{
+			// Fallback if active clip is filtered out: find last clip newer than active clip (closest newer).
+			// Iterating from 0, since list is sorted descending.
+			for (var i = 0; i < _filteredclips.Length; i++)
+			{
+				if (_filteredclips[i].StartDate > _activeClip.StartDate)
+					next = _filteredclips[i];
+				else
+					break;
+			}
 		}
 
 		if (next != null)
