@@ -116,6 +116,8 @@ public class ExportService : IExportService
             return;
         }
 
+        var tempFiles = new List<string>();
+
         try
         {
             job.Status = ExportStatus.Processing;
@@ -158,7 +160,6 @@ public class ExportService : IExportService
 
             if (!activeCameras.Contains(request.MainCamera) && request.MainCamera != Cameras.Unknown) activeCameras.Add(request.MainCamera);
 
-            var tempFiles = new List<string>();
             var validCameras = new List<Cameras>();
             var cameraInputMap = new Dictionary<Cameras, int>();
             int inputIndex = 0;
@@ -343,10 +344,6 @@ public class ExportService : IExportService
             job.Progress = 100;
             await dbContext.SaveChangesAsync();
 
-            foreach(var f in tempFiles)
-            {
-                if(File.Exists(f)) File.Delete(f);
-            }
         }
         catch (Exception ex)
         {
@@ -355,6 +352,23 @@ public class ExportService : IExportService
             job.ErrorMessage = ex.Message;
             await dbContext.SaveChangesAsync();
             await julesService.ReportErrorAsync(ex, $"Export Job {jobId} Failed");
+        }
+        finally
+        {
+            foreach (var f in tempFiles)
+            {
+                if (File.Exists(f))
+                {
+                    try
+                    {
+                        File.Delete(f);
+                    }
+                    catch
+                    {
+                        // Ignore delete errors
+                    }
+                }
+            }
         }
     }
 }
