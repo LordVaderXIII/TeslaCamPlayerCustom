@@ -121,6 +121,10 @@ using (var scope = app.Services.CreateScope())
             );
         ");
 
+        dbContext.Database.ExecuteSqlRaw(@"
+            CREATE INDEX IF NOT EXISTS ""IX_VideoFiles_StartDate"" ON ""VideoFiles"" (""StartDate"" DESC);
+        ");
+
         var user = dbContext.Users.Find("Admin");
         if (user == null)
         {
