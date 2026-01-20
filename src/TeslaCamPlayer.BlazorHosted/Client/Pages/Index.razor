@@ -115,9 +115,13 @@ else
 							}
 							<div class="details ml-2">
 								<div class="icons">
-									@foreach (var icon in GetClipIcons(context))
+									@{
+										var (icon1, icon2) = GetClipIcons(context);
+									}
+									<MudIcon Icon="@icon1" Size="Size.Small" Class="mr-1"/>
+									@if (icon2 != null)
 									{
-										<MudIcon Icon="@icon" Size="Size.Small" Class="mr-1"/>
+										<MudIcon Icon="@icon2" Size="Size.Small" Class="mr-1"/>
 									}
 								</div>
 								<div class="date">

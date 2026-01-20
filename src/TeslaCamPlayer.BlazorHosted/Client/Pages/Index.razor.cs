@@ -158,7 +158,7 @@ public partial class Index : ComponentBase
 	private bool IsDateDisabledFunc(DateTime date)
 		=> !_eventDates.Contains(date);
 
-	private static string[] GetClipIcons(Clip clip)
+	private static (string Icon1, string? Icon2) GetClipIcons(Clip clip)
 	{
 		// sentry_aware_object_detection
 		// user_interaction_honk
@@ -174,7 +174,7 @@ public partial class Index : ComponentBase
 		};
 
 		if (clip.Type == ClipType.Recent || clip.Type == ClipType.Unknown || clip.Event == null)
-			return new[] { baseIcon };
+			return (baseIcon, null);
 
 		var secondIcon = clip.Event.Reason switch
 		{
@@ -188,7 +188,7 @@ public partial class Index : ComponentBase
 		if (clip.Event.Reason.StartsWith(CamEvents.SentryAwareAccelerationPrefix))
 			secondIcon = Icons.Material.Filled.OpenWith;
 
-		return secondIcon == null ? new [] { baseIcon } : new[] { baseIcon, secondIcon };
+		return (baseIcon, secondIcon);
 	}
 
 	private class ScrollToOptions
