@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using TeslaCamPlayer.BlazorHosted.Server.Data;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
 using Microsoft.AspNetCore.Identity;
+using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 using UserModel = TeslaCamPlayer.BlazorHosted.Shared.Models.User;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Controllers;
@@ -15,10 +16,12 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly TeslaCamDbContext _dbContext;
+    private readonly ISetupTokenService _setupTokenService;
 
-    public AuthController(TeslaCamDbContext dbContext)
+    public AuthController(TeslaCamDbContext dbContext, ISetupTokenService setupTokenService)
     {
         _dbContext = dbContext;
+        _setupTokenService = setupTokenService;
     }
 
     [HttpGet("status")]
@@ -119,6 +122,15 @@ public class AuthController : ControllerBase
         if (user.IsEnabled && User.Identity?.IsAuthenticated != true)
         {
             return Unauthorized();
+        }
+
+        // If auth is disabled, require Setup Token to prevent unauthorized takeover
+        if (!user.IsEnabled)
+        {
+            if (string.IsNullOrWhiteSpace(request.SetupToken) || request.SetupToken != _setupTokenService.Token)
+            {
+                return Unauthorized("Invalid Setup Token. Check server logs.");
+            }
         }
 
         user.IsEnabled = request.IsEnabled;

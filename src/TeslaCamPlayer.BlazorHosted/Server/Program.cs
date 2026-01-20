@@ -50,6 +50,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddSingleton<ISettingsProvider, SettingsProvider>();
 builder.Services.AddTransient<IClipsService, ClipsService>();
 builder.Services.AddSingleton<IExportService, ExportService>();
+builder.Services.AddSingleton<ISetupTokenService, SetupTokenService>();
 builder.Services.AddTransient<IJulesApiService, JulesApiService>();
 #if WINDOWS
 builder.Services.AddTransient<IFfProbeService, FfProbeServiceWindows>();
@@ -142,6 +143,14 @@ using (var scope = app.Services.CreateScope())
             dbContext.Users.Update(user);
             dbContext.SaveChanges();
             Log.Information("Authentication reset to OFF via RESET_AUTH environment variable.");
+        }
+
+        if (!user.IsEnabled)
+        {
+            var tokenService = scope.ServiceProvider.GetRequiredService<ISetupTokenService>();
+            var token = Guid.NewGuid().ToString("N");
+            tokenService.Token = token;
+            Log.Warning("Authentication is currently DISABLED. To enable it, use this Setup Token: {Token}", token);
         }
     }
     catch (Exception ex)
