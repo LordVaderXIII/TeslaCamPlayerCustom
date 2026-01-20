@@ -12,3 +12,8 @@
 **Vulnerability:** The video export process created temporary files that were only deleted if the process completed successfully. Exceptions during processing left these files on disk indefinitely, leading to potential disk space exhaustion (DoS).
 **Learning:** `finally` blocks are crucial for resource cleanup, especially when dealing with external processes (like ffmpeg) or file I/O where exceptions are likely.
 **Prevention:** Always wrap temporary file creation and usage in `try...finally` blocks to ensure cleanup happens regardless of success or failure.
+
+## 2026-01-20 - [Auth Setup Token Implementation]
+**Vulnerability:** The `/api/auth/update` endpoint allowed unauthenticated takeover when auth was disabled.
+**Learning:** "Trust on First Use" models are dangerous in containerized environments where "localhost" isn't a sufficient restriction.
+**Prevention:** Implemented a startup-generated "Setup Token" printed to logs, requiring physical/console access to the server to claim ownership.

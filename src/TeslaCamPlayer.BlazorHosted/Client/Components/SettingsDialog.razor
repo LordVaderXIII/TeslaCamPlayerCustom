@@ -17,6 +17,11 @@
                     If this is your first time enabling authentication, please set a password below.
                 </MudAlert>
 
+                @if (!_isOriginallyEnabled)
+                {
+                    <MudTextField @bind-Value="_setupToken" Label="Setup Token" Required="true" RequiredError="Setup Token is required! Check server logs." Variant="Variant.Outlined" Class="mb-4" HelperText="Found in server startup logs" />
+                }
+
                 <MudTextField @bind-Value="_username" Label="Username" Required="true" RequiredError="Username is required!" Variant="Variant.Outlined" Class="mb-4" />
                 <MudTextField @bind-Value="_firstName" Label="First Name" Variant="Variant.Outlined" Class="mb-4" HelperText="Displayed in the top bar" />
                 <MudTextField @bind-Value="_password" Label="Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4"
@@ -44,6 +49,7 @@
     private string _username;
     private string _password;
     private string _firstName;
+    private string _setupToken;
     private bool _isValid;
     private MudForm _form;
 
@@ -78,7 +84,8 @@
             IsEnabled = _isEnabled,
             Username = _username,
             Password = _password,
-            FirstName = _firstName
+            FirstName = _firstName,
+            SetupToken = _setupToken
         };
 
         var response = await HttpClient.PostAsJsonAsync("api/auth/update", request);
