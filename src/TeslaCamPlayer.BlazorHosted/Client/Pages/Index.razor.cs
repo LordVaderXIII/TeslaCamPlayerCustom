@@ -272,45 +272,59 @@ public partial class Index : ComponentBase
 		_scrollDebounceTimer.Enabled = false;
 	}
 
+	// Descending comparer for Clips (Newer first)
+	private static readonly IComparer<Clip> DescendingStartDateComparer = Comparer<Clip>.Create((x, y) => y.StartDate.CompareTo(x.StartDate));
+
 	private async Task PreviousButtonClicked()
 	{
-		if (_filteredclips == null)
+		if (_filteredclips == null || _activeClip == null)
 			return;
 
-		// Optimization: _filteredclips is already sorted descending by StartDate.
-		// Finding the first clip with StartDate < ActiveClip.StartDate gives us the next older clip.
-		// This avoids O(N log N) sorting.
-		var previous = _filteredclips
-			.FirstOrDefault(c => c.StartDate < _activeClip.StartDate);
+		// Optimization: Use BinarySearch (O(log N)) instead of LINQ (O(N)) to find the active clip.
+		// _filteredclips is sorted descending by StartDate.
+		var index = Array.BinarySearch(_filteredclips, _activeClip, DescendingStartDateComparer);
 
-		if (previous != null)
+		// If found (>=0), we want older clips (index + 1).
+		// If not found (~index), insert position is the first older clip.
+		var candidateIndex = index >= 0 ? index + 1 : ~index;
+
+		// Scan forward to skip any that are >= active (in case of duplicates)
+		// We want strictly OLDER (< active)
+		while (candidateIndex < _filteredclips.Length && _filteredclips[candidateIndex].StartDate >= _activeClip.StartDate)
 		{
-			await SetActiveClip(previous);
+			candidateIndex++;
+		}
+
+		if (candidateIndex < _filteredclips.Length)
+		{
+			await SetActiveClip(_filteredclips[candidateIndex]);
 			await ScrollListToActiveClip();
 		}
 	}
 
 	private async Task NextButtonClicked()
 	{
-		if (_filteredclips == null)
+		if (_filteredclips == null || _activeClip == null)
 			return;
 
-		// Optimization: _filteredclips is already sorted descending by StartDate.
-		// We want the smallest StartDate that is still > ActiveClip.StartDate.
-		// Iterating the sorted list, we track the last item > active.
-		// This avoids O(N log N) sorting.
-		Clip next = null;
-		for (var i = 0; i < _filteredclips.Length; i++)
+		// Optimization: Use BinarySearch (O(log N)) instead of iteration (O(N)).
+		var index = Array.BinarySearch(_filteredclips, _activeClip, DescendingStartDateComparer);
+
+		// If found (>=0), we want newer clips (index - 1).
+		// If not found (~index), insert position is the first older clip, so previous index (insert - 1) is newer.
+		var searchIndex = index >= 0 ? index : ~index;
+		var candidateIndex = searchIndex - 1;
+
+		// Scan backward to skip any that are <= active
+		// We want strictly NEWER (> active)
+		while (candidateIndex >= 0 && _filteredclips[candidateIndex].StartDate <= _activeClip.StartDate)
 		{
-			if (_filteredclips[i].StartDate > _activeClip.StartDate)
-				next = _filteredclips[i];
-			else
-				break;
+			candidateIndex--;
 		}
 
-		if (next != null)
+		if (candidateIndex >= 0)
 		{
-			await SetActiveClip(next);
+			await SetActiveClip(_filteredclips[candidateIndex]);
 			await ScrollListToActiveClip();
 		}
 	}
