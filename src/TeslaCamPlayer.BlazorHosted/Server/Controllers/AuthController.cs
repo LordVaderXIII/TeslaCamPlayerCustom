@@ -34,7 +34,8 @@ public class AuthController : ControllerBase
                 IsAuthenticated = true,
                 Username = user.Username,
                 FirstName = user.FirstName,
-                AuthRequired = false
+                AuthRequired = false,
+                HasPassword = !string.IsNullOrEmpty(user.PasswordHash)
             });
         }
 
@@ -45,14 +46,16 @@ public class AuthController : ControllerBase
                 IsAuthenticated = true,
                 Username = User.Identity.Name,
                 FirstName = user.FirstName,
-                AuthRequired = true
+                AuthRequired = true,
+                HasPassword = !string.IsNullOrEmpty(user.PasswordHash)
             });
         }
 
         return Ok(new AuthStatus
         {
             IsAuthenticated = false,
-            AuthRequired = true
+            AuthRequired = true,
+            HasPassword = !string.IsNullOrEmpty(user.PasswordHash)
         });
     }
 
@@ -119,6 +122,26 @@ public class AuthController : ControllerBase
         if (user.IsEnabled && User.Identity?.IsAuthenticated != true)
         {
             return Unauthorized();
+        }
+
+        // SECURITY: If a password is already set, we must verify it before allowing any changes,
+        // even if auth is currently disabled (to prevent hijacking by enabling auth with a new password).
+        if (!string.IsNullOrEmpty(user.PasswordHash))
+        {
+            if (string.IsNullOrEmpty(request.CurrentPassword))
+            {
+                // For backward compatibility or if user forgot, we might want to check something else?
+                // But strict security requires current password.
+                // If user forgot password and auth is disabled, they should use RESET_AUTH env var which clears the password hash.
+                return Unauthorized("Current password is required to change settings.");
+            }
+
+            var hasher = new PasswordHasher<UserModel>();
+            var result = hasher.VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
+            if (result == PasswordVerificationResult.Failed)
+            {
+                return Unauthorized("Invalid current password.");
+            }
         }
 
         user.IsEnabled = request.IsEnabled;
