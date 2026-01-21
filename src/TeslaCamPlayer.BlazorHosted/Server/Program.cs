@@ -139,6 +139,7 @@ using (var scope = app.Services.CreateScope())
         if (!string.IsNullOrEmpty(resetAuth) && bool.TryParse(resetAuth, out var shouldReset) && shouldReset)
         {
             user.IsEnabled = false;
+            user.PasswordHash = null; // Also clear password so a new one can be set without knowing the old one
             dbContext.Users.Update(user);
             dbContext.SaveChanges();
             Log.Information("Authentication reset to OFF via RESET_AUTH environment variable.");

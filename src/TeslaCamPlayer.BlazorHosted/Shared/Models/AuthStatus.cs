@@ -6,4 +6,5 @@ public class AuthStatus
     public string Username { get; set; }
     public string FirstName { get; set; }
     public bool AuthRequired { get; set; }
+    public bool HasPassword { get; set; }
 }
