@@ -264,7 +264,8 @@ public partial class Index : ComponentBase
 		var listBoundingRect = await _eventsList.MudGetBoundingClientRectAsync();
 		var centerScrollPosition = scrollTop + listBoundingRect.Height / 2 + EventItemHeight / 2;
 		var itemIndex = (int)centerScrollPosition / EventItemHeight;
-		var atClip = _filteredclips.ElementAt(Math.Min(_filteredclips.Length - 1, itemIndex));
+		// Optimization: Use array indexer instead of ElementAt extension method
+		var atClip = _filteredclips[Math.Min(_filteredclips.Length - 1, itemIndex)];
 
 		_ignoreDatePicked = atClip.StartDate.Date;
 		await _datePicker.GoToDate(atClip.StartDate.Date);
@@ -274,17 +275,16 @@ public partial class Index : ComponentBase
 
 	private async Task PreviousButtonClicked()
 	{
-		if (_filteredclips == null)
+		if (_filteredclips == null || _activeClip == null)
 			return;
 
-		// Optimization: _filteredclips is already sorted descending by StartDate.
-		// Finding the first clip with StartDate < ActiveClip.StartDate gives us the next older clip.
-		// This avoids O(N log N) sorting.
-		var previous = _filteredclips
-			.FirstOrDefault(c => c.StartDate < _activeClip.StartDate);
-
-		if (previous != null)
+		// Optimization: _filteredclips is sorted descending by StartDate.
+		// Use Array.IndexOf to find the current position, then take the next element (older).
+		// This avoids LINQ allocation and iteration overhead (O(N) -> optimized O(N)).
+		var index = Array.IndexOf(_filteredclips, _activeClip);
+		if (index != -1 && index < _filteredclips.Length - 1)
 		{
+			var previous = _filteredclips[index + 1];
 			await SetActiveClip(previous);
 			await ScrollListToActiveClip();
 		}
@@ -292,24 +292,16 @@ public partial class Index : ComponentBase
 
 	private async Task NextButtonClicked()
 	{
-		if (_filteredclips == null)
+		if (_filteredclips == null || _activeClip == null)
 			return;
 
-		// Optimization: _filteredclips is already sorted descending by StartDate.
-		// We want the smallest StartDate that is still > ActiveClip.StartDate.
-		// Iterating the sorted list, we track the last item > active.
-		// This avoids O(N log N) sorting.
-		Clip next = null;
-		for (var i = 0; i < _filteredclips.Length; i++)
+		// Optimization: _filteredclips is sorted descending by StartDate.
+		// Use Array.IndexOf to find the current position, then take the previous element (newer).
+		// This avoids manual loop overhead (O(N) -> optimized O(N)).
+		var index = Array.IndexOf(_filteredclips, _activeClip);
+		if (index > 0)
 		{
-			if (_filteredclips[i].StartDate > _activeClip.StartDate)
-				next = _filteredclips[i];
-			else
-				break;
-		}
-
-		if (next != null)
-		{
+			var next = _filteredclips[index - 1];
 			await SetActiveClip(next);
 			await ScrollListToActiveClip();
 		}
