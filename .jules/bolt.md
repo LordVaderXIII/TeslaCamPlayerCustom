@@ -7,3 +7,7 @@
 ## 2025-01-29 - Array.IndexOf vs LINQ for Navigation
 **Learning:** Using `Array.IndexOf` combined with direct array access is significantly more efficient than LINQ `FirstOrDefault` or manual loops for finding adjacent items in a sorted list. It avoids delegate allocations and utilizes vectorized native search.
 **Action:** Prefer `Array.IndexOf` for navigation logic when the item instance is known to be in the collection.
+
+## 2025-01-29 - Regex vs Span Parsing in File Scanning
+**Learning:** Complex Regex in hot loops (like scanning thousands of files) is a major bottleneck. Replacing it with `ReadOnlySpan<char>` parsing yielded a ~38x speedup (777ms -> 20ms for 100k iters).
+**Action:** Prefer Span-based manual parsing for high-throughput string processing, especially for rigid formats like file paths.

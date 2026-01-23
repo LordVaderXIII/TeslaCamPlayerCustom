@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -11,18 +10,18 @@ using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Serilog;
 using TeslaCamPlayer.BlazorHosted.Server.Data;
+using TeslaCamPlayer.BlazorHosted.Server.Helpers;
 using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Services;
 
-public partial class ClipsService : IClipsService
+public class ClipsService : IClipsService
 {
 	private const string NoThumbnailImageUrl = "/img/no-thumbnail.png";
     private const string ClipsCacheKey = "Clips_All";
 
-	private static readonly Regex FileNameRegex = FileNameRegexGenerated();
 	private static readonly SemaphoreSlim FfProbeSemaphore = new(10);
 	private static readonly SemaphoreSlim _syncSemaphore = new(1);
 	
@@ -129,8 +128,12 @@ public partial class ClipsService : IClipsService
 		// Find new files
 		var newFiles = filePaths
 			.Where(path => !knownVideoFiles.ContainsKey(path))
-			.Select(path => new { Path = path, RegexMatch = FileNameRegex.Match(path) })
-			.Where(f => f.RegexMatch.Success)
+			.Select(path =>
+            {
+                var success = TeslaCamFileParser.TryParse(path, out var metadata);
+                return new { Path = path, Metadata = metadata, Success = success };
+            })
+			.Where(f => f.Success)
 			.ToList();
 
 		if (newFiles.Any())
@@ -142,7 +145,7 @@ public partial class ClipsService : IClipsService
 					await FfProbeSemaphore.WaitAsync();
 					try
 					{
-						return await TryParseVideoFileAsync(f.Path, f.RegexMatch);
+						return await TryParseVideoFileAsync(f.Path, f.Metadata);
 					}
 					finally
 					{
@@ -251,11 +254,11 @@ public partial class ClipsService : IClipsService
 		}
 	}
 
-	private async Task<VideoFile> TryParseVideoFileAsync(string path, Match regexMatch)
+	private async Task<VideoFile> TryParseVideoFileAsync(string path, VideoFileMetadata metadata)
 	{
 		try
 		{
-			return await ParseVideoFileAsync(path, regexMatch);
+			return await ParseVideoFileAsync(path, metadata);
 		}
 		catch (Exception e)
 		{
@@ -267,37 +270,8 @@ public partial class ClipsService : IClipsService
 		}
 	}
 
-	private async Task<VideoFile> ParseVideoFileAsync(string path, Match regexMatch)
+	private async Task<VideoFile> ParseVideoFileAsync(string path, VideoFileMetadata metadata)
 	{
-		var clipType = regexMatch.Groups["type"].Value switch
-		{
-			"RecentClips" => ClipType.Recent,
-			"SavedClips" => ClipType.Saved,
-			"SentryClips" => ClipType.Sentry,
-			_ => ClipType.Unknown
-		};
-
-		var camera = regexMatch.Groups["camera"].Value switch
-		{
-			"back" => Cameras.Back,
-			"front" => Cameras.Front,
-			"left_repeater" => Cameras.LeftRepeater,
-			"right_repeater" => Cameras.RightRepeater,
-			"left_pillar" => Cameras.LeftBPillar,
-			"right_pillar" => Cameras.RightBPillar,
-			"fisheye" => Cameras.Fisheye,
-			"narrow" => Cameras.Narrow,
-			_ => Cameras.Unknown
-		};
-
-		var date = new DateTime(
-			int.Parse(regexMatch.Groups["vyear"].Value),
-			int.Parse(regexMatch.Groups["vmonth"].Value),
-			int.Parse(regexMatch.Groups["vday"].Value),
-			int.Parse(regexMatch.Groups["vhour"].Value),
-			int.Parse(regexMatch.Groups["vminute"].Value),
-			int.Parse(regexMatch.Groups["vsecond"].Value));
-
 		var duration = await _ffProbeService.GetVideoFileDurationAsync(path);
 		if (!duration.HasValue)
 		{
@@ -305,9 +279,14 @@ public partial class ClipsService : IClipsService
 			return null;
 		}
 
-		var eventFolderName = clipType != ClipType.Recent
-			? regexMatch.Groups["event"].Value
+		var eventFolderName = metadata.ClipType != ClipType.Recent
+			? metadata.EventFolderName
 			: null;
+
+        if (string.IsNullOrWhiteSpace(eventFolderName))
+        {
+            eventFolderName = null;
+        }
 		
 		var relativePath = Path.GetRelativePath(_settingsProvider.Settings.ClipsRootPath, path);
 
@@ -316,9 +295,9 @@ public partial class ClipsService : IClipsService
 			FilePath = path,
 			Url = $"/Api/Video/{Uri.EscapeDataString(relativePath)}",
 			EventFolderName = eventFolderName,
-			ClipType = clipType,
-			StartDate = date,
-			Camera = camera,
+			ClipType = metadata.ClipType,
+			StartDate = metadata.Date,
+			Camera = metadata.Camera,
 			Duration = duration.Value
 		};
 	}
@@ -386,23 +365,4 @@ public partial class ClipsService : IClipsService
 			}
 		});
 	}
-
-	/*
-	 * \SavedClips\2023-06-16_17-18-06\2023-06-16_17-12-49-front.mp4"
-	 * type = SavedClips
-	 * event = 2023-06-16_17-18-06
-	 * year = 2023
-	 * month = 06
-	 * day = 17
-	 * hour = 18
-	 * minute = 06
-	 * vyear = 2023
-	 * vmonth = 06
-	 * vhour = 17
-	 * vminute = 12
-	 * vsecond = 49
-	 * camera = front
-	 */
-	[GeneratedRegex(@"(?:[\\/]|^)(?<type>(?:Recent|Saved|Sentry)Clips)(?:[\\/](?<event>(?<year>20\d{2})\-(?<month>[0-1][0-9])\-(?<day>[0-3][0-9])_(?<hour>[0-2][0-9])\-(?<minute>[0-5][0-9])\-(?<second>[0-5][0-9])))?[\\/](?<vyear>20\d{2})\-(?<vmonth>[0-1][0-9])\-(?<vday>[0-3][0-9])_(?<vhour>[0-2][0-9])\-(?<vminute>[0-5][0-9])\-(?<vsecond>[0-5][0-9])\-(?<camera>back|front|left_repeater|right_repeater|left_pillar|right_pillar|fisheye|narrow)\.mp4")]
-	private static partial Regex FileNameRegexGenerated();
 }
