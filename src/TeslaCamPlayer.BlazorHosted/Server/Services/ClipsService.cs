@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,6 +15,8 @@ using TeslaCamPlayer.BlazorHosted.Server.Data;
 using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
+
+[assembly: InternalsVisibleTo("TeslaCamPlayer.BlazorHosted.Server.Tests")]
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Services;
 
@@ -194,39 +197,62 @@ public partial class ClipsService : IClipsService
 		return clips;
 	}
 
-	private static IEnumerable<Clip> GetRecentClips(List<VideoFile> recentVideoFiles)
+	internal static IEnumerable<Clip> GetRecentClips(List<VideoFile> recentVideoFiles)
 	{
-		// Optimize: Group by StartDate first to avoid O(N^2) scan in the loop
-		var groupedSegments = recentVideoFiles
-			.GroupBy(f => f.StartDate)
-			.OrderByDescending(g => g.Key)
-			.ToList();
+		// Optimization: Sort in-place to avoid O(N) allocations from GroupBy and allow O(N) linear scan.
+		// We sort descending (Newest first) to match the expected output order.
+		recentVideoFiles.Sort((a, b) => b.StartDate.CompareTo(a.StartDate));
 
 		var currentClipSegments = new List<ClipVideoSegment>();
-		for (var i = 0; i < groupedSegments.Count; i++)
+		var i = 0;
+		var count = recentVideoFiles.Count;
+
+		while (i < count)
 		{
-			var segmentVideos = groupedSegments[i].ToList();
-			// Use the first video in the group for reference properties (Start, Duration)
-			var currentVideoFile = segmentVideos[0];
+			// Start of a new segment (group of files with same StartDate)
+			var currentVideoFile = recentVideoFiles[i];
+			var currentStartDate = currentVideoFile.StartDate;
+
+			VideoFile camFront = null, camLeft = null, camRight = null, camBack = null,
+			          camLeftPillar = null, camRightPillar = null, camFisheye = null, camNarrow = null;
+
+			// Optimization: Iterate through the sorted list to find all cameras for this segment.
+			// Avoids allocating a list for the group and avoid LINQ FirstOrDefault calls.
+			while (i < count && recentVideoFiles[i].StartDate == currentStartDate)
+			{
+				var v = recentVideoFiles[i];
+				switch (v.Camera)
+				{
+					case Cameras.Front: camFront = v; break;
+					case Cameras.LeftRepeater: camLeft = v; break;
+					case Cameras.RightRepeater: camRight = v; break;
+					case Cameras.Back: camBack = v; break;
+					case Cameras.LeftBPillar: camLeftPillar = v; break;
+					case Cameras.RightBPillar: camRightPillar = v; break;
+					case Cameras.Fisheye: camFisheye = v; break;
+					case Cameras.Narrow: camNarrow = v; break;
+				}
+				i++;
+			}
 
 			var segment = new ClipVideoSegment
 			{
-				StartDate = currentVideoFile.StartDate,
-				EndDate = currentVideoFile.StartDate.Add(currentVideoFile.Duration),
-				CameraFront = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Front),
-				CameraLeftRepeater = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.LeftRepeater),
-				CameraRightRepeater = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.RightRepeater),
-				CameraBack = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Back),
-				CameraLeftBPillar = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.LeftBPillar),
-				CameraRightBPillar = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.RightBPillar),
-				CameraFisheye = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Fisheye),
-				CameraNarrow = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Narrow)
+				StartDate = currentStartDate,
+				EndDate = currentStartDate.Add(currentVideoFile.Duration),
+				CameraFront = camFront,
+				CameraLeftRepeater = camLeft,
+				CameraRightRepeater = camRight,
+				CameraBack = camBack,
+				CameraLeftBPillar = camLeftPillar,
+				CameraRightBPillar = camRightPillar,
+				CameraFisheye = camFisheye,
+				CameraNarrow = camNarrow
 			};
 			
 			currentClipSegments.Add(segment);
 
-			// No more groups
-			if (i + 1 >= groupedSegments.Count)
+			// Check if we are at the end of the list
+			if (i >= count)
 			{
 				yield return new Clip(ClipType.Recent, currentClipSegments.ToArray())
 				{
@@ -237,12 +263,16 @@ public partial class ClipsService : IClipsService
 			}
 
 			const int segmentVideoGapToleranceInSeconds = 5;
-			var nextSegmentFirstVideo = groupedSegments[i + 1].First();
-			// Next video is within X seconds of last video of current segment, continue building clip segments
-			if (nextSegmentFirstVideo.StartDate <= segment.EndDate.AddSeconds(segmentVideoGapToleranceInSeconds))
+			var nextVideo = recentVideoFiles[i]; // The first video of the NEXT segment (which is OLDER)
+
+			// Logic fix: When traversing descending (New -> Old), we check if the CURRENT segment (Newer)
+			// starts close to when the NEXT segment (Older) ends.
+			// Condition: Current.Start <= Next.End + Gap
+			// Note: Next.End = Next.Start + Next.Duration.
+			if (segment.StartDate <= nextVideo.StartDate.Add(nextVideo.Duration).AddSeconds(segmentVideoGapToleranceInSeconds))
 				continue;
 			
-			// Next video is more than X seconds, assume it's a new recent video clip
+			// Gap is too large, assume it's a new recent video clip
 			yield return new Clip(ClipType.Recent, currentClipSegments.ToArray())
 			{
 				ThumbnailUrl = NoThumbnailImageUrl
