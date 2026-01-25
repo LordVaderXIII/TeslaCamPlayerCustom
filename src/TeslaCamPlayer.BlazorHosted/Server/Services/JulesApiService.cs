@@ -190,7 +190,22 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
             // Limit to code files to prevent arbitrary file read (e.g. /etc/passwd)
             var allowedExtensions = new[] { ".cs", ".razor", ".cshtml", ".js", ".ts", ".css", ".scss" };
             var ext = Path.GetExtension(filePath);
-            return allowedExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase);
+            if (!allowedExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // SECURITY: Ensure file is within the application directory to prevent path traversal
+            var fullPath = Path.GetFullPath(filePath);
+            var appRoot = Path.GetFullPath(Directory.GetCurrentDirectory());
+
+            // Ensure appRoot ends with separator to avoid partial matches
+            if (!appRoot.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            {
+                appRoot += Path.DirectorySeparatorChar;
+            }
+
+            return fullPath.StartsWith(appRoot, StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task<bool> CheckAndIncrementDailyLimitAsync()
