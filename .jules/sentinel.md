@@ -17,3 +17,8 @@
 **Vulnerability:** Even if a password was previously set, disabling authentication allowed anyone to re-enable it and overwrite the password without providing the old one.
 **Learning:** "Disabled" authentication state should not imply "Reset" state. Sensitive operations (like changing passwords) must always require the current credential if one exists, regardless of the global auth switch.
 **Prevention:** Enforce `CurrentPassword` verification for sensitive updates whenever a password hash exists in the database. Ensure recovery mechanisms (like `RESET_AUTH`) explicitly clear credentials if they are intended to bypass this check.
+
+## 2026-05-20 - [Arbitrary Source Code Read in JulesApiService]
+**Vulnerability:** The `JulesApiService` extracted code snippets from stack traces to send to an external API. It checked for file extensions but failed to validate that the file path was within the application directory, allowing arbitrary file read of source code files from the server.
+**Learning:** Features designed to help debugging (like sending stack traces + code context) can become data exfiltration vectors if the scope of file access is not strictly limited.
+**Prevention:** Always validate file paths against `Directory.GetCurrentDirectory()` (or a specific allowed root) when reading files based on user input or semi-trusted input like stack traces.
