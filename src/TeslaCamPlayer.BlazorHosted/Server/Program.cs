@@ -50,6 +50,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddSingleton<ISettingsProvider, SettingsProvider>();
 builder.Services.AddTransient<IClipsService, ClipsService>();
 builder.Services.AddSingleton<IExportService, ExportService>();
+builder.Services.AddSingleton<ISetupTokenService, SetupTokenService>();
 builder.Services.AddTransient<IJulesApiService, JulesApiService>();
 #if WINDOWS
 builder.Services.AddTransient<IFfProbeService, FfProbeServiceWindows>();
@@ -143,6 +144,19 @@ using (var scope = app.Services.CreateScope())
             dbContext.Users.Update(user);
             dbContext.SaveChanges();
             Log.Information("Authentication reset to OFF via RESET_AUTH environment variable.");
+        }
+
+        // SECURITY: Generate a setup token if no password is set (Initial setup or Reset)
+        if (string.IsNullOrEmpty(user.PasswordHash))
+        {
+            var setupTokenService = scope.ServiceProvider.GetRequiredService<ISetupTokenService>();
+            var token = Guid.NewGuid().ToString("N");
+            setupTokenService.Token = token;
+            Log.Warning("********************************************************************************");
+            Log.Warning("SECURITY ALERT: Server is unclaimed (no password set).");
+            Log.Warning("Use this Setup Token to claim the server and set the initial password:");
+            Log.Warning("TOKEN: {Token}", token);
+            Log.Warning("********************************************************************************");
         }
     }
     catch (Exception ex)

@@ -16,6 +16,11 @@
                 <MudTextField @bind-Value="_currentPassword" Label="Current Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4"
                               Required="true" RequiredError="Current password is required to make changes!" />
             }
+            else
+            {
+                <MudTextField @bind-Value="_currentPassword" Label="Setup Token" InputType="InputType.Text" Variant="Variant.Outlined" Class="mb-4"
+                              HelperText="Found in application logs" Required="true" RequiredError="Setup Token is required for initial setup!" />
+            }
 
             @if (_isEnabled)
             {
