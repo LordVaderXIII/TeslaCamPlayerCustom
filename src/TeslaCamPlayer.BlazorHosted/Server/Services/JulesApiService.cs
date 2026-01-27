@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -19,17 +20,24 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
         private readonly IConfiguration _configuration;
         private readonly ILogger<JulesApiService> _logger;
         private readonly ISettingsProvider _settingsProvider;
-        private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly IWebHostEnvironment _webHostEnvironment;
         private const string JulesApiUrl = "https://jules.googleapis.com/v1alpha/sessions";
         private const int DailyLimit = 5;
         private const string LimitFileName = "jules_sessions_limit.json";
 
-        public JulesApiService(IConfiguration configuration, ILogger<JulesApiService> logger, ISettingsProvider settingsProvider)
+        public JulesApiService(
+            IConfiguration configuration,
+            ILogger<JulesApiService> logger,
+            ISettingsProvider settingsProvider,
+            IHttpClientFactory httpClientFactory,
+            IWebHostEnvironment webHostEnvironment)
         {
             _configuration = configuration;
             _logger = logger;
             _settingsProvider = settingsProvider;
-            _httpClient = new HttpClient();
+            _httpClientFactory = httpClientFactory;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         public async Task<JulesSessionResult> ReportErrorAsync(Exception ex, string contextInfo, string stackTrace = null)
@@ -88,7 +96,8 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
                 request.Headers.Add("x-goog-api-key", apiKey);
                 request.Content = content;
 
-                var response = await _httpClient.SendAsync(request);
+                using var client = _httpClientFactory.CreateClient();
+                var response = await client.SendAsync(request);
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -190,7 +199,29 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
             // Limit to code files to prevent arbitrary file read (e.g. /etc/passwd)
             var allowedExtensions = new[] { ".cs", ".razor", ".cshtml", ".js", ".ts", ".css", ".scss" };
             var ext = Path.GetExtension(filePath);
-            return allowedExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase);
+            if (!allowedExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // SECURITY: Ensure file is within the content root to prevent Path Traversal / Arbitrary File Read
+            try
+            {
+                var fullPath = Path.GetFullPath(filePath);
+                var contentRoot = Path.GetFullPath(_webHostEnvironment.ContentRootPath);
+
+                // Ensure trailing separator for correct prefix check (e.g., /app vs /application)
+                if (!contentRoot.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                {
+                    contentRoot += Path.DirectorySeparatorChar;
+                }
+
+                return fullPath.StartsWith(contentRoot, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private async Task<bool> CheckAndIncrementDailyLimitAsync()
