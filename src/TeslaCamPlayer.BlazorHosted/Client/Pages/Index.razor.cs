@@ -309,15 +309,18 @@ public partial class Index : ComponentBase
 
 	private async Task DatePickerOnMouseWheel(WheelEventArgs e)
 	{
-		if (e.DeltaY == 0 && e.DeltaX == 0 || !_datePicker.PickerMonth.HasValue || _filteredclips == null)
+		if (e.DeltaY == 0 && e.DeltaX == 0 || !_datePicker.PickerMonth.HasValue || _filteredclips == null || _filteredclips.Length == 0)
 			return;
 
 		var goToNextMonth = e.DeltaY + e.DeltaX * -1 < 0;
 		var targetDate = _datePicker.PickerMonth.Value.AddMonths(goToNextMonth ? 1 : -1);
 		var endOfMonth = targetDate.AddMonths(1);
 
-		var clipsInOrAfterTargetMonth = _filteredclips.Any(c => c.StartDate >= targetDate);
-		var clipsInOrBeforeTargetMonth = _filteredclips.Any(c => c.StartDate <= endOfMonth);
+		// Optimization: _filteredclips is sorted descending. Use O(1) checks instead of O(N) LINQ.
+		// For >= targetDate (newer), check the first item (newest).
+		// For <= endOfMonth (older), check the last item (oldest).
+		var clipsInOrAfterTargetMonth = _filteredclips[0].StartDate >= targetDate;
+		var clipsInOrBeforeTargetMonth = _filteredclips[^1].StartDate <= endOfMonth;
 		
 		if (goToNextMonth && !clipsInOrAfterTargetMonth)
 			return;
