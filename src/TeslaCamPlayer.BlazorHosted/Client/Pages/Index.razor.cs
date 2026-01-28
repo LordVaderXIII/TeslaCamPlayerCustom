@@ -316,8 +316,10 @@ public partial class Index : ComponentBase
 		var targetDate = _datePicker.PickerMonth.Value.AddMonths(goToNextMonth ? 1 : -1);
 		var endOfMonth = targetDate.AddMonths(1);
 
-		var clipsInOrAfterTargetMonth = _filteredclips.Any(c => c.StartDate >= targetDate);
-		var clipsInOrBeforeTargetMonth = _filteredclips.Any(c => c.StartDate <= endOfMonth);
+		// Optimization: _filteredclips is sorted descending by StartDate.
+		// Checking bounds (first/last element) is O(1) compared to Any() which is O(N).
+		var clipsInOrAfterTargetMonth = _filteredclips.Length > 0 && _filteredclips[0].StartDate >= targetDate;
+		var clipsInOrBeforeTargetMonth = _filteredclips.Length > 0 && _filteredclips[^1].StartDate <= endOfMonth;
 		
 		if (goToNextMonth && !clipsInOrAfterTargetMonth)
 			return;
