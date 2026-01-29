@@ -17,3 +17,8 @@
 **Vulnerability:** Even if a password was previously set, disabling authentication allowed anyone to re-enable it and overwrite the password without providing the old one.
 **Learning:** "Disabled" authentication state should not imply "Reset" state. Sensitive operations (like changing passwords) must always require the current credential if one exists, regardless of the global auth switch.
 **Prevention:** Enforce `CurrentPassword` verification for sensitive updates whenever a password hash exists in the database. Ensure recovery mechanisms (like `RESET_AUTH`) explicitly clear credentials if they are intended to bypass this check.
+
+## 2026-02-04 - [Secure Default Credential Distribution]
+**Vulnerability:** Distributing generated default credentials via application logs (e.g., `Console.WriteLine` or Serilog) poses a significant security risk as logs are often persisted, aggregated, and viewable by non-admins.
+**Learning:** While user-friendly for "Trust on First Use", logging secrets violates the principle of "No Secrets in Logs". A safer pattern for headless/containerized apps is writing the credential to a protected file on the filesystem or requiring an environment variable.
+**Prevention:** Use filesystem-based credential passing (writing a file to a volume-mounted data directory) or environment variables to bootstrap initial authentication securely.
