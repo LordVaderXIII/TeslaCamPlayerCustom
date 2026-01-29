@@ -194,7 +194,7 @@ public partial class ClipsService : IClipsService
 		return clips;
 	}
 
-	private static IEnumerable<Clip> GetRecentClips(List<VideoFile> recentVideoFiles)
+	internal static IEnumerable<Clip> GetRecentClips(List<VideoFile> recentVideoFiles)
 	{
 		// Optimize: Group by StartDate first to avoid O(N^2) scan in the loop
 		var groupedSegments = recentVideoFiles
@@ -205,24 +205,50 @@ public partial class ClipsService : IClipsService
 		var currentClipSegments = new List<ClipVideoSegment>();
 		for (var i = 0; i < groupedSegments.Count; i++)
 		{
-			var segmentVideos = groupedSegments[i].ToList();
-			// Use the first video in the group for reference properties (Start, Duration)
-			var currentVideoFile = segmentVideos[0];
+			var group = groupedSegments[i];
+
+			VideoFile cameraFront = null;
+			VideoFile cameraLeftRepeater = null;
+			VideoFile cameraRightRepeater = null;
+			VideoFile cameraBack = null;
+			VideoFile cameraLeftBPillar = null;
+			VideoFile cameraRightBPillar = null;
+			VideoFile cameraFisheye = null;
+			VideoFile cameraNarrow = null;
+			TimeSpan duration = default;
+
+			foreach (var video in group)
+			{
+				if (duration == default)
+					duration = video.Duration;
+
+				switch (video.Camera)
+				{
+					case Cameras.Front: cameraFront = video; break;
+					case Cameras.LeftRepeater: cameraLeftRepeater = video; break;
+					case Cameras.RightRepeater: cameraRightRepeater = video; break;
+					case Cameras.Back: cameraBack = video; break;
+					case Cameras.LeftBPillar: cameraLeftBPillar = video; break;
+					case Cameras.RightBPillar: cameraRightBPillar = video; break;
+					case Cameras.Fisheye: cameraFisheye = video; break;
+					case Cameras.Narrow: cameraNarrow = video; break;
+				}
+			}
 
 			var segment = new ClipVideoSegment
 			{
-				StartDate = currentVideoFile.StartDate,
-				EndDate = currentVideoFile.StartDate.Add(currentVideoFile.Duration),
-				CameraFront = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Front),
-				CameraLeftRepeater = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.LeftRepeater),
-				CameraRightRepeater = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.RightRepeater),
-				CameraBack = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Back),
-				CameraLeftBPillar = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.LeftBPillar),
-				CameraRightBPillar = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.RightBPillar),
-				CameraFisheye = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Fisheye),
-				CameraNarrow = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Narrow)
+				StartDate = group.Key,
+				EndDate = group.Key.Add(duration),
+				CameraFront = cameraFront,
+				CameraLeftRepeater = cameraLeftRepeater,
+				CameraRightRepeater = cameraRightRepeater,
+				CameraBack = cameraBack,
+				CameraLeftBPillar = cameraLeftBPillar,
+				CameraRightBPillar = cameraRightBPillar,
+				CameraFisheye = cameraFisheye,
+				CameraNarrow = cameraNarrow
 			};
-			
+
 			currentClipSegments.Add(segment);
 
 			// No more groups
