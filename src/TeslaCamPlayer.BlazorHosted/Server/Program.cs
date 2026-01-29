@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.StaticFiles;
 using Serilog.Events;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
+using System.Runtime.CompilerServices;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
 using TeslaCamPlayer.BlazorHosted.Server.Data;
@@ -13,6 +14,8 @@ using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Services;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
+
+[assembly: InternalsVisibleTo("TeslaCamPlayer.BlazorHosted.Server.Tests")]
 
 Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Is(LogEventLevel.Verbose)
