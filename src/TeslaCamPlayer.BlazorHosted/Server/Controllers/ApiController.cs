@@ -23,8 +23,21 @@ public class ApiController : ControllerBase
 	}
 
 	[HttpGet]
-	public async Task<Clip[]> GetClips(SyncMode syncMode = SyncMode.None)
-		=> await _clipsService.GetClipsAsync(syncMode);
+	public async Task<ActionResult<Clip[]>> GetClips(SyncMode syncMode = SyncMode.None)
+	{
+		if (syncMode != SyncMode.None)
+		{
+			return BadRequest("Please use POST /Api/Sync for syncing operations.");
+		}
+		return await _clipsService.GetClipsAsync(SyncMode.None);
+	}
+
+	[HttpPost("Sync")]
+	public async Task<IActionResult> Sync([FromQuery] SyncMode syncMode)
+	{
+		await _clipsService.GetClipsAsync(syncMode);
+		return Ok();
+	}
 
 	private bool IsUnderRootPath(string path)
 	{
