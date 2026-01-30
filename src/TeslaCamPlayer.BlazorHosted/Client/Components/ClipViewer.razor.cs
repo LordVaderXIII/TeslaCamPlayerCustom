@@ -294,25 +294,16 @@ public partial class ClipViewer : ComponentBase, IDisposable
 
 	private async Task VideoEnded()
 	{
-		if (_currentSegment == _clip.Segments.Last())
+		// Optimization: Avoid LINQ allocations for finding next segment
+		var currentIndex = Array.IndexOf(_clip.Segments, _currentSegment);
+
+		// If current segment is the last one (or not found), stop.
+		if (currentIndex == -1 || currentIndex >= _clip.Segments.Length - 1)
 			return;
 
 		await TogglePlayingAsync(false);
 
-		var nextSegment = _clip.Segments
-			.OrderBy(s => s.StartDate)
-			.SkipWhile(s => s != _currentSegment)
-			.Skip(1)
-			.FirstOrDefault()
-			?? _clip.Segments.FirstOrDefault();
-
-		if (nextSegment == null)
-		{
-			await TogglePlayingAsync(false);
-			return;
-		}
-
-		_currentSegment = nextSegment;
+		_currentSegment = _clip.Segments[currentIndex + 1];
 		await SetCurrentSegmentVideosAsync();
 		await AwaitUiUpdate();
 		await TogglePlayingAsync(true);
@@ -458,7 +449,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		{
 			var scrubToDate = _clip.StartDate.AddSeconds(TimelineValue);
 			var segment = _clip.SegmentAtDate(scrubToDate)
-			              ?? _clip.Segments.Where(s => s.StartDate > scrubToDate).MinBy(s => s.StartDate);
+			              ?? Array.Find(_clip.Segments, s => s.StartDate > scrubToDate);
 
 			if (segment == null)
 				return;
