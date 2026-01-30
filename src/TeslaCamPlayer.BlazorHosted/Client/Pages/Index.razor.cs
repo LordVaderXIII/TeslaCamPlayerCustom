@@ -111,7 +111,15 @@ public partial class Index : ComponentBase
 		_setDatePickerInitialDate = false;
         try
         {
-		    _clips = await HttpClient.GetFromNewtonsoftJsonAsync<Clip[]>($"Api/GetClips?syncMode={syncMode}&_={DateTime.Now.Ticks}");
+            if (syncMode != SyncMode.None)
+            {
+                var response = await HttpClient.PostAsync($"Api/Sync?syncMode={syncMode}", null);
+                if (!response.IsSuccessStatusCode)
+                {
+                     throw new Exception($"Sync failed with status: {response.StatusCode}");
+                }
+            }
+		    _clips = await HttpClient.GetFromNewtonsoftJsonAsync<Clip[]>($"Api/GetClips?syncMode={SyncMode.None}&_={DateTime.Now.Ticks}");
         }
         catch (Exception ex)
         {
