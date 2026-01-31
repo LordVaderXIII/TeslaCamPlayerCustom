@@ -17,3 +17,8 @@
 **Vulnerability:** Even if a password was previously set, disabling authentication allowed anyone to re-enable it and overwrite the password without providing the old one.
 **Learning:** "Disabled" authentication state should not imply "Reset" state. Sensitive operations (like changing passwords) must always require the current credential if one exists, regardless of the global auth switch.
 **Prevention:** Enforce `CurrentPassword` verification for sensitive updates whenever a password hash exists in the database. Ensure recovery mechanisms (like `RESET_AUTH`) explicitly clear credentials if they are intended to bypass this check.
+
+## 2026-01-31 - [Path Disclosure in API Response]
+**Vulnerability:** The `GetClips` API endpoint returned `VideoFile` objects containing the absolute server file path (`FilePath`), exposing the internal directory structure to API consumers.
+**Learning:** Using shared Entity Framework models directly as API response objects often leaks internal state or implementation details.
+**Prevention:** Use dedicated Data Transfer Objects (DTOs) for API responses or strictly annotate sensitive properties with `[JsonIgnore]` if sharing models is necessary.

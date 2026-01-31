@@ -1,7 +1,11 @@
+using Newtonsoft.Json;
+
 namespace TeslaCamPlayer.BlazorHosted.Shared.Models;
 
 public class VideoFile
 {
+    [JsonIgnore]
+    [System.Text.Json.Serialization.JsonIgnore]
 	public string FilePath { get; init; }
 	public string Url { get; init; }
 	public string EventFolderName { get; init; }
