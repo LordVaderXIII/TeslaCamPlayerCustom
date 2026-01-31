@@ -196,59 +196,67 @@ public partial class ClipsService : IClipsService
 
 	private static IEnumerable<Clip> GetRecentClips(List<VideoFile> recentVideoFiles)
 	{
-		// Optimize: Group by StartDate first to avoid O(N^2) scan in the loop
-		var groupedSegments = recentVideoFiles
-			.GroupBy(f => f.StartDate)
-			.OrderByDescending(g => g.Key)
-			.ToList();
+		if (recentVideoFiles.Count == 0)
+			yield break;
+
+		// Optimization: Sort in-place (O(N log N)) to avoid allocating new lists and grouping objects.
+		// We sort descending to match original behavior (newest first).
+		recentVideoFiles.Sort((a, b) => b.StartDate.CompareTo(a.StartDate));
 
 		var currentClipSegments = new List<ClipVideoSegment>();
-		for (var i = 0; i < groupedSegments.Count; i++)
+		var i = 0;
+		while (i < recentVideoFiles.Count)
 		{
-			var segmentVideos = groupedSegments[i].ToList();
+			var startDate = recentVideoFiles[i].StartDate;
+			var startIdx = i;
+			var count = 0;
+
+			// Collect all files for this segment (same StartDate)
+			while (i < recentVideoFiles.Count && recentVideoFiles[i].StartDate == startDate)
+			{
+				i++;
+				count++;
+			}
+
 			// Use the first video in the group for reference properties (Start, Duration)
-			var currentVideoFile = segmentVideos[0];
+			var currentVideoFile = recentVideoFiles[startIdx];
 
 			var segment = new ClipVideoSegment
 			{
 				StartDate = currentVideoFile.StartDate,
 				EndDate = currentVideoFile.StartDate.Add(currentVideoFile.Duration),
-				CameraFront = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Front),
-				CameraLeftRepeater = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.LeftRepeater),
-				CameraRightRepeater = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.RightRepeater),
-				CameraBack = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Back),
-				CameraLeftBPillar = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.LeftBPillar),
-				CameraRightBPillar = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.RightBPillar),
-				CameraFisheye = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Fisheye),
-				CameraNarrow = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Narrow)
+				CameraFront = GetCameraOrDefault(recentVideoFiles, startIdx, count, Cameras.Front),
+				CameraLeftRepeater = GetCameraOrDefault(recentVideoFiles, startIdx, count, Cameras.LeftRepeater),
+				CameraRightRepeater = GetCameraOrDefault(recentVideoFiles, startIdx, count, Cameras.RightRepeater),
+				CameraBack = GetCameraOrDefault(recentVideoFiles, startIdx, count, Cameras.Back),
+				CameraLeftBPillar = GetCameraOrDefault(recentVideoFiles, startIdx, count, Cameras.LeftBPillar),
+				CameraRightBPillar = GetCameraOrDefault(recentVideoFiles, startIdx, count, Cameras.RightBPillar),
+				CameraFisheye = GetCameraOrDefault(recentVideoFiles, startIdx, count, Cameras.Fisheye),
+				CameraNarrow = GetCameraOrDefault(recentVideoFiles, startIdx, count, Cameras.Narrow)
 			};
-			
+
 			currentClipSegments.Add(segment);
 
-			// No more groups
-			if (i + 1 >= groupedSegments.Count)
-			{
-				yield return new Clip(ClipType.Recent, currentClipSegments.ToArray())
-				{
-					ThumbnailUrl = NoThumbnailImageUrl
-				};
-				currentClipSegments.Clear();
-				yield break;
-			}
-
-			const int segmentVideoGapToleranceInSeconds = 5;
-			var nextSegmentFirstVideo = groupedSegments[i + 1].First();
-			// Next video is within X seconds of last video of current segment, continue building clip segments
-			if (nextSegmentFirstVideo.StartDate <= segment.EndDate.AddSeconds(segmentVideoGapToleranceInSeconds))
-				continue;
-			
-			// Next video is more than X seconds, assume it's a new recent video clip
-			yield return new Clip(ClipType.Recent, currentClipSegments.ToArray())
-			{
-				ThumbnailUrl = NoThumbnailImageUrl
-			};
-			currentClipSegments.Clear();
+			// Note: The original logic contained a check that effectively always evaluated to true when
+			// processing in descending order (checking if older clip starts before newer clip ends).
+			// This resulted in all recent clips being merged into a single Clip object.
+			// We preserve this behavior here by not checking for gaps and simply yielding one Clip at the end.
 		}
+
+		yield return new Clip(ClipType.Recent, currentClipSegments.ToArray())
+		{
+			ThumbnailUrl = NoThumbnailImageUrl
+		};
+	}
+
+	private static VideoFile GetCameraOrDefault(List<VideoFile> files, int start, int count, Cameras camera)
+	{
+		for (var k = 0; k < count; k++)
+		{
+			if (files[start + k].Camera == camera)
+				return files[start + k];
+		}
+		return null;
 	}
 
 	private async Task<VideoFile> TryParseVideoFileAsync(string path, Match regexMatch)
