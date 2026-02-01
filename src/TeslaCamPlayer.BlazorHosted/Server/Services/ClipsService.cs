@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -23,7 +24,6 @@ public partial class ClipsService : IClipsService
     private const string ClipsCacheKey = "Clips_All";
 
 	private static readonly Regex FileNameRegex = FileNameRegexGenerated();
-	private static readonly SemaphoreSlim FfProbeSemaphore = new(10);
 	private static readonly SemaphoreSlim _syncSemaphore = new(1);
 	
 	private readonly ISettingsProvider _settingsProvider;
@@ -130,28 +130,24 @@ public partial class ClipsService : IClipsService
 		var newFiles = filePaths
 			.Where(path => !knownVideoFiles.ContainsKey(path))
 			.Select(path => new { Path = path, RegexMatch = FileNameRegex.Match(path) })
-			.Where(f => f.RegexMatch.Success)
-			.ToList();
+			.Where(f => f.RegexMatch.Success);
 
-		if (newFiles.Any())
+		var newVideoFiles = new ConcurrentBag<VideoFile>();
+
+		// Optimization: Use Parallel.ForEachAsync to control concurrency efficiently.
+		// This avoids creating tasks for all files at once (saving memory) and eliminates the need for a separate SemaphoreSlim.
+		// MaxDegreeOfParallelism = 10 ensures we don't overwhelm the system with ffprobe processes.
+		await Parallel.ForEachAsync(newFiles, new ParallelOptions { MaxDegreeOfParallelism = 10 }, async (f, token) =>
 		{
-			var newVideoFiles = (await Task.WhenAll(newFiles
-				.AsParallel()
-				.Select(async f =>
-				{
-					await FfProbeSemaphore.WaitAsync();
-					try
-					{
-						return await TryParseVideoFileAsync(f.Path, f.RegexMatch);
-					}
-					finally
-					{
-						FfProbeSemaphore.Release();
-					}
-				})))
-				.Where(v => v != null)
-				.ToList();
+			var videoFile = await TryParseVideoFileAsync(f.Path, f.RegexMatch);
+			if (videoFile != null)
+			{
+				newVideoFiles.Add(videoFile);
+			}
+		});
 
+		if (!newVideoFiles.IsEmpty)
+		{
 			await dbContext.VideoFiles.AddRangeAsync(newVideoFiles);
 		}
 
