@@ -1,5 +1,6 @@
 using System.Web;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TeslaCamPlayer.BlazorHosted.Server.Filters;
 using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Services;
@@ -8,6 +9,7 @@ using TeslaCamPlayer.BlazorHosted.Shared.Models;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Controllers;
 
+[EnableRateLimiting("ApiPolicy")]
 [TeslaCamAuth]
 [ApiController]
 [Route("Api/[action]")]
