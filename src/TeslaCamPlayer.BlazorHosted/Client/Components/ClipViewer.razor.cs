@@ -318,7 +318,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		await TogglePlayingAsync(true);
 	}
 
-	private async Task FrontVideoTimeUpdate()
+	private async Task FrontVideoTimeUpdate(double seconds)
 	{
 		if (_currentSegment == null)
 			return;
@@ -328,8 +328,6 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		
         // Ensure player is valid
         if (_videoPlayerFront == null) return;
-
-		var seconds = await _videoPlayerFront.GetTimeAsync();
 
         // Update Telemetry
         var telemetry = await TelemetryService.GetTelemetryAsync(seconds);

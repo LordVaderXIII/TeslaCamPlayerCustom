@@ -29,3 +29,27 @@ function syncVideos(mainVideo, otherVideos, threshold) {
         }
     }
 }
+
+function registerTimeUpdateObserver(element, dotNetRef, interval) {
+    if (!element || !dotNetRef) return;
+
+    // Cleanup existing if any
+    unregisterTimeUpdateObserver(element);
+
+    var lastTime = 0;
+    var handler = function() {
+        var now = Date.now();
+        if (now - lastTime < interval) return;
+        lastTime = now;
+        dotNetRef.invokeMethodAsync('HandleTimeUpdate', element.currentTime);
+    };
+
+    element.addEventListener('timeupdate', handler);
+    element._blazorTimeUpdateHandler = handler;
+}
+
+function unregisterTimeUpdateObserver(element) {
+    if (!element || !element._blazorTimeUpdateHandler) return;
+    element.removeEventListener('timeupdate', element._blazorTimeUpdateHandler);
+    delete element._blazorTimeUpdateHandler;
+}
