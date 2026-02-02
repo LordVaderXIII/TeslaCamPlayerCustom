@@ -1,3 +1,4 @@
+@implements IAsyncDisposable
 <div class="@Class @(string.IsNullOrWhiteSpace(Src) ? "d-none" : null) video-player-container"
 	 style="@(Clickable ? "cursor: pointer" : null)"
 	 @onclick="@OnClickHandler">
@@ -7,7 +8,6 @@
 		src="@Src"
 		style="width: 100%; height: 100%; display: block;"
 		@onended="@VideoEndedHandler"
-		@ontimeupdate="@(TimeUpdate.HasDelegate ? TimeUpdateHandler : null)"
 		@oncanplaythrough="@OnLoadedData"
 		preload="metadata"
 		muted
@@ -50,7 +50,7 @@
 	public EventCallback VideoEnded { get; set; }
 	
 	[Parameter]
-	public EventCallback TimeUpdate { get; set; }
+	public EventCallback<double> TimeUpdate { get; set; }
 
 	[Parameter]
 	public bool Selectable { get; set; }
@@ -67,6 +67,7 @@
 
 	private ElementReference _player;
     public ElementReference VideoElement => _player;
+    private DotNetObjectReference<VideoPlayer> _objRef;
 	
 	public ValueTask PlayAsync()
 		=> JsRuntime.InvokeVoidAsync("HTMLVideoElement.prototype.play.call", _player);
@@ -86,23 +87,40 @@
 	private Task VideoEndedHandler()
 		=> VideoEnded.InvokeAsync();
 
-	private DateTime _lastTimeUpdateInvoked;
-
-	private async Task TimeUpdateHandler()
-	{
-		var now = DateTime.UtcNow;
-		// Throttle updates to ~5 times per second (200ms) to reduce re-renders and JS Interop
-		if ((now - _lastTimeUpdateInvoked).TotalMilliseconds < 200)
-			return;
-
-		_lastTimeUpdateInvoked = now;
-		await TimeUpdate.InvokeAsync();
-	}
-
 	private Task OnClickHandler()
 		=> Clickable ? OnClick.InvokeAsync() : Task.CompletedTask;
 
 	private void OnLoadedData()
 		=> Loaded?.Invoke();
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && TimeUpdate.HasDelegate)
+        {
+            _objRef = DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("registerTimeUpdateObserver", _player, _objRef, 200);
+        }
+    }
+
+    [JSInvokable]
+    public async Task HandleTimeUpdate(double time)
+    {
+        await TimeUpdate.InvokeAsync(time);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_objRef != null)
+        {
+            try
+            {
+                await JsRuntime.InvokeVoidAsync("unregisterTimeUpdateObserver", _player);
+            }
+            catch (Exception)
+            {
+                // Ignored - JS runtime might be gone
+            }
+            _objRef.Dispose();
+        }
+    }
 }
