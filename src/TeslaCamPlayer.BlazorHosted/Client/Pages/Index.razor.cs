@@ -125,17 +125,22 @@ public partial class Index : ComponentBase
 
 	private void FilterClips()
 	{
-		_filteredclips = (_clips ??= Array.Empty<Clip>())
-			.Where(_eventFilter.IsInFilter)
-			.ToArray();
+		var clips = _clips ??= Array.Empty<Clip>();
+		var filteredList = new List<Clip>(clips.Length);
+		// Optimization: Single pass filtering and date aggregation to avoid LINQ allocations
+		_eventDates = new HashSet<DateTime>(clips.Length * 2);
 
-		// Optimization: Avoid multiple LINQ passes (Select, Concat, Distinct) by populating the HashSet directly.
-		_eventDates = new HashSet<DateTime>(_filteredclips.Length * 2);
-		foreach (var clip in _filteredclips)
+		foreach (var clip in clips)
 		{
-			_eventDates.Add(clip.StartDate.Date);
-			_eventDates.Add(clip.EndDate.Date);
+			if (_eventFilter.IsInFilter(clip))
+			{
+				filteredList.Add(clip);
+				_eventDates.Add(clip.StartDate.Date);
+				_eventDates.Add(clip.EndDate.Date);
+			}
 		}
+
+		_filteredclips = filteredList.ToArray();
 	}
 
 	private async Task ToggleFilter()
