@@ -50,6 +50,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddSingleton<ISettingsProvider, SettingsProvider>();
 builder.Services.AddTransient<IClipsService, ClipsService>();
 builder.Services.AddSingleton<IExportService, ExportService>();
+builder.Services.AddSingleton<AuthTokenService>();
 builder.Services.AddTransient<IJulesApiService, JulesApiService>();
 #if WINDOWS
 builder.Services.AddTransient<IFfProbeService, FfProbeServiceWindows>();
@@ -143,6 +144,17 @@ using (var scope = app.Services.CreateScope())
             dbContext.Users.Update(user);
             dbContext.SaveChanges();
             Log.Information("Authentication reset to OFF via RESET_AUTH environment variable.");
+        }
+
+        if (string.IsNullOrEmpty(user.PasswordHash))
+        {
+            var tokenService = scope.ServiceProvider.GetRequiredService<AuthTokenService>();
+            // Generate a simple 6-character token for easy typing
+            var token = Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper();
+            tokenService.Token = token;
+            Log.Warning("********************************************************************************");
+            Log.Warning("* SETUP REQUIRED: Use this token to set the initial admin password: {Token} *", token);
+            Log.Warning("********************************************************************************");
         }
     }
     catch (Exception ex)

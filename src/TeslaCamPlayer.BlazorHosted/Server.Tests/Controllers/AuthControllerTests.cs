@@ -44,7 +44,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, new TeslaCamPlayer.BlazorHosted.Server.Services.AuthTokenService());
             // Simulate unauthenticated user
             controller.ControllerContext = new ControllerContext
             {
@@ -84,7 +84,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, new TeslaCamPlayer.BlazorHosted.Server.Services.AuthTokenService());
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -123,7 +123,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, new TeslaCamPlayer.BlazorHosted.Server.Services.AuthTokenService());
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -150,7 +150,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
         }
 
         [Fact]
-        public async Task Update_ShouldSucceed_WhenAuthDisabledAndPasswordMissing_AndCurrentPasswordMissing()
+        public async Task Update_ShouldReturnUnauthorized_WhenSetupTokenMissing()
         {
             // Arrange
             using var context = new TeslaCamDbContext(_dbContextOptions);
@@ -164,7 +164,8 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var tokenService = new TeslaCamPlayer.BlazorHosted.Server.Services.AuthTokenService { Token = "123456" };
+            var controller = new AuthController(context, tokenService);
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -175,7 +176,81 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
                 IsEnabled = true,
                 Username = "Admin",
                 Password = "NewPassword",
-                CurrentPassword = null // Not needed
+                SetupToken = null
+            };
+
+            // Act
+            var result = await controller.Update(request);
+
+            // Assert
+            Assert.IsType<UnauthorizedObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task Update_ShouldReturnUnauthorized_WhenSetupTokenIncorrect()
+        {
+            // Arrange
+            using var context = new TeslaCamDbContext(_dbContextOptions);
+            var user = new User
+            {
+                Id = "Admin",
+                Username = "Admin",
+                IsEnabled = false,
+                PasswordHash = null // Initial setup
+            };
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var tokenService = new TeslaCamPlayer.BlazorHosted.Server.Services.AuthTokenService { Token = "123456" };
+            var controller = new AuthController(context, tokenService);
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+
+            var request = new UpdateAuthRequest
+            {
+                IsEnabled = true,
+                Username = "Admin",
+                Password = "NewPassword",
+                SetupToken = "WRONG"
+            };
+
+            // Act
+            var result = await controller.Update(request);
+
+            // Assert
+            Assert.IsType<UnauthorizedObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task Update_ShouldSucceed_WhenSetupTokenCorrect()
+        {
+            // Arrange
+            using var context = new TeslaCamDbContext(_dbContextOptions);
+            var user = new User
+            {
+                Id = "Admin",
+                Username = "Admin",
+                IsEnabled = false,
+                PasswordHash = null // Initial setup
+            };
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var tokenService = new TeslaCamPlayer.BlazorHosted.Server.Services.AuthTokenService { Token = "123456" };
+            var controller = new AuthController(context, tokenService);
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+
+            var request = new UpdateAuthRequest
+            {
+                IsEnabled = true,
+                Username = "Admin",
+                Password = "NewPassword",
+                SetupToken = "123456"
             };
 
             // Act
@@ -187,6 +262,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             var updatedUser = await context.Users.FindAsync("Admin");
             Assert.True(updatedUser.IsEnabled);
             Assert.NotNull(updatedUser.PasswordHash);
+            Assert.Null(tokenService.Token); // Token should be consumed
         }
     }
 }
