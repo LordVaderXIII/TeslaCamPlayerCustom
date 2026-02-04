@@ -9,12 +9,15 @@ using Xunit;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
+using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
+using Moq;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
 {
     public class AuthControllerTests
     {
         private DbContextOptions<TeslaCamDbContext> _dbContextOptions;
+        private Mock<IAuthSetupService> _mockAuthSetupService;
 
         public AuthControllerTests()
         {
@@ -26,6 +29,8 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
 
             using var context = new TeslaCamDbContext(_dbContextOptions);
             context.Database.EnsureCreated();
+            _mockAuthSetupService = new Mock<IAuthSetupService>();
+            _mockAuthSetupService.Setup(s => s.SetupToken).Returns("ValidToken");
         }
 
         [Fact]
@@ -44,7 +49,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, _mockAuthSetupService.Object);
             // Simulate unauthenticated user
             controller.ControllerContext = new ControllerContext
             {
@@ -84,7 +89,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, _mockAuthSetupService.Object);
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -123,7 +128,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, _mockAuthSetupService.Object);
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -150,7 +155,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
         }
 
         [Fact]
-        public async Task Update_ShouldSucceed_WhenAuthDisabledAndPasswordMissing_AndCurrentPasswordMissing()
+        public async Task Update_ShouldFail_WhenAuthDisabledAndPasswordMissing_AndTokenMissing()
         {
             // Arrange
             using var context = new TeslaCamDbContext(_dbContextOptions);
@@ -164,7 +169,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, _mockAuthSetupService.Object);
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -175,7 +180,82 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
                 IsEnabled = true,
                 Username = "Admin",
                 Password = "NewPassword",
-                CurrentPassword = null // Not needed
+                CurrentPassword = null,
+                SetupToken = null // Missing
+            };
+
+            // Act
+            var result = await controller.Update(request);
+
+            // Assert
+            Assert.IsType<UnauthorizedObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task Update_ShouldFail_WhenAuthDisabledAndPasswordMissing_AndTokenInvalid()
+        {
+            // Arrange
+            using var context = new TeslaCamDbContext(_dbContextOptions);
+            var user = new User
+            {
+                Id = "Admin",
+                Username = "Admin",
+                IsEnabled = false,
+                PasswordHash = null // Initial setup
+            };
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var controller = new AuthController(context, _mockAuthSetupService.Object);
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+
+            var request = new UpdateAuthRequest
+            {
+                IsEnabled = true,
+                Username = "Admin",
+                Password = "NewPassword",
+                CurrentPassword = null,
+                SetupToken = "InvalidToken"
+            };
+
+            // Act
+            var result = await controller.Update(request);
+
+            // Assert
+            Assert.IsType<UnauthorizedObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task Update_ShouldSucceed_WhenAuthDisabledAndPasswordMissing_AndTokenCorrect()
+        {
+            // Arrange
+            using var context = new TeslaCamDbContext(_dbContextOptions);
+            var user = new User
+            {
+                Id = "Admin",
+                Username = "Admin",
+                IsEnabled = false,
+                PasswordHash = null // Initial setup
+            };
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var controller = new AuthController(context, _mockAuthSetupService.Object);
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+
+            var request = new UpdateAuthRequest
+            {
+                IsEnabled = true,
+                Username = "Admin",
+                Password = "NewPassword",
+                CurrentPassword = null,
+                SetupToken = "ValidToken"
             };
 
             // Act
