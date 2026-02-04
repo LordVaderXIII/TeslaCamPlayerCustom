@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using TeslaCamPlayer.BlazorHosted.Server.Data;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
 using Microsoft.AspNetCore.Identity;
+using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 using UserModel = TeslaCamPlayer.BlazorHosted.Shared.Models.User;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Controllers;
@@ -15,10 +16,12 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly TeslaCamDbContext _dbContext;
+    private readonly IAuthSetupService _authSetupService;
 
-    public AuthController(TeslaCamDbContext dbContext)
+    public AuthController(TeslaCamDbContext dbContext, IAuthSetupService authSetupService)
     {
         _dbContext = dbContext;
+        _authSetupService = authSetupService;
     }
 
     [HttpGet("status")]
@@ -141,6 +144,14 @@ public class AuthController : ControllerBase
             if (result == PasswordVerificationResult.Failed)
             {
                 return Unauthorized("Invalid current password.");
+            }
+        }
+        else
+        {
+            // SECURITY: If no password is set (initial setup), require the Setup Token
+            if (request.SetupToken != _authSetupService.SetupToken)
+            {
+                 return Unauthorized("Setup token is required. Check server logs.");
             }
         }
 
