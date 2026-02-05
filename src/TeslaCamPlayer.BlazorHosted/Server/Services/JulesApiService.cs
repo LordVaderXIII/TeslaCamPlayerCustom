@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -16,33 +17,43 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
 {
     public class JulesApiService : IJulesApiService
     {
+        private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly ILogger<JulesApiService> _logger;
         private readonly ISettingsProvider _settingsProvider;
-        private readonly HttpClient _httpClient;
+        private readonly IWebHostEnvironment _webHostEnvironment;
         private const string JulesApiUrl = "https://jules.googleapis.com/v1alpha/sessions";
         private const int DailyLimit = 5;
         private const string LimitFileName = "jules_sessions_limit.json";
 
-        public JulesApiService(IConfiguration configuration, ILogger<JulesApiService> logger, ISettingsProvider settingsProvider)
+        public JulesApiService(
+            HttpClient httpClient,
+            IConfiguration configuration,
+            ILogger<JulesApiService> logger,
+            ISettingsProvider settingsProvider,
+            IWebHostEnvironment webHostEnvironment)
         {
+            _httpClient = httpClient;
             _configuration = configuration;
             _logger = logger;
             _settingsProvider = settingsProvider;
-            _httpClient = new HttpClient();
+            _webHostEnvironment = webHostEnvironment;
         }
 
         public async Task<JulesSessionResult> ReportErrorAsync(Exception ex, string contextInfo, string stackTrace = null)
         {
-            return await ReportErrorInternalAsync(ex.Message, stackTrace ?? ex.StackTrace, contextInfo);
+            // Backend errors are trusted, but still checked against ContentRootPath in IsSafeSourceFile
+            return await ReportErrorInternalAsync(ex.Message, stackTrace ?? ex.StackTrace, contextInfo, skipSnippet: false);
         }
 
         public async Task<JulesSessionResult> ReportFrontendErrorAsync(string message, string stackTrace, string contextInfo)
         {
-            return await ReportErrorInternalAsync(message, stackTrace, contextInfo);
+            // SECURITY: Frontend errors should not trigger snippet extraction as the stack trace is user-controlled.
+            // Reading files based on frontend stack trace can lead to arbitrary file read vulnerabilities.
+            return await ReportErrorInternalAsync(message, stackTrace, contextInfo, skipSnippet: true);
         }
 
-        private async Task<JulesSessionResult> ReportErrorInternalAsync(string message, string stackTrace, string contextInfo)
+        private async Task<JulesSessionResult> ReportErrorInternalAsync(string message, string stackTrace, string contextInfo, bool skipSnippet)
         {
             var apiKey = _configuration["JULES_API_KEY"];
             if (string.IsNullOrEmpty(apiKey))
@@ -66,7 +77,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
 
             try
             {
-                var prompt = BuildPrompt(message, stackTrace, contextInfo);
+                var prompt = BuildPrompt(message, stackTrace, contextInfo, skipSnippet);
 
                 var requestBody = new
                 {
@@ -110,7 +121,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
             }
         }
 
-        private string BuildPrompt(string message, string stackTrace, string contextInfo)
+        private string BuildPrompt(string message, string stackTrace, string contextInfo, bool skipSnippet)
         {
             var sb = new StringBuilder();
             sb.AppendLine("Analyze this error and generate a code patch to fix it. Focus on the C# backend if applicable.");
@@ -130,12 +141,15 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
             sb.AppendLine("Stack Trace:");
             sb.AppendLine(stackTrace);
 
-            var snippet = ExtractSnippet(stackTrace);
-            if (!string.IsNullOrEmpty(snippet))
+            if (!skipSnippet)
             {
-                sb.AppendLine();
-                sb.AppendLine("Code Snippet:");
-                sb.AppendLine(snippet);
+                var snippet = ExtractSnippet(stackTrace);
+                if (!string.IsNullOrEmpty(snippet))
+                {
+                    sb.AppendLine();
+                    sb.AppendLine("Code Snippet:");
+                    sb.AppendLine(snippet);
+                }
             }
 
             return sb.ToString();
@@ -190,7 +204,21 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Services
             // Limit to code files to prevent arbitrary file read (e.g. /etc/passwd)
             var allowedExtensions = new[] { ".cs", ".razor", ".cshtml", ".js", ".ts", ".css", ".scss" };
             var ext = Path.GetExtension(filePath);
-            return allowedExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase);
+            if (!allowedExtensions.Contains(ext, StringComparer.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // SECURITY: Ensure file is within ContentRootPath to prevent Path Traversal
+            var fullPath = Path.GetFullPath(filePath);
+            var contentRoot = Path.GetFullPath(_webHostEnvironment.ContentRootPath);
+            // Ensure contentRoot ends with separator to prevent partial match (e.g. /var/www vs /var/www2)
+            if (!contentRoot.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            {
+                contentRoot += Path.DirectorySeparatorChar;
+            }
+
+            return fullPath.StartsWith(contentRoot, StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task<bool> CheckAndIncrementDailyLimitAsync()
