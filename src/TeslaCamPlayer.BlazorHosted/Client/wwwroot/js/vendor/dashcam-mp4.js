@@ -65,10 +65,10 @@ class DashcamMP4 {
         // Extract SPS/PPS
         let p = o + 6;
         const spsLen = this.view.getUint16(p);
-        const sps = new Uint8Array(this.buffer.slice(p + 2, p + 2 + spsLen));
+        const sps = new Uint8Array(this.buffer, p + 2, spsLen);
         p += 2 + spsLen + 1;
         const ppsLen = this.view.getUint16(p);
-        const pps = new Uint8Array(this.buffer.slice(p + 2, p + 2 + ppsLen));
+        const pps = new Uint8Array(this.buffer, p + 2, ppsLen);
 
         // Get timescale from mdhd (ticks per second, used to convert stts deltas to ms)
         const mdhd = this.findBox(mdia.start, mdia.end, 'mdhd');
@@ -117,7 +117,7 @@ class DashcamMP4 {
             if (len < 1 || cursor + len > this.view.byteLength) break;
 
             const type = this.view.getUint8(cursor) & 0x1F;
-            const data = new Uint8Array(this.buffer.slice(cursor, cursor + len));
+            const data = new Uint8Array(this.buffer, cursor, len);
 
             if (type === 7) currentSps = data; // SPS
             else if (type === 8) currentPps = data; // PPS
@@ -160,7 +160,7 @@ class DashcamMP4 {
 
             // NAL type 6 = SEI, payload type 5 = user data unregistered
             if ((this.view.getUint8(cursor) & 0x1F) === 6 && this.view.getUint8(cursor + 1) === 5) {
-                const sei = this.decodeSei(new Uint8Array(this.buffer.slice(cursor, cursor + nalSize)), SeiMetadata);
+                const sei = this.decodeSei(new Uint8Array(this.buffer, cursor, nalSize), SeiMetadata);
                 if (sei) messages.push(sei);
             }
             cursor += nalSize;
@@ -185,14 +185,26 @@ class DashcamMP4 {
 
     /** Strip H.264 emulation prevention bytes */
     stripEmulationBytes(data) {
-        const out = [];
+        const length = data.length;
+        const out = new Uint8Array(length);
+        let count = 0;
         let zeros = 0;
-        for (const byte of data) {
-            if (zeros >= 2 && byte === 0x03) { zeros = 0; continue; }
-            out.push(byte);
-            zeros = byte === 0 ? zeros + 1 : 0;
+
+        for (let i = 0; i < length; i++) {
+            const byte = data[i];
+            if (zeros >= 2 && byte === 0x03) {
+                zeros = 0;
+                continue;
+            }
+            out[count++] = byte;
+            if (byte === 0) {
+                zeros++;
+            } else {
+                zeros = 0;
+            }
         }
-        return Uint8Array.from(out);
+
+        return out.subarray(0, count);
     }
 
     // -------------------------------------------------------------
