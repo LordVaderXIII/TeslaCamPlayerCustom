@@ -50,7 +50,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddSingleton<ISettingsProvider, SettingsProvider>();
 builder.Services.AddTransient<IClipsService, ClipsService>();
 builder.Services.AddSingleton<IExportService, ExportService>();
-builder.Services.AddTransient<IJulesApiService, JulesApiService>();
+builder.Services.AddHttpClient<IJulesApiService, JulesApiService>();
 #if WINDOWS
 builder.Services.AddTransient<IFfProbeService, FfProbeServiceWindows>();
 #elif DOCKER
