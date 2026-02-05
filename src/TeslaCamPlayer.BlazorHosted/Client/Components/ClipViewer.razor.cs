@@ -457,8 +457,8 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		try
 		{
 			var scrubToDate = _clip.StartDate.AddSeconds(TimelineValue);
-			var segment = _clip.SegmentAtDate(scrubToDate)
-			              ?? _clip.Segments.Where(s => s.StartDate > scrubToDate).MinBy(s => s.StartDate);
+			// Optimization: Use binary search O(log N) instead of LINQ O(N)
+			var segment = _clip.GetSegmentAtOrAfter(scrubToDate);
 
 			if (segment == null)
 				return;

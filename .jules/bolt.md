@@ -7,3 +7,7 @@
 ## 2025-01-29 - Array.IndexOf vs LINQ for Navigation
 **Learning:** Using `Array.IndexOf` combined with direct array access is significantly more efficient than LINQ `FirstOrDefault` or manual loops for finding adjacent items in a sorted list. It avoids delegate allocations and utilizes vectorized native search.
 **Action:** Prefer `Array.IndexOf` for navigation logic when the item instance is known to be in the collection.
+
+## 2025-01-30 - Binary Search for Timeline Scrubbing
+**Learning:** Timeline scrubbing generates high-frequency events. Using LINQ (`Where` + `MinBy`) to find the nearest segment is O(N) and creates allocations on every event.
+**Action:** Implement custom Binary Search (O(log N)) for looking up time-based segments to minimize latency and allocations during scrubbing.
