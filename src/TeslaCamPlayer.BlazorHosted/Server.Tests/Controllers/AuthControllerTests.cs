@@ -9,12 +9,15 @@ using Xunit;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
 {
     public class AuthControllerTests
     {
         private DbContextOptions<TeslaCamDbContext> _dbContextOptions;
+        private readonly Mock<ILogger<AuthController>> _mockLogger = new Mock<ILogger<AuthController>>();
 
         public AuthControllerTests()
         {
@@ -44,7 +47,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, _mockLogger.Object);
             // Simulate unauthenticated user
             controller.ControllerContext = new ControllerContext
             {
@@ -84,7 +87,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, _mockLogger.Object);
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -123,7 +126,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, _mockLogger.Object);
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -164,7 +167,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, _mockLogger.Object);
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
