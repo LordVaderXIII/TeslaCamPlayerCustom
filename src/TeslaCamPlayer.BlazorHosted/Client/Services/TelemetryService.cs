@@ -9,7 +9,17 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Services
     {
         Task<bool> InitAsync(string videoUrl);
         Task<TelemetryData> GetTelemetryAsync(double timeSeconds);
+        Task<TelemetryResult> GetTelemetryForVideoAsync(ElementReference videoElement);
         Task<System.Collections.Generic.List<double[]>> GetPathAsync();
+    }
+
+    public class TelemetryResult
+    {
+        [JsonPropertyName("time")]
+        public double Time { get; set; }
+
+        [JsonPropertyName("telemetry")]
+        public TelemetryData Telemetry { get; set; }
     }
 
     public class TelemetryService : ITelemetryService, IAsyncDisposable
@@ -44,6 +54,19 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Services
             catch
             {
                 return null;
+            }
+        }
+
+        public async Task<TelemetryResult> GetTelemetryForVideoAsync(ElementReference videoElement)
+        {
+            try
+            {
+                return await _jsRuntime.InvokeAsync<TelemetryResult>("telemetryInterop.getTelemetryForVideo", videoElement);
+            }
+            catch
+            {
+                // Fallback or error
+                return new TelemetryResult { Time = 0, Telemetry = null };
             }
         }
 
