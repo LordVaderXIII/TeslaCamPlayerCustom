@@ -151,5 +151,15 @@ window.telemetryInterop = {
     getPath: function() {
         if (!this.frames) return [];
         return this.frames.map(f => [f.data.latitude_deg, f.data.longitude_deg]);
+    },
+
+    getPlaybackState: function (videoElement) {
+        if (!videoElement) return null;
+        var time = videoElement.currentTime;
+        var telemetry = this.getTelemetry(time);
+        return {
+            time: time,
+            telemetry: telemetry
+        };
     }
 };
