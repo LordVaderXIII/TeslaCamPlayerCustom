@@ -20,6 +20,7 @@ RUN apt-get update && apt-get install -y ffmpeg fonts-dejavu --no-install-recomm
 WORKDIR /app
 ENV ClipsRootPath=/TeslaCam
 ENV ASPNETCORE_HTTP_PORTS=80
+ENV DISABLE_HTTPS_REDIRECTION=true
 EXPOSE 80/tcp
 COPY --from=publish /app/publish .
 COPY --from=gulp /src/wwwroot/css/ ./wwwroot/css/

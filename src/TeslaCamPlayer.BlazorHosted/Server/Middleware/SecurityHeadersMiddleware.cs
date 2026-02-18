@@ -51,8 +51,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Middleware
                           "object-src 'none'; " +
                           "base-uri 'self'; " +
                           "form-action 'self'; " +
-                          "frame-ancestors 'self'; " +
-                          "upgrade-insecure-requests;";
+                          "frame-ancestors 'self';";
 
                 context.Response.Headers["Content-Security-Policy"] = csp;
             }
