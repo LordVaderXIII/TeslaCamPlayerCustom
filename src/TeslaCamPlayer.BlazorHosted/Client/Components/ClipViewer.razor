@@ -1,84 +1,13 @@
 @using TeslaCamPlayer.BlazorHosted.Shared.Models
-@inject IJSRuntime JSRuntime
-
-<div class="viewer @(_is360Mode ? "viewer--360" : "")">
+<div class="viewer">
     <TelemetryOverlay Data="_currentTelemetry" />
 
     <!-- Camera Switch Button (Mobile Only) -->
-    <div class="camera-switch-btn d-md-none" style="@(_is360Mode ? "display:none" : "")">
+    <div class="camera-switch-btn d-md-none">
         <MudIconButton Icon="@Icons.Material.Filled.Cameraswitch" Variant="Variant.Filled" Color="Color.Secondary" OnClick="@ToggleCameraOverlay" AriaLabel="Switch Camera" />
     </div>
 
-    <!-- 3D Toggle Button -->
-    <div class="mode-switch-btn @(_is360Mode ? "d-none d-md-block" : "")" style="@(_is360Mode ? "z-index: 10002; position: absolute;" : "")">
-         @if (_is360Mode)
-         {
-             <div class="d-flex align-center gap-2 mr-4" style="background: rgba(0,0,0,0.5); padding: 4px; border-radius: 4px; display: inline-flex;">
-                <MudTooltip Text="Halo Effect">
-                     <MudToggleIconButton Toggled="@_isHaloEnabled" ToggledChanged="@OnHaloToggled"
-                                          Icon="@Icons.Material.Filled.BlurOff" Color="@Color.Default"
-                                          ToggledIcon="@Icons.Material.Filled.BlurOn" ToggledColor="@Color.Warning"
-                                          Variant="Variant.Filled" Size="Size.Small"
-                                          AriaLabel="Toggle Halo" />
-                </MudTooltip>
-
-                <div style="width: 80px; display: flex; align-items: center;">
-                    <MudSlider T="double" Value="@_opacity" ValueChanged="@OnOpacityChanged" Min="0.1" Max="1.0" Step="0.1" Size="Size.Small" Color="Color.Info" />
-                </div>
-
-                <MudTooltip Text="Calibration Mode">
-                    <MudIconButton Icon="@Icons.Material.Filled.Settings"
-                                   Variant="Variant.Filled"
-                                   Color="@(_isCalibration ? Color.Warning : Color.Secondary)"
-                                   OnClick="@ToggleCalibration"
-                                   Class="calibration-btn"
-                                   Size="Size.Small"
-                                   AriaLabel="Calibration Mode" />
-                </MudTooltip>
-
-                @if (_isCalibration)
-                {
-                     <MudTooltip Text="Transform Mode">
-                        <MudToggleIconButton Toggled="@_isRotateMode" ToggledChanged="@OnTransformModeChanged"
-                                             Icon="@Icons.Material.Filled.OpenWith" Color="@Color.Info"
-                                             ToggledIcon="@Icons.Material.Filled.RotateRight" ToggledColor="@Color.Warning"
-                                             Variant="Variant.Filled" Size="Size.Small"
-                                             AriaLabel="Transform Mode" />
-                    </MudTooltip>
-
-                    <MudTooltip Text="Save Calibration">
-                        <MudIconButton Icon="@Icons.Material.Filled.Save"
-                                       Variant="Variant.Filled"
-                                       Color="Color.Success"
-                                       OnClick="@SaveCalibration"
-                                       Class="save-calibration-btn"
-                                       Size="Size.Small"
-                                       AriaLabel="Save Calibration" />
-                    </MudTooltip>
-                }
-             </div>
-         }
-         <MudTooltip Text="@(_is360Mode ? "Exit 3D View" : "Enter 3D View")">
-             <MudIconButton Icon="@(_is360Mode ? Icons.Material.Filled.ViewModule : Icons.Material.Filled.Panorama)"
-                            Variant="Variant.Filled"
-                            Color="Color.Primary"
-                            OnClick="@Toggle360Mode"
-                            Class="mode-toggle-icon"
-                            AriaLabel="@(_is360Mode ? "Exit 3D View" : "Enter 3D View")" />
-         </MudTooltip>
-    </div>
-
-    <div id="pano-container" style="@(_is360Mode ? "display:block;" : "display:none;")">
-        <!-- Three.js Canvas will be injected here -->
-         @if (_is360Mode)
-         {
-             <div class="exit-3d-mobile d-md-none">
-                  <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.Close" OnClick="@Toggle360Mode">Exit 3D</MudButton>
-             </div>
-         }
-    </div>
-
-	<div class="viewer-grid" style="@(_is360Mode ? "visibility:hidden; position: absolute; z-index: -1; width: 100%; height: 100%; top:0; left:0;" : "")">
+	<div class="viewer-grid">
 		<div class="main-view">
 			@if (_mainCamera == Cameras.Front)
 			{
@@ -182,7 +111,7 @@
 		</div>
 	</div>
 
-	<div class="controls" style="@(_is360Mode ? "z-index: 10001; position: relative;" : "")">
+	<div class="controls">
 		<div class="play-pause">
 			<MudIconButton Icon="@Icons.Material.Filled.SkipPrevious" Size="Size.Medium" OnClick="@PreviousButtonClicked" AriaLabel="Previous Clip" />
 			<MudIconButton Icon="@Icons.Material.Filled.Replay5" Size="Size.Medium" OnClick="@SkipBackwardClicked" AriaLabel="Jump Back 5 Seconds" />

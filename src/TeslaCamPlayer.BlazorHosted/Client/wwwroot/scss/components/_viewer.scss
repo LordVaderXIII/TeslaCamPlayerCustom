@@ -6,32 +6,9 @@
 	display: flex;
 	flex-direction: column;
 	flex-grow: 1;
-    position: relative; // For 3D view positioning
+    position: relative;
 
-    .mode-switch-btn {
-        position: absolute;
-        top: 10px;
-        right: 10px; // Default top-right
-        z-index: 1001;
-    }
 
-    #pano-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #111;
-        z-index: 0; // Behind controls (z=10001) but cover grid
-
-        .exit-3d-mobile {
-            position: absolute;
-            bottom: 80px; // Above controls
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2000;
-        }
-    }
 
 	.viewer-grid {
 		display: flex;
@@ -94,7 +71,7 @@
 		flex-direction: column;
 		align-items: center;
 		padding: 10px;
-        z-index: 10001; // Ensure controls are above everything else
+
 		
 		.play-pause {
 			display: flex;
@@ -263,32 +240,6 @@
             z-index: 1000;
         }
 
-        .mode-switch-btn {
-             top: 10px;
-             right: 110px; // Adjusted to avoid overlap with profile icon
-        }
-
-        &.viewer--360 {
-            position: fixed !important;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh !important;
-            z-index: 5000;
-            background: black;
-        }
     }
 }
 
-// 360 Mode styles (Desktop & Mobile)
-// Ensure controls are always at the bottom in 360 mode
-.viewer.viewer--360 {
-    .controls {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background: rgba(0,0,0,0.5);
-        z-index: 10001;
-    }
-}
