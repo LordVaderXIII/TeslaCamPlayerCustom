@@ -7,9 +7,9 @@
         <div class="dashboard-strip">
 
             <!-- Left Signal -->
-            <div class="signal-indicator @(Data.BlinkerOnLeft ? "active" : "")">
-                <MudIcon Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Large" />
-            </div>
+            <MudIcon Icon="@Icons.Material.Filled.ArrowBack"
+                     Size="Size.Large"
+                     Class="@($"signal-indicator {(Data.BlinkerOnLeft ? "active" : "")}")" />
 
             <!-- Steering Wheel -->
             <div class="steering-wheel-container">
@@ -54,9 +54,9 @@
             </div>
 
             <!-- Right Signal -->
-            <div class="signal-indicator @(Data.BlinkerOnRight ? "active" : "")">
-                <MudIcon Icon="@Icons.Material.Filled.ArrowForward" Size="Size.Large" />
-            </div>
+            <MudIcon Icon="@Icons.Material.Filled.ArrowForward"
+                     Size="Size.Large"
+                     Class="@($"signal-indicator {(Data.BlinkerOnRight ? "active" : "")}")" />
 
         </div>
     </div>
@@ -92,8 +92,6 @@
         .signal-indicator {
             color: #555;
             transition: color 0.2s;
-            display: flex;
-            align-items: center;
         }
         .signal-indicator.active {
             color: #00e676;
