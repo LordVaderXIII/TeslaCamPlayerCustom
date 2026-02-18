@@ -204,26 +204,28 @@ class DashcamMP4 {
     decodeSei(nal, SeiMetadata) {
         if (!SeiMetadata || nal.length < 2) return null;
 
-        let offset = 1; // Skip NAL header (1 byte)
+        // Strip emulation bytes from the NAL unit (excluding header) to get RBSP
+        const rbsp = this.stripEmulationBytes(nal.subarray(1));
+        let offset = 0;
 
         // Parse Payload Type
         let payloadType = 0;
-        while (offset < nal.length) {
-            const byte = nal[offset++];
+        while (offset < rbsp.length) {
+            const byte = rbsp[offset++];
             payloadType += byte;
             if (byte !== 0xFF) break;
         }
 
         // Parse Payload Size
         let payloadSize = 0;
-        while (offset < nal.length) {
-             const byte = nal[offset++];
+        while (offset < rbsp.length) {
+             const byte = rbsp[offset++];
              payloadSize += byte;
              if (byte !== 0xFF) break;
         }
 
         // Validate size
-        if (offset + payloadSize > nal.length) return null;
+        if (offset + payloadSize > rbsp.length) return null;
 
         // We only care about User Data Unregistered (Type 5)
         if (payloadType !== 5) return null;
@@ -232,17 +234,17 @@ class DashcamMP4 {
         let i = 0;
         const payloadEnd = offset + payloadSize;
 
-        while (offset + i < payloadEnd && nal[offset + i] === 0x42) i++;
+        while (offset + i < payloadEnd && rbsp[offset + i] === 0x42) i++;
 
         let dataStart = -1;
 
-        if (offset + i < payloadEnd && nal[offset + i] === 0x69) {
+        if (offset + i < payloadEnd && rbsp[offset + i] === 0x69) {
             // Standard Tesla SEI: "Bi..." (where i is 0x69)
             dataStart = offset + i + 1;
         } else {
              // Fallback for new firmware/models that might have changed the header
              if (this.logSeiFailure) {
-                 const badPayload = nal.subarray(offset, Math.min(offset + 32, payloadEnd));
+                 const badPayload = rbsp.subarray(offset, Math.min(offset + 32, payloadEnd));
                  const hexDump = Array.from(badPayload).map(b => b.toString(16).padStart(2,'0')).join(' ');
                  console.warn("DashcamMP4: SEI 0x69 marker not found. First 32 bytes of payload:", hexDump);
                  this.logSeiFailure = false;
@@ -250,7 +252,7 @@ class DashcamMP4 {
 
              // Search for 0x08 (Field 1: Version) which is typical for Tesla Protobuf
              for(let j = 0; j < Math.min(64, payloadSize); j++) {
-                 if (nal[offset + j] === 0x08) {
+                 if (rbsp[offset + j] === 0x08) {
                      dataStart = offset + j;
                      console.log(`DashcamMP4: Found potential protobuf start at offset ${j}. Recovering...`);
                      break;
@@ -261,7 +263,7 @@ class DashcamMP4 {
         if (dataStart === -1) return null;
 
         try {
-            return SeiMetadata.decode(this.stripEmulationBytes(nal.subarray(dataStart, payloadEnd)));
+            return SeiMetadata.decode(rbsp.subarray(dataStart, payloadEnd));
         } catch {
             return null;
         }
