@@ -117,17 +117,17 @@ window.telemetryInterop = {
 
         return {
             timestamp: new Date().toISOString(), // Placeholder
-            gearState: this.mapGear(sei.gear_state),
-            vehicleSpeedMps: sei.vehicle_speed_mps || 0,
-            latitudeDeg: sei.latitude_deg || 0,
-            longitudeDeg: sei.longitude_deg || 0,
-            headingDeg: sei.heading_deg || 0,
-            autopilotState: this.mapAutopilot(sei.autopilot_state),
-            steeringWheelAngle: sei.steering_wheel_angle || 0,
-            brakeApplied: sei.brake_applied || false,
-            acceleratorPedalPosition: sei.accelerator_pedal_position || 0,
-            blinkerOnLeft: sei.blinker_on_left || false,
-            blinkerOnRight: sei.blinker_on_right || false
+            gearState: this.mapGear(sei.gearState),
+            vehicleSpeedMps: sei.vehicleSpeedMps || 0,
+            latitudeDeg: sei.latitudeDeg || 0,
+            longitudeDeg: sei.longitudeDeg || 0,
+            headingDeg: sei.headingDeg || 0,
+            autopilotState: this.mapAutopilot(sei.autopilotState),
+            steeringWheelAngle: sei.steeringWheelAngle || 0,
+            brakeApplied: sei.brakeApplied || false,
+            acceleratorPedalPosition: sei.acceleratorPedalPosition || 0,
+            blinkerOnLeft: sei.blinkerOnLeft || false,
+            blinkerOnRight: sei.blinkerOnRight || false
         };
     },
 
@@ -143,6 +143,6 @@ window.telemetryInterop = {
 
     getPath: function() {
         if (!this.frames) return [];
-        return this.frames.map(f => [f.data.latitude_deg, f.data.longitude_deg]);
+        return this.frames.map(f => [f.data.latitudeDeg, f.data.longitudeDeg]);
     }
 };
