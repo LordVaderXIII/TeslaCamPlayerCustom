@@ -37,12 +37,12 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Middleware
 
             if (!context.Response.Headers.ContainsKey("Content-Security-Policy"))
             {
-                // CSP for Blazor WebAssembly + Leaflet + Three.js + External CDNs
+                // CSP for Blazor WebAssembly + Leaflet + External CDNs
                 // script-src: 'unsafe-eval'/'wasm-unsafe-eval' required for Blazor WASM
                 // style-src: 'unsafe-inline' required for MudBlazor/Leaflet
                 // img-src: tile.openstreetmap.org for map tiles
                 var csp = "default-src 'self'; " +
-                          "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
+                          "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; " +
                           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; " +
                           "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com; " +
                           "font-src 'self' https://fonts.gstatic.com; " +

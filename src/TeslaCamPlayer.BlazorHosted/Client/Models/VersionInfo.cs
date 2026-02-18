@@ -11,10 +11,20 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
 
     public static class VersionInfo
     {
-        public const string CurrentVersion = "2025-12-1.3.11";
+        public const string CurrentVersion = "2026-02-1.4.0";
 
         public static readonly List<VersionRelease> Releases = new List<VersionRelease>
         {
+            new VersionRelease
+            {
+                Version = "2026-02-1.4.0",
+                Date = "2026-02-18",
+                Changes = new List<string>
+                {
+                    "feat: Remove deprecated 3D panorama mode and related client assets",
+                    "fix: Eliminate runtime JS interop failures caused by missing/stale teslaPano functions"
+                }
+            },
             new VersionRelease
             {
                 Version = "2025-12-1.3.11",
