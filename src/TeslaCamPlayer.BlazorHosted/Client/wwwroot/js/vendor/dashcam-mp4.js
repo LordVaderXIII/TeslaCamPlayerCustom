@@ -170,15 +170,45 @@ class DashcamMP4 {
 
     /** Decode SEI NAL unit to protobuf message */
     decodeSei(nal, SeiMetadata) {
-        if (!SeiMetadata || nal.length < 4) return null;
+        if (!SeiMetadata || nal.length < 2) return null;
 
-        let i = 3;
-        while (i < nal.length && nal[i] === 0x42) i++;
+        let offset = 1; // Skip NAL header (1 byte)
 
-        if (i >= nal.length || nal[i] !== 0x69) return null;
+        // Parse Payload Type
+        let payloadType = 0;
+        while (offset < nal.length) {
+            const byte = nal[offset++];
+            payloadType += byte;
+            if (byte !== 0xFF) break;
+        }
+
+        // Parse Payload Size
+        let payloadSize = 0;
+        while (offset < nal.length) {
+             const byte = nal[offset++];
+             payloadSize += byte;
+             if (byte !== 0xFF) break;
+        }
+
+        // Validate size
+        if (offset + payloadSize > nal.length) return null;
+
+        // We only care about User Data Unregistered (Type 5)
+        if (payloadType !== 5) return null;
+
+        // Inspect payload for 0x69 marker (after optional 0x42 padding)
+        let i = 0;
+        const payloadEnd = offset + payloadSize;
+
+        while (offset + i < payloadEnd && nal[offset + i] === 0x42) i++;
+
+        if (offset + i >= payloadEnd || nal[offset + i] !== 0x69) return null;
+
+        // Data starts after 0x69
+        const dataStart = offset + i + 1;
 
         try {
-            return SeiMetadata.decode(this.stripEmulationBytes(nal.subarray(i + 1, nal.length - 1)));
+            return SeiMetadata.decode(this.stripEmulationBytes(nal.subarray(dataStart, payloadEnd)));
         } catch {
             return null;
         }
