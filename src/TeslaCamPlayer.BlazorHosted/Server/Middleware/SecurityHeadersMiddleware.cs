@@ -46,7 +46,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Middleware
                           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; " +
                           "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://unpkg.com; " +
                           "font-src 'self' https://fonts.gstatic.com; " +
-                          "connect-src 'self' https://*.tile.openstreetmap.org https://unpkg.com; " +
+                          "connect-src 'self' https://*.tile.openstreetmap.org https://unpkg.com https://cdn.jsdelivr.net; " +
                           "media-src 'self' blob:; " +
                           "object-src 'none'; " +
                           "base-uri 'self'; " +

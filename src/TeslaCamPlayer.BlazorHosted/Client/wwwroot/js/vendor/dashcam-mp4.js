@@ -7,6 +7,7 @@ class DashcamMP4 {
         this.buffer = buffer;
         this.view = new DataView(buffer);
         this._config = null;
+        this.logSeiFailure = true; // Log only the first failure to avoid spam
     }
 
     // -------------------------------------------------------------
@@ -56,19 +57,52 @@ class DashcamMP4 {
         const minf = this.findBox(mdia.start, mdia.end, 'minf');
         const stbl = this.findBox(minf.start, minf.end, 'stbl');
         const stsd = this.findBox(stbl.start, stbl.end, 'stsd');
-        const avc1 = this.findBox(stsd.start + 8, stsd.end, 'avc1');
-        const avcC = this.findBox(avc1.start + 78, avc1.end, 'avcC');
 
-        const o = avcC.start;
-        const codec = `avc1.${this.hex(this.view.getUint8(o + 1))}${this.hex(this.view.getUint8(o + 2))}${this.hex(this.view.getUint8(o + 3))}`;
+        let codecBox = null;
+        let codecName = '';
 
-        // Extract SPS/PPS
-        let p = o + 6;
-        const spsLen = this.view.getUint16(p);
-        const sps = new Uint8Array(this.buffer.slice(p + 2, p + 2 + spsLen));
-        p += 2 + spsLen + 1;
-        const ppsLen = this.view.getUint16(p);
-        const pps = new Uint8Array(this.buffer.slice(p + 2, p + 2 + ppsLen));
+        try {
+            codecBox = this.findBox(stsd.start + 8, stsd.end, 'avc1');
+            codecName = 'avc1';
+        } catch {
+            try {
+                codecBox = this.findBox(stsd.start + 8, stsd.end, 'hvc1');
+                codecName = 'hvc1';
+            } catch {
+                 console.warn("DashcamMP4: No avc1 or hvc1 box found in stsd.");
+            }
+        }
+
+        let codec = 'unknown';
+        let sps = new Uint8Array();
+        let pps = new Uint8Array();
+        let width = 0;
+        let height = 0;
+
+        if (codecBox) {
+             width = this.view.getUint16(codecBox.start + 24);
+             height = this.view.getUint16(codecBox.start + 26);
+
+             if (codecName === 'avc1') {
+                try {
+                    const avcC = this.findBox(codecBox.start + 78, codecBox.end, 'avcC');
+                    const o = avcC.start;
+                    codec = `avc1.${this.hex(this.view.getUint8(o + 1))}${this.hex(this.view.getUint8(o + 2))}${this.hex(this.view.getUint8(o + 3))}`;
+
+                    let p = o + 6;
+                    const spsLen = this.view.getUint16(p);
+                    sps = new Uint8Array(this.buffer.slice(p + 2, p + 2 + spsLen));
+                    p += 2 + spsLen + 1;
+                    const ppsLen = this.view.getUint16(p);
+                    pps = new Uint8Array(this.buffer.slice(p + 2, p + 2 + ppsLen));
+                } catch (e) {
+                    console.warn("DashcamMP4: Failed to parse avcC", e);
+                }
+             } else if (codecName === 'hvc1') {
+                 codec = 'hvc1';
+                 console.log("DashcamMP4: HEVC (hvc1) detected. Playback config is minimal.");
+             }
+        }
 
         // Get timescale from mdhd (ticks per second, used to convert stts deltas to ms)
         const mdhd = this.findBox(mdia.start, mdia.end, 'mdhd');
@@ -91,9 +125,7 @@ class DashcamMP4 {
         }
 
         this._config = {
-            width: this.view.getUint16(avc1.start + 24),
-            height: this.view.getUint16(avc1.start + 26),
-            codec, sps, pps, timescale, durations
+            width, height, codec, sps, pps, timescale, durations
         };
         return this._config;
     }
@@ -202,10 +234,31 @@ class DashcamMP4 {
 
         while (offset + i < payloadEnd && nal[offset + i] === 0x42) i++;
 
-        if (offset + i >= payloadEnd || nal[offset + i] !== 0x69) return null;
+        let dataStart = -1;
 
-        // Data starts after 0x69
-        const dataStart = offset + i + 1;
+        if (offset + i < payloadEnd && nal[offset + i] === 0x69) {
+            // Standard Tesla SEI: "Bi..." (where i is 0x69)
+            dataStart = offset + i + 1;
+        } else {
+             // Fallback for new firmware/models that might have changed the header
+             if (this.logSeiFailure) {
+                 const badPayload = nal.subarray(offset, Math.min(offset + 32, payloadEnd));
+                 const hexDump = Array.from(badPayload).map(b => b.toString(16).padStart(2,'0')).join(' ');
+                 console.warn("DashcamMP4: SEI 0x69 marker not found. First 32 bytes of payload:", hexDump);
+                 this.logSeiFailure = false;
+             }
+
+             // Search for 0x08 (Field 1: Version) which is typical for Tesla Protobuf
+             for(let j = 0; j < Math.min(64, payloadSize); j++) {
+                 if (nal[offset + j] === 0x08) {
+                     dataStart = offset + j;
+                     console.log(`DashcamMP4: Found potential protobuf start at offset ${j}. Recovering...`);
+                     break;
+                 }
+             }
+        }
+
+        if (dataStart === -1) return null;
 
         try {
             return SeiMetadata.decode(this.stripEmulationBytes(nal.subarray(dataStart, payloadEnd)));
@@ -262,8 +315,18 @@ window.DashcamMP4 = DashcamMP4;
     async function initProtobuf(protoPath = 'dashcam.proto') {
         if (SeiMetadata) return { SeiMetadata, enumFields };
 
+        if (typeof protobuf === 'undefined') {
+             const msg = "Protobuf library not loaded. Check CSP or network.";
+             console.error(msg);
+             throw new Error(msg);
+        }
+
         const response = await fetch(protoPath);
-        const root = protobuf.parse(await response.text()).root;
+        if (!response.ok) {
+             throw new Error(`Failed to fetch ${protoPath}: ${response.statusText}`);
+        }
+        const text = await response.text();
+        const root = protobuf.parse(text).root;
         SeiMetadata = root.lookupType('SeiMetadata');
         enumFields = {
             gearState: SeiMetadata.lookup('Gear'),

@@ -38,6 +38,8 @@ window.telemetryInterop = {
             const rawFrames = this.dashcam.parseFrames(SeiMetadata);
             const config = this.dashcam.getConfig();
 
+            console.log(`Telemetry: Parsed ${rawFrames.length} video frames.`);
+
             // Expand frame durations to absolute timestamps
             const timestamps = [];
             let t = 0;
@@ -57,7 +59,12 @@ window.telemetryInterop = {
                     };
                 });
 
-            console.log(`Telemetry initialized. Found ${this.frames.length} data points.`);
+            const seiFrameCount = this.frames.length;
+            if (rawFrames.length > 0 && seiFrameCount === 0) {
+                 console.warn("Telemetry warning: Video frames found but NO SEI metadata extracted. This might indicate a parser issue or missing SEI data.");
+            }
+
+            console.log(`Telemetry initialized. Found ${seiFrameCount} data points.`);
             return this.frames.length > 0;
 
         } catch (e) {
