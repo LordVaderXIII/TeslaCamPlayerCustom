@@ -174,7 +174,8 @@ class DashcamMP4 {
 
         let i = 3;
         while (i < nal.length && nal[i] === 0x42) i++;
-        if (i <= 3 || i + 1 >= nal.length || nal[i] !== 0x69) return null;
+
+        if (i >= nal.length || nal[i] !== 0x69) return null;
 
         try {
             return SeiMetadata.decode(this.stripEmulationBytes(nal.subarray(i + 1, nal.length - 1)));

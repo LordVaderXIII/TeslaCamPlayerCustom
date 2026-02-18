@@ -3,166 +3,237 @@
 @if (Data != null)
 {
     <div class="telemetry-overlay">
-        <!-- Turn Signal Left -->
-        <MudIcon Icon="@Icons.Material.Filled.ArrowBack"
-                 Color="@(Data.BlinkerOnLeft ? Color.Success : Color.Default)"
-                 Class="@($"signal-icon {(Data.BlinkerOnLeft ? "blink" : "dim")}")" />
+        <!-- Dashboard Container -->
+        <div class="dashboard-strip">
 
-        <!-- Gear -->
-        <div class="gear-selector">
-            <span class="@(Data.Gear == GearState.Park ? "active" : "")">P</span>
-            <span class="@(Data.Gear == GearState.Reverse ? "active" : "")">R</span>
-            <span class="@(Data.Gear == GearState.Neutral ? "active" : "")">N</span>
-            <span class="@(Data.Gear == GearState.Drive ? "active" : "")">D</span>
-        </div>
+            <!-- Left Signal -->
+            <MudIcon Icon="@Icons.Material.Filled.ArrowBack"
+                     Size="Size.Large"
+                     Class="@($"signal-indicator {(Data.BlinkerOnLeft ? "active" : "")}")" />
 
-        <!-- Speed & Autopilot -->
-        <div class="center-info">
-            <div class="autopilot-status">
-                <MudIcon Icon="@Icons.Material.Filled.DirectionsCar"
-                         Color="@GetAutopilotColor(Data.AutopilotState)"
-                         Size="Size.Large" />
-                <MudText Typo="Typo.caption">@Data.AutopilotState.ToString()</MudText>
+            <!-- Steering Wheel -->
+            <div class="steering-wheel-container">
+                <!-- Using SVG for steering wheel as it rotates better and looks specific -->
+                <svg viewBox="0 0 24 24" class="steering-wheel" style="@($"transform: rotate({Data.SteeringWheelAngle}deg);")">
+                     <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
+                     <path d="M12 2 L12 12 M4 16 L12 12 L20 16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
             </div>
-            <div class="speed">
-                <MudText Typo="Typo.h5">@Math.Round(Data.SpeedKmph)</MudText>
-                <MudText Typo="Typo.caption">km/h</MudText>
-            </div>
-        </div>
 
-        <!-- Steering Wheel -->
-        <div class="steering-container">
-             <!-- Simple Steering Wheel SVG rotated -->
-             <svg viewBox="0 0 24 24" class="steering-wheel" style="@($"transform: rotate({Data.SteeringWheelAngle}deg); transition: transform 0.1s linear;")">
-                 <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none" />
-                 <path d="M12 2 L12 12 L4 18 M12 12 L20 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-             </svg>
-        </div>
-
-        <!-- Pedals -->
-        <div class="pedals">
-            <div class="pedal brake @(Data.BrakeApplied ? "active" : "")">
-                <MudText Typo="Typo.caption">BRAKE</MudText>
-            </div>
-            <div class="pedal accel">
-                <div class="accel-bar-bg">
-                    <div class="accel-bar-fill" style="height: @(Data.AcceleratorPedalPosition)%"></div>
+            <!-- Center Info: Speed, Gear, AP -->
+            <div class="center-cluster">
+                <div class="gear-strip">
+                    <span class="@(Data.Gear == GearState.Park ? "selected" : "")">P</span>
+                    <span class="@(Data.Gear == GearState.Reverse ? "selected" : "")">R</span>
+                    <span class="@(Data.Gear == GearState.Neutral ? "selected" : "")">N</span>
+                    <span class="@(Data.Gear == GearState.Drive ? "selected" : "")">D</span>
                 </div>
-                <MudText Typo="Typo.caption">ACCEL</MudText>
-            </div>
-        </div>
 
-        <!-- Turn Signal Right -->
-        <MudIcon Icon="@Icons.Material.Filled.ArrowForward"
-                 Color="@(Data.BlinkerOnRight ? Color.Success : Color.Default)"
-                 Class="@($"signal-icon {(Data.BlinkerOnRight ? "blink" : "dim")}")" />
+                <div class="speed-readout">
+                    <span class="value">@Math.Round(Data.SpeedKmph)</span>
+                    <span class="unit">KM/H</span>
+                </div>
+
+                <div class="autopilot-indicator" style="color: @GetAutopilotColorHex(Data.AutopilotState)">
+                    <MudIcon Icon="@Icons.Material.Filled.DirectionsCar" Size="Size.Small" />
+                    <span class="label">@GetAutopilotLabel(Data.AutopilotState)</span>
+                </div>
+            </div>
+
+            <!-- Pedals -->
+            <div class="pedals-cluster">
+                <div class="pedal brake @(Data.BrakeApplied ? "active" : "")">
+                    <span class="pedal-icon">BRAKE</span>
+                </div>
+                <div class="pedal accel">
+                     <div class="accel-bar">
+                         <div class="accel-fill" style="width: @(Math.Min(Data.AcceleratorPedalPosition, 100))%"></div>
+                     </div>
+                     <span class="pedal-label">ACCEL</span>
+                </div>
+            </div>
+
+            <!-- Right Signal -->
+            <MudIcon Icon="@Icons.Material.Filled.ArrowForward"
+                     Size="Size.Large"
+                     Class="@($"signal-indicator {(Data.BlinkerOnRight ? "active" : "")}")" />
+
+        </div>
     </div>
 
     <style>
         .telemetry-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 80px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.8), rgba(0,0,0,0));
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+            min-width: 600px;
+            max-width: 90%;
             z-index: 2000;
-            pointer-events: none; /* Let clicks pass through */
-            color: white;
+            pointer-events: none;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
 
-        .signal-icon.dim { opacity: 0.2; }
-        .signal-icon.blink { animation: blinker 0.5s linear infinite; }
-
-        @@keyframes blinker {
-            50% { opacity: 0.3; }
-        }
-
-        .gear-selector {
+        .dashboard-strip {
             display: flex;
-            gap: 10px;
-            font-weight: bold;
-            font-family: monospace;
-            font-size: 1.2rem;
-        }
-        .gear-selector span { opacity: 0.3; }
-        .gear-selector span.active { opacity: 1; color: var(--mud-palette-info); transform: scale(1.2); }
-
-        .center-info {
-            display: flex;
-            flex-direction: column;
             align-items: center;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            border-radius: 50px;
+            padding: 10px 40px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            color: #fff;
+            gap: 20px;
         }
 
-        .steering-container {
+        /* Signals */
+        .signal-indicator {
+            color: #555;
+            transition: color 0.2s;
+        }
+        .signal-indicator.active {
+            color: #00e676;
+            animation: blink 0.5s infinite alternate;
+        }
+        @@keyframes blink { from { opacity: 1; } to { opacity: 0.3; } }
+
+        /* Steering */
+        .steering-wheel-container {
+            width: 40px;
+            height: 40px;
             display: flex;
+            align-items: center;
             justify-content: center;
-            align-items: center;
         }
         .steering-wheel {
-            width: 48px;
-            height: 48px;
+            width: 100%;
+            height: 100%;
+            color: #ccc;
+            transition: transform 0.1s linear;
         }
 
-        .pedals {
-            display: flex;
-            gap: 10px;
-            align-items: flex-end;
-            height: 50px;
-        }
-        .pedal {
+        /* Center Cluster */
+        .center-cluster {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-end;
+            min-width: 120px;
         }
+
+        .gear-strip {
+            display: flex;
+            gap: 10px;
+            font-size: 0.9rem;
+            color: #777;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+        .gear-strip span.selected {
+            color: #fff;
+            text-shadow: 0 0 5px rgba(255,255,255,0.5);
+        }
+
+        .speed-readout {
+            display: flex;
+            align-items: baseline;
+            gap: 5px;
+            line-height: 1;
+        }
+        .speed-readout .value {
+            font-size: 2.2rem;
+            font-weight: 300;
+        }
+        .speed-readout .unit {
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #aaa;
+        }
+
+        .autopilot-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-top: 2px;
+            color: #757575;
+        }
+
+        /* Pedals */
+        .pedals-cluster {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            width: 80px;
+        }
+
         .pedal.brake {
-            border: 2px solid #555;
-            padding: 4px;
+            font-size: 0.7rem;
+            font-weight: bold;
+            color: #555;
+            background: rgba(255, 82, 82, 0.1);
+            border: 1px solid #555;
             border-radius: 4px;
-            background: rgba(0,0,0,0.5);
+            text-align: center;
+            padding: 2px;
+            transition: all 0.1s;
         }
         .pedal.brake.active {
-            background: var(--mud-palette-error);
-            border-color: var(--mud-palette-error);
-            box-shadow: 0 0 10px var(--mud-palette-error);
+            background: #d32f2f;
+            color: white;
+            border-color: #d32f2f;
+            box-shadow: 0 0 8px #d32f2f;
         }
-        .pedal.accel {
 
-        }
-        .accel-bar-bg {
-            width: 20px;
-            height: 40px;
-            background: #333;
-            border: 1px solid #555;
-            border-radius: 2px;
-            position: relative;
+        .pedal.accel {
             display: flex;
-            align-items: flex-end;
+            align-items: center;
+            gap: 5px;
         }
-        .accel-bar-fill {
-            width: 100%;
-            background: var(--mud-palette-success);
-            transition: height 0.1s linear;
+        .accel-bar {
+            flex-grow: 1;
+            height: 6px;
+            background: #333;
+            border-radius: 3px;
+            overflow: hidden;
         }
+        .accel-fill {
+            height: 100%;
+            background: white;
+            transition: width 0.1s linear;
+        }
+        .pedal-label {
+            font-size: 0.6rem;
+            color: #aaa;
+        }
+
     </style>
 }
 
 @code {
     [Parameter] public TelemetryData Data { get; set; }
 
-    private Color GetAutopilotColor(AutopilotState state)
+    private string GetAutopilotColorHex(AutopilotState state)
     {
         return state switch
         {
-            AutopilotState.SelfDriving => Color.Info,
-            AutopilotState.Autosteer => Color.Info,
-            AutopilotState.Tacc => Color.Primary,
-            _ => Color.Default
+            AutopilotState.SelfDriving => "#29b6f6", // Light Blue
+            AutopilotState.Autosteer => "#29b6f6",
+            AutopilotState.Tacc => "#42a5f5", // Blue
+            _ => "#757575" // Grey
+        };
+    }
+
+    private string GetAutopilotLabel(AutopilotState state)
+    {
+        return state switch
+        {
+            AutopilotState.SelfDriving => "FSD",
+            AutopilotState.Autosteer => "AUTOSTEER",
+            AutopilotState.Tacc => "TACC",
+            _ => "MANUAL"
         };
     }
 }
