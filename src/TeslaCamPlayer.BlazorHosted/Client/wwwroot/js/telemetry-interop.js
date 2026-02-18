@@ -125,27 +125,13 @@ window.telemetryInterop = {
     },
 
     mapGear: function(protoGear) {
-         // Proto: PARK=0, DRIVE=1, REVERSE=2, NEUTRAL=3
-         // C#: Unknown=0, Park=1, Reverse=2, Neutral=3, Drive=4
-         switch(protoGear) {
-             case 0: return 1; // Park
-             case 1: return 4; // Drive
-             case 2: return 2; // Reverse
-             case 3: return 3; // Neutral
-             default: return 0;
-         }
+        // C# and Proto enums match: Park=0, Drive=1, Reverse=2, Neutral=3
+        return protoGear;
     },
 
     mapAutopilot: function(protoAp) {
-        // Proto: NONE=0, SELF_DRIVING=1, AUTOSTEER=2, TACC=3
-        // C#: Inactive=0, Tacc=1, Autosteer=2, SelfDriving=3
-        switch(protoAp) {
-            case 0: return 0;
-            case 1: return 3; // SD
-            case 2: return 2; // Autosteer
-            case 3: return 1; // TACC
-            default: return 0;
-        }
+        // C# and Proto enums match: None=0, SelfDriving=1, Autosteer=2, Tacc=3
+        return protoAp;
     },
 
     getPath: function() {
