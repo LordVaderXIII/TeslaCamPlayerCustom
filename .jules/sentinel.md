@@ -17,3 +17,8 @@
 **Vulnerability:** Even if a password was previously set, disabling authentication allowed anyone to re-enable it and overwrite the password without providing the old one.
 **Learning:** "Disabled" authentication state should not imply "Reset" state. Sensitive operations (like changing passwords) must always require the current credential if one exists, regardless of the global auth switch.
 **Prevention:** Enforce `CurrentPassword` verification for sensitive updates whenever a password hash exists in the database. Ensure recovery mechanisms (like `RESET_AUTH`) explicitly clear credentials if they are intended to bypass this check.
+
+## 2026-02-03 - [Secure Initial Setup Pattern]
+**Vulnerability:** The initial setup allowed any network user to set the admin password because the application defaulted to an "unconfigured" state accessible by anyone.
+**Learning:** In containerized/self-hosted apps, relying on "network isolation" for initial setup is insufficient. We cannot assume the user sets it up immediately or that the network is trusted.
+**Prevention:** Implemented a "Proof of Possession" pattern where the server generates a random Setup Token in the logs. The user must provide this token to "claim" the server and set the initial password. This proves they have administrative access to the server's output.
