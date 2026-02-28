@@ -66,6 +66,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
 	private VideoPlayer _videoPlayerCabin;
     private readonly HashSet<Cameras> _loadedCameras = new();
 	private bool _isPlaying;
+	private bool _isAdvancingSegment; // Re-entrancy guard for VideoEnded
 	private ClipVideoSegment _currentSegment;
 	private MudSlider<double> _timelineSlider;
 	private double _timelineMaxSeconds;
@@ -111,7 +112,6 @@ public partial class ClipViewer : ComponentBase, IDisposable
 
         _syncTimer = new(1000);
         _syncTimer.Elapsed += SyncVideosTick;
-        _syncTimer.Enabled = true;
 
 		foreach (Cameras cam in AllCameras)
 		{
@@ -192,8 +192,11 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		
 		await InvokeAsync(StateHasChanged);
 
-        // Optimization: Wait for TCS signal instead of polling
-        if (!_loadedCameras.Contains(_mainCamera))
+        // Only wait for the main camera to load if it actually has footage in this segment.
+        // If it has no footage (e.g. cabin camera missing), the canplaythrough event never fires
+        // and the TCS would never be set, causing an unnecessary 10-second timeout.
+        var mainCameraHasFootage = GetVideoFileForCurrentSegment(_mainCamera) != null;
+        if (mainCameraHasFootage && !_loadedCameras.Contains(_mainCamera))
         {
             var timeoutTask = Task.Delay(10000, _loadSegmentCts.Token);
             // We use WhenAny to wait for either completion or timeout/cancellation
@@ -208,10 +211,6 @@ public partial class ClipViewer : ComponentBase, IDisposable
             {
                  Console.WriteLine("Main camera loaded, playing...");
             }
-        }
-        else
-        {
-            Console.WriteLine("Main camera already loaded");
         }
 
 		if (wasPlaying)
@@ -277,6 +276,8 @@ public partial class ClipViewer : ComponentBase, IDisposable
 	{
 		play ??= !_isPlaying;
 		_isPlaying = play.Value;
+		// Only run sync timer while playing to avoid unnecessary ticks when paused
+		_syncTimer.Enabled = play.Value;
 		return ExecuteOnPlayers(async p => await (play.Value ? p.PlayAsync() : p.PauseAsync()));
 	}
 
@@ -285,28 +286,36 @@ public partial class ClipViewer : ComponentBase, IDisposable
 
 	private async Task VideoEnded()
 	{
+		// Guard against re-entrant calls from multiple camera VideoEnded events
+		if (_isAdvancingSegment)
+			return;
+
 		if (_currentSegment == _clip.Segments.Last())
 			return;
 
-		await TogglePlayingAsync(false);
-
-		var nextSegment = _clip.Segments
-			.OrderBy(s => s.StartDate)
-			.SkipWhile(s => s != _currentSegment)
-			.Skip(1)
-			.FirstOrDefault()
-			?? _clip.Segments.FirstOrDefault();
-
-		if (nextSegment == null)
+		_isAdvancingSegment = true;
+		try
 		{
 			await TogglePlayingAsync(false);
-			return;
-		}
 
-		_currentSegment = nextSegment;
-		await SetCurrentSegmentVideosAsync();
-		await AwaitUiUpdate();
-		await TogglePlayingAsync(true);
+			// Segments are already sorted by StartDate in the Clip constructor
+			var currentIndex = Array.IndexOf(_clip.Segments, _currentSegment);
+			var nextSegment = currentIndex >= 0 && currentIndex < _clip.Segments.Length - 1
+				? _clip.Segments[currentIndex + 1]
+				: null;
+
+			if (nextSegment == null)
+				return;
+
+			_currentSegment = nextSegment;
+			await SetCurrentSegmentVideosAsync();
+			await AwaitUiUpdate();
+			await TogglePlayingAsync(true);
+		}
+		finally
+		{
+			_isAdvancingSegment = false;
+		}
 	}
 
 	private async Task FrontVideoTimeUpdate()
@@ -410,6 +419,24 @@ public partial class ClipViewer : ComponentBase, IDisposable
             Cameras.Fisheye => _videoPlayerFisheye,
             Cameras.Narrow => _videoPlayerNarrow,
             Cameras.Cabin => _videoPlayerCabin,
+            _ => null
+        };
+    }
+
+    private VideoFile GetVideoFileForCurrentSegment(Cameras camera)
+    {
+        if (_currentSegment == null) return null;
+        return camera switch
+        {
+            Cameras.Front => _currentSegment.CameraFront,
+            Cameras.LeftRepeater => _currentSegment.CameraLeftRepeater,
+            Cameras.RightRepeater => _currentSegment.CameraRightRepeater,
+            Cameras.Back => _currentSegment.CameraBack,
+            Cameras.LeftBPillar => _currentSegment.CameraLeftBPillar,
+            Cameras.RightBPillar => _currentSegment.CameraRightBPillar,
+            Cameras.Fisheye => _currentSegment.CameraFisheye,
+            Cameras.Narrow => _currentSegment.CameraNarrow,
+            Cameras.Cabin => _currentSegment.CameraCabin,
             _ => null
         };
     }
