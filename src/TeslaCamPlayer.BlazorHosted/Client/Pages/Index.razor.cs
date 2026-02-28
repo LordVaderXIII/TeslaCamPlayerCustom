@@ -12,7 +12,7 @@ using TeslaCamPlayer.BlazorHosted.Client.Services.Interfaces;
 
 namespace TeslaCamPlayer.BlazorHosted.Client.Pages;
 
-public partial class Index : ComponentBase
+public partial class Index : ComponentBase, IDisposable
 {
 	private const int EventItemHeight = 60;
 
@@ -394,5 +394,11 @@ public partial class Index : ComponentBase
     {
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
         DialogService.Show<SettingsDialog>("Settings", options);
+    }
+
+    public void Dispose()
+    {
+        _scrollDebounceTimer?.Dispose();
+        _jobsCheckTimer?.Dispose();
     }
 }

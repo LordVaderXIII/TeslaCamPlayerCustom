@@ -66,6 +66,7 @@ public partial class ClipViewer : ComponentBase, IDisposable
 	private VideoPlayer _videoPlayerCabin;
     private readonly HashSet<Cameras> _loadedCameras = new();
 	private bool _isPlaying;
+	private bool _isAdvancingSegment; // Re-entrancy guard for VideoEnded
 	private ClipVideoSegment _currentSegment;
 	private MudSlider<double> _timelineSlider;
 	private double _timelineMaxSeconds;
@@ -111,7 +112,6 @@ public partial class ClipViewer : ComponentBase, IDisposable
 
         _syncTimer = new(1000);
         _syncTimer.Elapsed += SyncVideosTick;
-        _syncTimer.Enabled = true;
 
 		foreach (Cameras cam in AllCameras)
 		{
@@ -277,6 +277,8 @@ public partial class ClipViewer : ComponentBase, IDisposable
 	{
 		play ??= !_isPlaying;
 		_isPlaying = play.Value;
+		// Only run sync timer while playing to avoid unnecessary ticks when paused
+		_syncTimer.Enabled = play.Value;
 		return ExecuteOnPlayers(async p => await (play.Value ? p.PlayAsync() : p.PauseAsync()));
 	}
 
@@ -285,28 +287,36 @@ public partial class ClipViewer : ComponentBase, IDisposable
 
 	private async Task VideoEnded()
 	{
+		// Guard against re-entrant calls from multiple camera VideoEnded events
+		if (_isAdvancingSegment)
+			return;
+
 		if (_currentSegment == _clip.Segments.Last())
 			return;
 
-		await TogglePlayingAsync(false);
-
-		var nextSegment = _clip.Segments
-			.OrderBy(s => s.StartDate)
-			.SkipWhile(s => s != _currentSegment)
-			.Skip(1)
-			.FirstOrDefault()
-			?? _clip.Segments.FirstOrDefault();
-
-		if (nextSegment == null)
+		_isAdvancingSegment = true;
+		try
 		{
 			await TogglePlayingAsync(false);
-			return;
-		}
 
-		_currentSegment = nextSegment;
-		await SetCurrentSegmentVideosAsync();
-		await AwaitUiUpdate();
-		await TogglePlayingAsync(true);
+			// Segments are already sorted by StartDate in the Clip constructor
+			var currentIndex = Array.IndexOf(_clip.Segments, _currentSegment);
+			var nextSegment = currentIndex >= 0 && currentIndex < _clip.Segments.Length - 1
+				? _clip.Segments[currentIndex + 1]
+				: null;
+
+			if (nextSegment == null)
+				return;
+
+			_currentSegment = nextSegment;
+			await SetCurrentSegmentVideosAsync();
+			await AwaitUiUpdate();
+			await TogglePlayingAsync(true);
+		}
+		finally
+		{
+			_isAdvancingSegment = false;
+		}
 	}
 
 	private async Task FrontVideoTimeUpdate()

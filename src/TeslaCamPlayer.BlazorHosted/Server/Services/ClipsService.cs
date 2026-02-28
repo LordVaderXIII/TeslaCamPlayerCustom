@@ -220,7 +220,8 @@ public partial class ClipsService : IClipsService
 				CameraLeftBPillar = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.LeftBPillar),
 				CameraRightBPillar = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.RightBPillar),
 				CameraFisheye = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Fisheye),
-				CameraNarrow = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Narrow)
+				CameraNarrow = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Narrow),
+				CameraCabin = segmentVideos.FirstOrDefault(v => v.Camera == Cameras.Cabin)
 			};
 			
 			currentClipSegments.Add(segment);
@@ -340,7 +341,8 @@ public partial class ClipsService : IClipsService
 				CameraLeftBPillar = g.FirstOrDefault(v => v.Camera == Cameras.LeftBPillar),
 				CameraRightBPillar = g.FirstOrDefault(v => v.Camera == Cameras.RightBPillar),
 				CameraFisheye = g.FirstOrDefault(v => v.Camera == Cameras.Fisheye),
-				CameraNarrow = g.FirstOrDefault(v => v.Camera == Cameras.Narrow)
+				CameraNarrow = g.FirstOrDefault(v => v.Camera == Cameras.Narrow),
+				CameraCabin = g.FirstOrDefault(v => v.Camera == Cameras.Cabin)
 			})
 			.ToArray();
 
