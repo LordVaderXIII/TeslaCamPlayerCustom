@@ -192,8 +192,11 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		
 		await InvokeAsync(StateHasChanged);
 
-        // Optimization: Wait for TCS signal instead of polling
-        if (!_loadedCameras.Contains(_mainCamera))
+        // Only wait for the main camera to load if it actually has footage in this segment.
+        // If it has no footage (e.g. cabin camera missing), the canplaythrough event never fires
+        // and the TCS would never be set, causing an unnecessary 10-second timeout.
+        var mainCameraHasFootage = GetVideoFileForCurrentSegment(_mainCamera) != null;
+        if (mainCameraHasFootage && !_loadedCameras.Contains(_mainCamera))
         {
             var timeoutTask = Task.Delay(10000, _loadSegmentCts.Token);
             // We use WhenAny to wait for either completion or timeout/cancellation
@@ -208,10 +211,6 @@ public partial class ClipViewer : ComponentBase, IDisposable
             {
                  Console.WriteLine("Main camera loaded, playing...");
             }
-        }
-        else
-        {
-            Console.WriteLine("Main camera already loaded");
         }
 
 		if (wasPlaying)
@@ -420,6 +419,24 @@ public partial class ClipViewer : ComponentBase, IDisposable
             Cameras.Fisheye => _videoPlayerFisheye,
             Cameras.Narrow => _videoPlayerNarrow,
             Cameras.Cabin => _videoPlayerCabin,
+            _ => null
+        };
+    }
+
+    private VideoFile GetVideoFileForCurrentSegment(Cameras camera)
+    {
+        if (_currentSegment == null) return null;
+        return camera switch
+        {
+            Cameras.Front => _currentSegment.CameraFront,
+            Cameras.LeftRepeater => _currentSegment.CameraLeftRepeater,
+            Cameras.RightRepeater => _currentSegment.CameraRightRepeater,
+            Cameras.Back => _currentSegment.CameraBack,
+            Cameras.LeftBPillar => _currentSegment.CameraLeftBPillar,
+            Cameras.RightBPillar => _currentSegment.CameraRightBPillar,
+            Cameras.Fisheye => _currentSegment.CameraFisheye,
+            Cameras.Narrow => _currentSegment.CameraNarrow,
+            Cameras.Cabin => _currentSegment.CameraCabin,
             _ => null
         };
     }
