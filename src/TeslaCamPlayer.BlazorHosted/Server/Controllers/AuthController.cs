@@ -77,7 +77,7 @@ public class AuthController : ControllerBase
         var hasher = new PasswordHasher<UserModel>();
         var result = hasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
 
-        if (user.Username == request.Username && result == PasswordVerificationResult.Success)
+        if (user.Username == request.Username && result != PasswordVerificationResult.Failed)
         {
             var claims = new List<Claim>
             {

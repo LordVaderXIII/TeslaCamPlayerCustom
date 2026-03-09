@@ -11,46 +11,46 @@
 		<div class="main-view">
 			@if (_mainCamera == Cameras.Front)
 			{
-				<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" Src="@(_currentSegment?.CameraFront?.Url)" VideoEnded="VideoEnded" TimeUpdate="FrontVideoTimeUpdate" Label="Front" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Front).IsSelected" />
+				<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" Src="@(_currentSegment?.CameraFront?.Url)" VideoEnded="VideoEnded" TimeUpdate="MainCameraTimeUpdate" Label="Front" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Front).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.LeftBPillar)
 			{
-				<VideoPlayer @key="@("LEFTPIL")" @ref="_videoPlayerLeftBPillar" Class="video video--left-pillar" Src="@(_currentSegment?.CameraLeftBPillar?.Url)" VideoEnded="VideoEnded" Label="Left Pillar" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.LeftBPillar).IsSelected" />
+				<VideoPlayer @key="@("LEFTPIL")" @ref="_videoPlayerLeftBPillar" Class="video video--left-pillar" Src="@(_currentSegment?.CameraLeftBPillar?.Url)" VideoEnded="VideoEnded" TimeUpdate="MainCameraTimeUpdate" Label="Left Pillar" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.LeftBPillar).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.RightBPillar)
 			{
-				<VideoPlayer @key="@("RIGHTPIL")" @ref="_videoPlayerRightBPillar" Class="video video--right-pillar" Src="@(_currentSegment?.CameraRightBPillar?.Url)" VideoEnded="VideoEnded" Label="Right Pillar" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.RightBPillar).IsSelected" />
+				<VideoPlayer @key="@("RIGHTPIL")" @ref="_videoPlayerRightBPillar" Class="video video--right-pillar" Src="@(_currentSegment?.CameraRightBPillar?.Url)" VideoEnded="VideoEnded" TimeUpdate="MainCameraTimeUpdate" Label="Right Pillar" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.RightBPillar).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.LeftRepeater)
 			{
-				<VideoPlayer @key="@("D1916B24")" @ref="_videoPlayerLeftRepeater" Class="video video--left-repeater" Src="@(_currentSegment?.CameraLeftRepeater?.Url)" VideoEnded="VideoEnded" Label="Left Repeater" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.LeftRepeater).IsSelected" />
+				<VideoPlayer @key="@("D1916B24")" @ref="_videoPlayerLeftRepeater" Class="video video--left-repeater" Src="@(_currentSegment?.CameraLeftRepeater?.Url)" VideoEnded="VideoEnded" TimeUpdate="MainCameraTimeUpdate" Label="Left Repeater" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.LeftRepeater).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.RightRepeater)
 			{
-				<VideoPlayer @key="@("87B15DCA")" @ref="_videoPlayerRightRepeater" Class="video video--right-repeater" Src="@(_currentSegment?.CameraRightRepeater?.Url)" VideoEnded="VideoEnded" Label="Right Repeater" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.RightRepeater).IsSelected" />
+				<VideoPlayer @key="@("87B15DCA")" @ref="_videoPlayerRightRepeater" Class="video video--right-repeater" Src="@(_currentSegment?.CameraRightRepeater?.Url)" VideoEnded="VideoEnded" TimeUpdate="MainCameraTimeUpdate" Label="Right Repeater" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.RightRepeater).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.Back)
 			{
-				<VideoPlayer @key="@("66EC38D4")" @ref="_videoPlayerBack" Class="video video--back" Src="@(_currentSegment?.CameraBack?.Url)" VideoEnded="VideoEnded" Label="Back" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Back).IsSelected" />
+				<VideoPlayer @key="@("66EC38D4")" @ref="_videoPlayerBack" Class="video video--back" Src="@(_currentSegment?.CameraBack?.Url)" VideoEnded="VideoEnded" TimeUpdate="MainCameraTimeUpdate" Label="Back" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Back).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.Fisheye)
 			{
-				<VideoPlayer @key="@("FISH")" @ref="_videoPlayerFisheye" Class="video video--fisheye" Src="@(_currentSegment?.CameraFisheye?.Url)" VideoEnded="VideoEnded" Label="Fisheye" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Fisheye).IsSelected" />
+				<VideoPlayer @key="@("FISH")" @ref="_videoPlayerFisheye" Class="video video--fisheye" Src="@(_currentSegment?.CameraFisheye?.Url)" VideoEnded="VideoEnded" TimeUpdate="MainCameraTimeUpdate" Label="Fisheye" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Fisheye).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.Narrow)
 			{
-				<VideoPlayer @key="@("NARROW")" @ref="_videoPlayerNarrow" Class="video video--narrow" Src="@(_currentSegment?.CameraNarrow?.Url)" VideoEnded="VideoEnded" Label="Narrow" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Narrow).IsSelected" />
+				<VideoPlayer @key="@("NARROW")" @ref="_videoPlayerNarrow" Class="video video--narrow" Src="@(_currentSegment?.CameraNarrow?.Url)" VideoEnded="VideoEnded" TimeUpdate="MainCameraTimeUpdate" Label="Narrow" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Narrow).IsSelected" />
 			}
 			@if (_mainCamera == Cameras.Cabin)
 			{
-				<VideoPlayer @key="@("CABIN")" @ref="_videoPlayerCabin" Class="video video--cabin" Src="@(_currentSegment?.CameraCabin?.Url)" VideoEnded="VideoEnded" Label="Cabin" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Cabin).IsSelected" />
+				<VideoPlayer @key="@("CABIN")" @ref="_videoPlayerCabin" Class="video video--cabin" Src="@(_currentSegment?.CameraCabin?.Url)" VideoEnded="VideoEnded" TimeUpdate="MainCameraTimeUpdate" Label="Cabin" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Cabin).IsSelected" />
 			}
 		</div>
 		<div class="side-view @(_showCameraOverlay ? "mobile-cameras-overlay" : "")">
 			@if (_mainCamera != Cameras.Front)
 			{
 				<div style="@(_currentSegment?.CameraFront == null ? "display:none" : "")" class="video-wrapper">
-					<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" Src="@(_currentSegment?.CameraFront?.Url)" TimeUpdate="FrontVideoTimeUpdate" Clickable="@(!IsExportMode)" OnClick="@(() => SwapCamera(Cameras.Front))" Label="Front" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Front).IsSelected" />
+					<VideoPlayer @key="@("128D7AB3")" @ref="_videoPlayerFront" Class="video video--front" Src="@(_currentSegment?.CameraFront?.Url)" Clickable="@(!IsExportMode)" OnClick="@(() => SwapCamera(Cameras.Front))" Label="Front" Selectable="IsExportMode" @bind-IsSelected="GetCameraSelectionState(Cameras.Front).IsSelected" />
 				</div>
 			}
 			@if (_mainCamera != Cameras.LeftBPillar)
