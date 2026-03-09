@@ -11,10 +11,20 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
 
     public static class VersionInfo
     {
-        public const string CurrentVersion = "2026-02-1.4.1";
+        public const string CurrentVersion = "2026-03-1.5.0";
 
         public static readonly List<VersionRelease> Releases = new List<VersionRelease>
         {
+            new VersionRelease
+            {
+                Version = "2026-03-1.5.0",
+                Date = "2026-03-09",
+                Changes = new List<string>
+                {
+                    "fix: Timeline now tracks the active main camera instead of always the front camera",
+                    "fix: Login no longer fails when password hash needs rehashing (SuccessRehashNeeded)"
+                }
+            },
             new VersionRelease
             {
                 Version = "2026-02-1.4.1",

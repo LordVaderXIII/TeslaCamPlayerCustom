@@ -318,18 +318,18 @@ public partial class ClipViewer : ComponentBase, IDisposable
 		}
 	}
 
-	private async Task FrontVideoTimeUpdate()
+	private async Task MainCameraTimeUpdate()
 	{
 		if (_currentSegment == null)
 			return;
 
 		if (_isScrubbing || _isDraggingExportHandle)
 			return;
-		
-        // Ensure player is valid
-        if (_videoPlayerFront == null) return;
 
-		var seconds = await _videoPlayerFront.GetTimeAsync();
+		var mainPlayer = GetPlayerForCamera(_mainCamera);
+		if (mainPlayer == null) return;
+
+		var seconds = await mainPlayer.GetTimeAsync();
 
         // Update Telemetry
         var telemetry = await TelemetryService.GetTelemetryAsync(seconds);
@@ -439,22 +439,6 @@ public partial class ClipViewer : ComponentBase, IDisposable
             Cameras.Cabin => _currentSegment.CameraCabin,
             _ => null
         };
-    }
-
-    private async Task CheckAndSyncPlayer(VideoPlayer player, Cameras camera, double mainTime)
-    {
-        if (player == null || camera == _mainCamera) return;
-
-        try
-        {
-            var time = await player.GetTimeAsync();
-            if (Math.Abs(time - mainTime) > 0.4) // 400ms drift tolerance
-            {
-                Console.WriteLine($"Syncing {camera} (Diff: {time - mainTime:F3}s)");
-                await player.SetTimeAsync(mainTime);
-            }
-        }
-        catch { /* Player might not be ready */ }
     }
 
 	private async void ScrubVideoDebounceTick(object _, ElapsedEventArgs __)
