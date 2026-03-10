@@ -35,5 +35,18 @@ public class Clip
 	}
 
 	public ClipVideoSegment SegmentAtDate(DateTime date)
-		=> Segments.FirstOrDefault(s => s.StartDate <= date && s.EndDate >= date);
+	{
+		// Optimization: Avoid LINQ allocation for hot path.
+		// Segments are sorted by StartDate.
+		foreach (var s in Segments)
+		{
+			if (s.StartDate > date)
+				return null;
+
+			if (s.EndDate >= date)
+				return s;
+		}
+
+		return null;
+	}
 }
