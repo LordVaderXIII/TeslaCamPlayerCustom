@@ -5,12 +5,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TeslaCamPlayer.BlazorHosted.Server.Filters;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Controllers
 {
+    [EnableRateLimiting("LogsPolicy")]
     [TeslaCamAuth]
     [Route("api/[controller]")]
     [ApiController]
