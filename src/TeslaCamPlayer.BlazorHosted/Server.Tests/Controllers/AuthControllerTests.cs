@@ -188,5 +188,43 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             Assert.True(updatedUser.IsEnabled);
             Assert.NotNull(updatedUser.PasswordHash);
         }
+
+        [Fact]
+        public async Task Update_ShouldReturnBadRequest_WhenEnablingAuthWithoutPassword()
+        {
+            // Arrange
+            using var context = new TeslaCamDbContext(_dbContextOptions);
+            var user = new User
+            {
+                Id = "Admin",
+                Username = "Admin",
+                IsEnabled = false,
+                PasswordHash = null // Initial setup
+            };
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var controller = new AuthController(context);
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+
+            var request = new UpdateAuthRequest
+            {
+                IsEnabled = true,
+                Username = "Admin",
+                Password = "", // Empty
+                CurrentPassword = null
+            };
+
+            // Act
+            var result = await controller.Update(request);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+            var badRequestResult = result as BadRequestObjectResult;
+            Assert.Equal("Password is required when enabling authentication.", badRequestResult.Value);
+        }
     }
 }
