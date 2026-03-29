@@ -20,28 +20,44 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
 
 		public bool IsInFilter(Clip clip)
 		{
-			if (Recent && clip.Type == ClipType.Recent)
-				return true;
-			
-			if (DashcamHonk && clip.Event?.Reason == CamEvents.UserInteractionHonk)
-				return true;
+			// Optimization: Switch on Type first to avoid unnecessary string checks for other types.
+			switch (clip.Type)
+			{
+				case ClipType.Recent:
+					return Recent;
 
-			if (DashcamSaved && clip.Event?.Reason is CamEvents.UserInteractionDashcamPanelSave or CamEvents.UserInteractionDashcamIconTapped)
-				return true;
+				case ClipType.Saved:
+					// If "Other" is enabled, it includes all Saved clips.
+					// This acts as a catch-all for this type, skipping expensive string checks.
+					if (DashcamOther)
+						return true;
 
-			if (DashcamOther && clip.Type == ClipType.Saved)
-				return true;
+					var savedReason = clip.Event?.Reason;
+					if (DashcamHonk && savedReason == CamEvents.UserInteractionHonk)
+						return true;
 
-			if (SentryObjectDetection && clip.Event?.Reason == CamEvents.SentryAwareObjectDetection)
-				return true;
+					if (DashcamSaved && (savedReason is CamEvents.UserInteractionDashcamPanelSave or CamEvents.UserInteractionDashcamIconTapped))
+						return true;
 
-			if (SentryAccelerationDetection && clip.Event?.Reason?.StartsWith(CamEvents.SentryAwareAccelerationPrefix) == true)
-				return true;
+					return false;
 
-			if (SentryOther && clip.Type == ClipType.Sentry)
-				return true;
+				case ClipType.Sentry:
+					// If "Other" is enabled, it includes all Sentry clips.
+					if (SentryOther)
+						return true;
 
-			return false;
+					var sentryReason = clip.Event?.Reason;
+					if (SentryObjectDetection && sentryReason == CamEvents.SentryAwareObjectDetection)
+						return true;
+
+					if (SentryAccelerationDetection && sentryReason?.StartsWith(CamEvents.SentryAwareAccelerationPrefix) == true)
+						return true;
+
+					return false;
+
+				default:
+					return false;
+			}
 		}
 	}
 }
