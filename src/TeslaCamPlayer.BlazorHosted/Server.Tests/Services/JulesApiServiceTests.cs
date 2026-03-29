@@ -1,11 +1,13 @@
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
+using TeslaCamPlayer.BlazorHosted.Server.Models;
 using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Services;
 using Xunit;
@@ -27,7 +29,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Services
 
             _testDataPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(_testDataPath);
-            _mockSettingsProvider.Setup(s => s.Settings.ClipsRootPath).Returns(_testDataPath);
+            _mockSettingsProvider.Setup(s => s.Settings).Returns(new Settings { ClipsRootPath = _testDataPath });
         }
 
         [Fact]
@@ -82,6 +84,29 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Services
                 It.Is<It.IsAnyType>((v, t) => v.ToString().Contains("JULES_API_KEY is not set")),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception, string>>()), Times.Once);
+        }
+
+        [Fact]
+        public void IsSafeSourceFile_ShouldReturnFalse_ForFileOutsideAppDir()
+        {
+            // Arrange
+            var service = new JulesApiService(_mockConfiguration.Object, _mockLogger.Object, _mockSettingsProvider.Object);
+            var tempFile = Path.Combine(Path.GetTempPath(), $"test_{Guid.NewGuid()}.cs");
+            File.WriteAllText(tempFile, "public class Test {}");
+
+            try
+            {
+                // Act
+                var method = typeof(JulesApiService).GetMethod("IsSafeSourceFile", BindingFlags.NonPublic | BindingFlags.Instance);
+                var result = (bool)method.Invoke(service, new object[] { tempFile });
+
+                // Assert
+                Assert.False(result, "File outside application directory should be rejected.");
+            }
+            finally
+            {
+                if (File.Exists(tempFile)) File.Delete(tempFile);
+            }
         }
     }
 }
