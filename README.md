@@ -7,7 +7,7 @@ A self-hosted web player for viewing Tesla Sentry and Dashcam clips.
 This project is a fork of the original **TeslaCam Player**. It builds on that foundation with an expanded feature set, focused on getting the most out of newer Tesla hardware. Key goals of this fork include:
 
 - **More Camera Support:** Adding support for additional camera angles beyond the original (e.g. Left/Right Pillars), so all available feeds from newer vehicles can be viewed.
-- **360°/3D View:** A panoramic 3D mode that stitches the camera feeds together to reconstruct the car's surroundings.
+- **360°/3D View (Proposed):** A planned panoramic 3D mode that would stitch the camera feeds together to reconstruct the car's surroundings.
 - **Additional Features:** Ongoing enhancements to playback, export, and integrations (including the planned OpenAI Codex auto-fix workflow described below).
 
 Credit for the original application goes to the upstream TeslaCam Player project — this fork extends it rather than replacing it.
@@ -18,7 +18,7 @@ Credit for the original application goes to the upstream TeslaCam Player project
   - Front, Back, Left/Right Repeaters
   - Left/Right Pillars (New!)
   - Fisheye & Narrow (Legacy/Debug)
-- **3D/360° Mode:** Toggle a panoramic 3D view of all cameras stitched together (reconstructs the car's surroundings).
+- **3D/360° Mode (Proposed):** A planned panoramic 3D view that stitches all cameras together to reconstruct the car's surroundings.
 - **Synchronized Playback:** All video feeds are synced by timestamp.
 - **Event Markers:** Visualize the exact moment of a Sentry event on the timeline.
 - **Clip Export:** Export custom clips with multiple camera angles merged into a single video file.
