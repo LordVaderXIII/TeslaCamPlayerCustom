@@ -14,7 +14,7 @@ A self-hosted web player for viewing Tesla Sentry and Dashcam clips.
 - **Clip Export:** Export custom clips with multiple camera angles merged into a single video file.
 - **Responsive Layout:** Large main view (Front) with a grid of side cameras.
 - **Dockerized:** Easy deployment on any Docker host (Unraid, Synology, Linux, etc.).
-- **Jules Integration:** View logs and manually report errors to Jules for automated resolution directly from the UI.
+- **OpenAI Codex Integration (Planned):** View logs and manually report errors to OpenAI Codex for automated resolution directly from the UI. *This replaces the previous Jules-based auto-fix workflow.*
 
 ## Prerequisites
 
@@ -64,8 +64,8 @@ services:
     volumes:
       - /path/to/your/TeslaCam:/TeslaCam
     environment:
-      - JULES_API_KEY=your_jules_api_key_here
-      - JULES_SOURCE=sources/github/your_github_username/your_repo_name
+      - OPENAI_API_KEY=your_openai_api_key_here
+      - OPENAI_CODEX_SOURCE=sources/github/your_github_username/your_repo_name
       - RESET_AUTH=false # Set to true to reset authentication to OFF
     restart: unless-stopped
 ```
@@ -79,24 +79,24 @@ Version 1.0 introduces a simple authentication system (disabled by default).
 
 ## Error Reporting and Auto-Fixes
 
-This application integrates with the **Jules API** to automatically report backend errors and request bug fixes via GitHub Pull Requests.
+We are planning to replace the previous Jules-based auto-fix workflow with the **OpenAI Codex API**, which will automatically report backend errors and request bug fixes via GitHub Pull Requests.
 
 To enable this feature, you must configure the following environment variables in your Docker container:
 
-- `JULES_API_KEY`: Your Jules API Key. (See [Jules Docs](https://jules.google/docs/api/reference/authentication) to generate one).
-- `JULES_SOURCE`: The Jules Source identifier for your repository, in the format `sources/github/OWNER/REPO`.
+- `OPENAI_API_KEY`: Your OpenAI API Key. (See [OpenAI Docs](https://platform.openai.com/docs/api-reference/authentication) to generate one).
+- `OPENAI_CODEX_SOURCE`: The source identifier for your repository, in the format `sources/github/OWNER/REPO`.
 
 **Privacy Note:** Error reports include the error message, stack trace, application version, and environment type. Code snippets from the stack trace may be included if available.
 
 ### Manual Error Reporting
 
-You can also view application logs and manually report specific errors to Jules:
+You can also view application logs and manually report specific errors to OpenAI Codex:
 
 1.  Click the **User Profile** icon.
 2.  Click **Settings**.
 3.  Click the **Logs** button.
 4.  Review the list of "Resolvable Errors".
-5.  Click **Send to Jules** on any error to initiate an automated fix session.
+5.  Click **Send to Codex** on any error to initiate an automated fix session.
 
 ## Usage
 
