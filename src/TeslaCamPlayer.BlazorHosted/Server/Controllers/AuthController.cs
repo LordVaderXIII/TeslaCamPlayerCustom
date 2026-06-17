@@ -1,9 +1,12 @@
 using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Serilog;
 using Microsoft.AspNetCore.RateLimiting;
 using TeslaCamPlayer.BlazorHosted.Server.Data;
+using TeslaCamPlayer.BlazorHosted.Server.Services;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
 using Microsoft.AspNetCore.Identity;
 using UserModel = TeslaCamPlayer.BlazorHosted.Shared.Models.User;
@@ -15,10 +18,12 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly TeslaCamDbContext _dbContext;
+    private readonly AuthTokenService _authTokenService;
 
-    public AuthController(TeslaCamDbContext dbContext)
+    public AuthController(TeslaCamDbContext dbContext, AuthTokenService authTokenService)
     {
         _dbContext = dbContext;
+        _authTokenService = authTokenService;
     }
 
     [HttpGet("status")]
@@ -142,6 +147,23 @@ public class AuthController : ControllerBase
             {
                 return Unauthorized("Invalid current password.");
             }
+        }
+        else
+        {
+            // Initial setup - Check Setup Token
+            if (string.IsNullOrEmpty(_authTokenService.Token))
+            {
+                Log.Warning("Setup token missing during initial setup.");
+                return Unauthorized("Setup token not found. Please restart server.");
+            }
+
+            if (request.SetupToken != _authTokenService.Token)
+            {
+                 return Unauthorized("Invalid setup token. Check server logs.");
+            }
+
+            // Consume token
+            _authTokenService.Token = null;
         }
 
         user.IsEnabled = request.IsEnabled;
