@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 using TeslaCamPlayer.BlazorHosted.Server.Data;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
 using Microsoft.AspNetCore.Identity;
@@ -15,10 +16,12 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly TeslaCamDbContext _dbContext;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(TeslaCamDbContext dbContext)
+    public AuthController(TeslaCamDbContext dbContext, ILogger<AuthController> logger)
     {
         _dbContext = dbContext;
+        _logger = logger;
     }
 
     [HttpGet("status")]
@@ -98,8 +101,12 @@ public class AuthController : ControllerBase
                 new ClaimsPrincipal(claimsIdentity),
                 authProperties);
 
+            _logger.LogInformation("User {Username} logged in successfully from {IpAddress}.", user.Username, HttpContext.Connection.RemoteIpAddress);
+
             return Ok();
         }
+
+        _logger.LogWarning("Failed login attempt for username {Username} from {IpAddress}.", request.Username, HttpContext.Connection.RemoteIpAddress);
 
         return Unauthorized();
     }
@@ -107,7 +114,9 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout()
     {
+        var username = User.Identity?.Name ?? "Unknown";
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        _logger.LogInformation("User {Username} logged out from {IpAddress}.", username, HttpContext.Connection.RemoteIpAddress);
         return Ok();
     }
 
@@ -156,6 +165,8 @@ public class AuthController : ControllerBase
 
         _dbContext.Users.Update(user);
         await _dbContext.SaveChangesAsync();
+
+        _logger.LogInformation("Auth settings updated by {User} from {IpAddress}. Enabled: {Enabled}", User.Identity?.Name ?? "Admin", HttpContext.Connection.RemoteIpAddress, request.IsEnabled);
 
         return Ok();
     }
