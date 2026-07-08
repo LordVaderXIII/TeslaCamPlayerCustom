@@ -50,6 +50,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddSingleton<ISettingsProvider, SettingsProvider>();
 builder.Services.AddTransient<IClipsService, ClipsService>();
 builder.Services.AddSingleton<IExportService, ExportService>();
+builder.Services.AddSingleton<SetupTokenService>();
 builder.Services.AddTransient<IJulesApiService, JulesApiService>();
 #if WINDOWS
 builder.Services.AddTransient<IFfProbeService, FfProbeServiceWindows>();
@@ -143,6 +144,13 @@ using (var scope = app.Services.CreateScope())
             dbContext.Users.Update(user);
             dbContext.SaveChanges();
             Log.Information("Authentication reset to OFF via RESET_AUTH environment variable.");
+        }
+
+        if (string.IsNullOrEmpty(user.PasswordHash))
+        {
+            var setupTokenService = scope.ServiceProvider.GetRequiredService<SetupTokenService>();
+            var token = setupTokenService.GenerateToken();
+            Log.Warning("SECURITY ALERT: Server is unclaimed. Use this Setup Token to set the initial password: {Token}", token);
         }
     }
     catch (Exception ex)

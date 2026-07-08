@@ -17,3 +17,8 @@
 **Vulnerability:** Even if a password was previously set, disabling authentication allowed anyone to re-enable it and overwrite the password without providing the old one.
 **Learning:** "Disabled" authentication state should not imply "Reset" state. Sensitive operations (like changing passwords) must always require the current credential if one exists, regardless of the global auth switch.
 **Prevention:** Enforce `CurrentPassword` verification for sensitive updates whenever a password hash exists in the database. Ensure recovery mechanisms (like `RESET_AUTH`) explicitly clear credentials if they are intended to bypass this check.
+
+## 2026-01-24 - [Secure Initial Setup Implementation]
+**Vulnerability:** Addressed the previously identified TOFU vulnerability where an unclaimed server could be hijacked.
+**Learning:** Using a memory-only Setup Token generated on startup (when no password exists) provides a secure way to bootstrap trust without persistent secrets or complex setup wizards. It leverages the admin's access to server logs as a side-channel for authentication.
+**Prevention:** This pattern should be standard for self-hosted apps that start in an unconfigured state.

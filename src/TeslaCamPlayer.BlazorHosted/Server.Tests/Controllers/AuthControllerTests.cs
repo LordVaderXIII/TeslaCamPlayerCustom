@@ -9,12 +9,14 @@ using Xunit;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
+using TeslaCamPlayer.BlazorHosted.Server.Services;
 
 namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
 {
     public class AuthControllerTests
     {
         private DbContextOptions<TeslaCamDbContext> _dbContextOptions;
+        private SetupTokenService _setupTokenService;
 
         public AuthControllerTests()
         {
@@ -26,6 +28,9 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
 
             using var context = new TeslaCamDbContext(_dbContextOptions);
             context.Database.EnsureCreated();
+
+            _setupTokenService = new SetupTokenService();
+            _setupTokenService.GenerateToken();
         }
 
         [Fact]
@@ -44,7 +49,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, _setupTokenService);
             // Simulate unauthenticated user
             controller.ControllerContext = new ControllerContext
             {
@@ -84,7 +89,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, _setupTokenService);
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -123,7 +128,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, _setupTokenService);
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -150,7 +155,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
         }
 
         [Fact]
-        public async Task Update_ShouldSucceed_WhenAuthDisabledAndPasswordMissing_AndCurrentPasswordMissing()
+        public async Task Update_ShouldReturnUnauthorized_WhenAuthDisabledAndPasswordMissing_AndTokenMissing()
         {
             // Arrange
             using var context = new TeslaCamDbContext(_dbContextOptions);
@@ -164,7 +169,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            var controller = new AuthController(context);
+            var controller = new AuthController(context, _setupTokenService);
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -175,7 +180,43 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Controllers
                 IsEnabled = true,
                 Username = "Admin",
                 Password = "NewPassword",
-                CurrentPassword = null // Not needed
+                CurrentPassword = "BadToken"
+            };
+
+            // Act
+            var result = await controller.Update(request);
+
+            // Assert
+            Assert.IsType<UnauthorizedObjectResult>(result);
+        }
+
+        [Fact]
+        public async Task Update_ShouldSucceed_WhenAuthDisabledAndPasswordMissing_AndTokenMatches()
+        {
+            // Arrange
+            using var context = new TeslaCamDbContext(_dbContextOptions);
+            var user = new User
+            {
+                Id = "Admin",
+                Username = "Admin",
+                IsEnabled = false,
+                PasswordHash = null // Initial setup
+            };
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
+
+            var controller = new AuthController(context, _setupTokenService);
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            };
+
+            var request = new UpdateAuthRequest
+            {
+                IsEnabled = true,
+                Username = "Admin",
+                Password = "NewPassword",
+                CurrentPassword = _setupTokenService.Token // Correct Token
             };
 
             // Act
