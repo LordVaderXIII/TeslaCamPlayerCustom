@@ -17,3 +17,8 @@
 **Vulnerability:** Even if a password was previously set, disabling authentication allowed anyone to re-enable it and overwrite the password without providing the old one.
 **Learning:** "Disabled" authentication state should not imply "Reset" state. Sensitive operations (like changing passwords) must always require the current credential if one exists, regardless of the global auth switch.
 **Prevention:** Enforce `CurrentPassword` verification for sensitive updates whenever a password hash exists in the database. Ensure recovery mechanisms (like `RESET_AUTH`) explicitly clear credentials if they are intended to bypass this check.
+
+## 2024-05-30 - [Admin Lockout via Empty Password]
+**Vulnerability:** The `Update` endpoint allowed enabling authentication (`IsEnabled = true`) without ensuring a password was set. If the system was in an initial state (null `PasswordHash`) and the user enabled auth without providing a password, they would be locked out as the login process would fail on the null hash.
+**Learning:** Validating state transitions is critical. Just because a request is valid in isolation (e.g. valid boolean) doesn't mean the resulting system state is valid.
+**Prevention:** Enforce invariants during state changes. Added a check to ensure that if `IsEnabled` becomes true, a password must either already exist or be provided in the request.

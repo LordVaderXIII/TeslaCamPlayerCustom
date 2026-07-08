@@ -124,6 +124,12 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
+        // SECURITY: Prevent lockout. If enabling auth, ensure we have a password (either existing or new).
+        if (request.IsEnabled && string.IsNullOrEmpty(user.PasswordHash) && string.IsNullOrEmpty(request.Password))
+        {
+            return BadRequest("Password is required when enabling authentication.");
+        }
+
         // SECURITY: If a password is already set, we must verify it before allowing any changes,
         // even if auth is currently disabled (to prevent hijacking by enabling auth with a new password).
         if (!string.IsNullOrEmpty(user.PasswordHash))
