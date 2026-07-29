@@ -45,6 +45,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddMemoryCache();
 builder.Services.AddResponseCompression();
+builder.Services.AddHttpClient();
 builder.Services.AddControllersWithViews().AddNewtonsoftJson();
 builder.Services.AddRazorPages();
 builder.Services.AddSingleton<ISettingsProvider, SettingsProvider>();
