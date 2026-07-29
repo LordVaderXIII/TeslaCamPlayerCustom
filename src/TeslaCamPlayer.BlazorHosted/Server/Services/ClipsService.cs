@@ -84,7 +84,11 @@ public partial class ClipsService : IClipsService
                 }
             }
 
-            var videoFiles = await dbContext.VideoFiles.ToListAsync();
+            // Optimization: Fetch files sorted by StartDate descending to avoid in-memory sorting later.
+            // The DB index on StartDate makes this efficient.
+            var videoFiles = await dbContext.VideoFiles
+                .OrderByDescending(v => v.StartDate)
+                .ToListAsync();
             var clips = await BuildClipsAsync(videoFiles);
 
             _memoryCache.Set(ClipsCacheKey, clips, new MemoryCacheEntryOptions
@@ -196,10 +200,11 @@ public partial class ClipsService : IClipsService
 
 	private static IEnumerable<Clip> GetRecentClips(List<VideoFile> recentVideoFiles)
 	{
-		// Optimize: Group by StartDate first to avoid O(N^2) scan in the loop
+		// Optimize: Use LINQ GroupBy but rely on input being sorted by DB.
+		// recentVideoFiles is already sorted by StartDate DESC.
 		var groupedSegments = recentVideoFiles
 			.GroupBy(f => f.StartDate)
-			.OrderByDescending(g => g.Key)
+			// Removed .OrderByDescending(g => g.Key) as input is already sorted.
 			.ToList();
 
 		var currentClipSegments = new List<ClipVideoSegment>();
