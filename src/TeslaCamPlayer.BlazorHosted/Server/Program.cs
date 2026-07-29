@@ -50,6 +50,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddSingleton<ISettingsProvider, SettingsProvider>();
 builder.Services.AddTransient<IClipsService, ClipsService>();
 builder.Services.AddSingleton<IExportService, ExportService>();
+builder.Services.AddSingleton<IAuthSetupService, AuthSetupService>();
 builder.Services.AddTransient<IJulesApiService, JulesApiService>();
 #if WINDOWS
 builder.Services.AddTransient<IFfProbeService, FfProbeServiceWindows>();
@@ -143,6 +144,15 @@ using (var scope = app.Services.CreateScope())
             dbContext.Users.Update(user);
             dbContext.SaveChanges();
             Log.Information("Authentication reset to OFF via RESET_AUTH environment variable.");
+        }
+
+        if (string.IsNullOrEmpty(user.PasswordHash))
+        {
+            var authSetupService = scope.ServiceProvider.GetRequiredService<IAuthSetupService>();
+            Log.Information("----------------------------------------------------------------");
+            Log.Information("SETUP REQUIRED: Authentication is not configured.");
+            Log.Information($"To set up a password, use this Setup Token: {authSetupService.SetupToken}");
+            Log.Information("----------------------------------------------------------------");
         }
     }
     catch (Exception ex)

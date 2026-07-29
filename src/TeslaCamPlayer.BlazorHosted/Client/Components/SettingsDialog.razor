@@ -16,6 +16,11 @@
                 <MudTextField @bind-Value="_currentPassword" Label="Current Password" InputType="InputType.Password" Variant="Variant.Outlined" Class="mb-4"
                               Required="true" RequiredError="Current password is required to make changes!" />
             }
+            else
+            {
+                <MudTextField @bind-Value="_setupToken" Label="Setup Token" Variant="Variant.Outlined" Class="mb-4"
+                              Required="true" RequiredError="Setup token is required! Check server logs." HelperText="Check server logs for the token." />
+            }
 
             @if (_isEnabled)
             {
@@ -54,6 +59,7 @@
     private string _username;
     private string _password;
     private string _currentPassword;
+    private string _setupToken;
     private string _firstName;
     private bool _isValid;
     private MudForm _form;
@@ -91,6 +97,7 @@
             Username = _username,
             Password = _password,
             CurrentPassword = _currentPassword,
+            SetupToken = _setupToken,
             FirstName = _firstName
         };
 
