@@ -82,6 +82,17 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(15)
             }));
+
+    options.AddPolicy("ExportPolicy", context =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 5,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(5)
+            }));
 });
 
 builder.Services.AddDbContext<TeslaCamDbContext>((sp, options) =>
