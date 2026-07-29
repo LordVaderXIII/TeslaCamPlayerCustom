@@ -1,4 +1,5 @@
-﻿using TeslaCamPlayer.BlazorHosted.Shared.Models;
+using System;
+using TeslaCamPlayer.BlazorHosted.Shared.Models;
 
 namespace TeslaCamPlayer.BlazorHosted.Client.Models
 {
@@ -20,25 +21,35 @@ namespace TeslaCamPlayer.BlazorHosted.Client.Models
 
 		public bool IsInFilter(Clip clip)
 		{
-			if (Recent && clip.Type == ClipType.Recent)
+            // Optimization: Cache properties to avoid repeated access and reduce overhead
+            var type = clip.Type;
+
+			// Check broad category filters first (Type-based)
+			// These allow skipping reason checks entirely if the whole category is enabled
+			if (Recent && type == ClipType.Recent)
 				return true;
 			
-			if (DashcamHonk && clip.Event?.Reason == CamEvents.UserInteractionHonk)
+			if (DashcamOther && type == ClipType.Saved)
 				return true;
 
-			if (DashcamSaved && clip.Event?.Reason is CamEvents.UserInteractionDashcamPanelSave or CamEvents.UserInteractionDashcamIconTapped)
+			if (SentryOther && type == ClipType.Sentry)
 				return true;
 
-			if (DashcamOther && clip.Type == ClipType.Saved)
+			// Check specific reason filters (Type-agnostic)
+			var reason = clip.Event?.Reason;
+			if (reason == null)
+				return false;
+
+			if (DashcamHonk && reason == CamEvents.UserInteractionHonk)
 				return true;
 
-			if (SentryObjectDetection && clip.Event?.Reason == CamEvents.SentryAwareObjectDetection)
+			if (DashcamSaved && (reason == CamEvents.UserInteractionDashcamPanelSave || reason == CamEvents.UserInteractionDashcamIconTapped))
 				return true;
 
-			if (SentryAccelerationDetection && clip.Event?.Reason?.StartsWith(CamEvents.SentryAwareAccelerationPrefix) == true)
+			if (SentryObjectDetection && reason == CamEvents.SentryAwareObjectDetection)
 				return true;
 
-			if (SentryOther && clip.Type == ClipType.Sentry)
+			if (SentryAccelerationDetection && reason.StartsWith(CamEvents.SentryAwareAccelerationPrefix, StringComparison.Ordinal))
 				return true;
 
 			return false;
