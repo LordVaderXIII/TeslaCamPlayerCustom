@@ -17,3 +17,8 @@
 **Vulnerability:** Even if a password was previously set, disabling authentication allowed anyone to re-enable it and overwrite the password without providing the old one.
 **Learning:** "Disabled" authentication state should not imply "Reset" state. Sensitive operations (like changing passwords) must always require the current credential if one exists, regardless of the global auth switch.
 **Prevention:** Enforce `CurrentPassword` verification for sensitive updates whenever a password hash exists in the database. Ensure recovery mechanisms (like `RESET_AUTH`) explicitly clear credentials if they are intended to bypass this check.
+
+## 2026-10-25 - [Input Validation Gaps]
+**Vulnerability:** The application relied on "happy path" assumptions for authentication inputs, allowing arbitrarily long strings or weak passwords to be processed. This posed risks of DoS (hashing large inputs) and weak security posture.
+**Learning:** Shared models in Blazor (Client/Server) are powerful because DataAnnotations protect both the UI and the API simultaneously. Neglecting these attributes leaves the backend vulnerable even if the frontend has checks.
+**Prevention:** Apply `[StringLength]` and `[Required]` to all DTOs exposed to the public API, especially in shared libraries.
