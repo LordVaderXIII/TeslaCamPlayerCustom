@@ -2,10 +2,12 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
+using TeslaCamPlayer.BlazorHosted.Server.Models;
 using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Services;
 using Xunit;
@@ -17,6 +19,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Services
         private readonly Mock<IConfiguration> _mockConfiguration;
         private readonly Mock<ILogger<JulesApiService>> _mockLogger;
         private readonly Mock<ISettingsProvider> _mockSettingsProvider;
+        private readonly Mock<IWebHostEnvironment> _mockEnvironment;
         private readonly string _testDataPath;
 
         public JulesApiServiceTests()
@@ -24,10 +27,16 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Services
             _mockConfiguration = new Mock<IConfiguration>();
             _mockLogger = new Mock<ILogger<JulesApiService>>();
             _mockSettingsProvider = new Mock<ISettingsProvider>();
+            _mockEnvironment = new Mock<IWebHostEnvironment>();
 
             _testDataPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
             Directory.CreateDirectory(_testDataPath);
-            _mockSettingsProvider.Setup(s => s.Settings.ClipsRootPath).Returns(_testDataPath);
+
+            // Fix setup for Settings
+            var settings = new Settings { ClipsRootPath = _testDataPath };
+            _mockSettingsProvider.Setup(s => s.Settings).Returns(settings);
+
+            _mockEnvironment.Setup(e => e.ContentRootPath).Returns(_testDataPath);
         }
 
         [Fact]
@@ -37,7 +46,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Services
             _mockConfiguration.Setup(c => c["JULES_API_KEY"]).Returns("fake-key");
             _mockConfiguration.Setup(c => c["JULES_SOURCE"]).Returns("sources/github/test/test");
 
-            var service = new JulesApiService(_mockConfiguration.Object, _mockLogger.Object, _mockSettingsProvider.Object);
+            var service = new JulesApiService(new HttpClient(), _mockConfiguration.Object, _mockLogger.Object, _mockSettingsProvider.Object, _mockEnvironment.Object);
 
             // Act
             // Call report 6 times (limit is 5)
@@ -69,7 +78,7 @@ namespace TeslaCamPlayer.BlazorHosted.Server.Tests.Services
         {
             // Arrange
             _mockConfiguration.Setup(c => c["JULES_API_KEY"]).Returns((string)null);
-            var service = new JulesApiService(_mockConfiguration.Object, _mockLogger.Object, _mockSettingsProvider.Object);
+            var service = new JulesApiService(new HttpClient(), _mockConfiguration.Object, _mockLogger.Object, _mockSettingsProvider.Object, _mockEnvironment.Object);
 
             // Act
             await service.ReportErrorAsync(new Exception("Test"), "Context");
