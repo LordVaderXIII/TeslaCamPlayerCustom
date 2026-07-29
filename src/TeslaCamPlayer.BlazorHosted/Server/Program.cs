@@ -13,6 +13,8 @@ using TeslaCamPlayer.BlazorHosted.Server.Providers.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Server.Services;
 using TeslaCamPlayer.BlazorHosted.Server.Services.Interfaces;
 using TeslaCamPlayer.BlazorHosted.Shared.Models;
+using Microsoft.AspNetCore.Identity;
+using System.Security.Cryptography;
 
 Log.Logger = new LoggerConfiguration()
 	.MinimumLevel.Is(LogEventLevel.Verbose)
@@ -124,15 +126,40 @@ using (var scope = app.Services.CreateScope())
         var user = dbContext.Users.Find("Admin");
         if (user == null)
         {
+            // SECURITY: Generate a secure random password and enable auth by default
+            // to prevent "Trust on First Use" vulnerability.
+            var passwordBytes = new byte[16];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(passwordBytes);
+            }
+            // Use hex to avoid special chars issues
+            var password = Convert.ToHexString(passwordBytes);
+
+            var settingsProvider = scope.ServiceProvider.GetRequiredService<ISettingsProvider>();
+            var passwordFilePath = Path.Combine(settingsProvider.Settings.ClipsRootPath, "initial_admin_password.txt");
+
+            File.WriteAllText(passwordFilePath, password);
+
+            var hasher = new PasswordHasher<User>();
+
             user = new User
             {
                 Id = "Admin",
                 Username = "Admin",
-                IsEnabled = false, // Default off
+                IsEnabled = true,
                 FirstName = "Admin"
             };
+            user.PasswordHash = hasher.HashPassword(user, password);
+
             dbContext.Users.Add(user);
             dbContext.SaveChanges();
+
+            Log.Warning("==================================================================");
+            Log.Warning("ADMIN USER CREATED SECURELY");
+            Log.Warning($"Initial password has been saved to: {passwordFilePath}");
+            Log.Warning("Please retrieve the password from this file to log in.");
+            Log.Warning("==================================================================");
         }
 
         var resetAuth = Environment.GetEnvironmentVariable("RESET_AUTH");
